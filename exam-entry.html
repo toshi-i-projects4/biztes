@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ビズてす 受験案内</title>
+<style>
+:root{--blue:#2563eb;--blue-dark:#1d4ed8;--navy:#0f172a;--line:#e5e7eb;--bg:#f5f7fb;--muted:#64748b;--orange:#f97316}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Hiragino Maru Gothic ProN","BIZ UDPGothic","Yu Gothic UI","Meiryo",sans-serif;background:var(--bg);color:#111827;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+.card{background:#fff;border-radius:22px;box-shadow:0 10px 30px rgba(15,23,42,.08);padding:36px;max-width:560px;width:100%}
+h1{font-size:21px;color:var(--navy);margin:0 0 6px}
+.sub{font-size:13px;color:var(--muted);margin-bottom:22px}
+.parts{display:grid;gap:10px;margin-bottom:22px}
+.part{border:1px solid var(--line);border-radius:14px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;font-size:13px}
+.part strong{color:var(--navy)}
+.part span{color:var(--muted)}
+.warn{background:#fffbeb;border:1px solid #fde68a;border-left:4px solid var(--orange);border-radius:12px;padding:14px 16px;font-size:13px;color:#92400e;line-height:1.7;margin-bottom:22px}
+button{width:100%;background:var(--blue);color:#fff;border:none;border-radius:12px;padding:14px;font-size:15px;font-weight:800;cursor:pointer}
+button:hover{background:var(--blue-dark)}
+button:disabled{background:#cbd5e1;cursor:not-allowed}
+.msg{font-size:13px;border-radius:10px;padding:10px 12px;margin-bottom:16px;display:none}
+.msg.show{display:block}
+.msg.error{background:#fef2f2;color:#dc2626;border:1px solid #fecaca}
+.loading{text-align:center;color:var(--muted);font-size:13px;padding:30px}
+</style>
+</head>
+<body>
+<div class="card">
+  <div id="loading" class="loading">読み込み中…</div>
+  <div id="content" style="display:none">
+    <h1>ビズてす 受験のご案内</h1>
+    <div class="sub" id="companyLine"></div>
+    <div id="msg" class="msg error"></div>
+
+    <div class="parts">
+      <div class="part"><strong>①タイピング試験</strong><span id="timeTyping"></span></div>
+      <div class="part"><strong>②リーディングスキル</strong><span id="timeReading"></span></div>
+      <div class="part"><strong>③ロジカルシンキング</strong><span id="timeLogical"></span></div>
+      <div class="part"><strong>④仕事観アセスメント</strong><span id="timeWorklife"></span></div>
+    </div>
+
+    <div class="warn">
+      各パートは「練習問題→本番」の順で進みます。<strong>受験を開始すると、原則として途中で中断・やり直しはできません。</strong>通信環境の良い場所で、時間に余裕をもってご受験ください。
+    </div>
+
+    <button id="startBtn">受験を開始する</button>
+  </div>
+</div>
+
+<script type="module">
+import { auth, db, PART_IDS } from "./firebase-config.js";
+import { signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { doc, getDoc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const params = new URLSearchParams(location.search);
+const companyId = params.get("company");
+const token = params.get("token");
+
+const loadingEl = document.getElementById("loading");
+const contentEl = document.getElementById("content");
+const msgEl = document.getElementById("msg");
+
+function showError(text) {
+  msgEl.textContent = text;
+  msgEl.classList.add("show");
+}
+
+function fmtTime(sec) {
+  if (!sec) return "時間制限なし";
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  return s ? `${m}分${s}秒` : `${m}分`;
+}
+
+async function init() {
+  if (!companyId || !token) {
+    loadingEl.textContent = "受験リンクが正しくありません。ご案内のURLをご確認ください。";
+    return;
+  }
+  try {
+    const companySnap = await getDoc(doc(db, "companies", companyId));
+    if (!companySnap.exists()) throw new Error("company not found");
+    const inviteRef = doc(db, "companies", companyId, "examInvites", token);
+    const inviteSnap = await getDoc(inviteRef);
+    if (!inviteSnap.exists()) throw new Error("invite not found");
+    const invite = inviteSnap.data();
+    if (invite.status === "completed") {
+      loadingEl.textContent = "このリンクでの受験はすでに完了しています。";
+      return;
+    }
+
+    document.getElementById("companyLine").textContent =
+      `${companySnap.data().companyName} 御中／${invite.applicantName || "応募者"} 様`;
+
+    const timeLabels = { typing: "timeTyping", reading: "timeReading", logical: "timeLogical", worklife: "timeWorklife" };
+    for (const partId of PART_IDS) {
+      const setSnap = await getDoc(doc(db, "companies", companyId, "questionSets", partId));
+      const sec = setSnap.exists() ? setSnap.data().realTimeLimitSec : 0;
+      document.getElementById(timeLabels[partId]).textContent = fmtTime(sec);
+    }
+
+    loadingEl.style.display = "none";
+    contentEl.style.display = "block";
+
+    document.getElementById("startBtn").addEventListener("click", async () => {
+      document.getElementById("startBtn").disabled = true;
+      try {
+        let uid = auth.currentUser?.uid;
+        if (!uid) {
+          const cred = await signInAnonymously(auth);
+          uid = cred.user.uid;
+        }
+        if (invite.status === "not_started") {
+          await updateDoc(inviteRef, {
+            anonUid: uid,
+            status: "in_progress",
+            startedAt: serverTimestamp(),
+          });
+        }
+        sessionStorage.setItem("biztest_company", companyId);
+        sessionStorage.setItem("biztest_token", token);
+        location.href = "exam.html?company=" + encodeURIComponent(companyId) + "&token=" + encodeURIComponent(token);
+      } catch (err) {
+        console.error(err);
+        showError("受験の開始に失敗しました。時間をおいて再度お試しください。");
+        document.getElementById("startBtn").disabled = false;
+      }
+    });
+  } catch (err) {
+    console.error(err);
+    loadingEl.textContent = "受験リンクが無効です。採用ご担当者にご確認ください。";
+  }
+}
+init();
+</script>
+</body>
+</html>

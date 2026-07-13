@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ビズてす 受験画面</title>
+<style>
+:root{--blue:#2563eb;--blue-dark:#1d4ed8;--navy:#0f172a;--line:#e5e7eb;--bg:#f5f7fb;--muted:#64748b;--orange:#f97316;--green:#16a34a}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Hiragino Maru Gothic ProN","BIZ UDPGothic","Yu Gothic UI","Meiryo",sans-serif;background:var(--bg);color:#111827}
+.topbar{position:sticky;top:0;background:#fff;border-bottom:1px solid var(--line);padding:12px 20px;display:flex;justify-content:space-between;align-items:center;z-index:10}
+.topbar .part-name{font-weight:800;color:var(--blue-dark);font-size:14px}
+.topbar .timer{font-weight:900;font-size:18px;color:var(--navy);font-variant-numeric:tabular-nums}
+.topbar .timer.warn{color:#dc2626}
+.wrap{max-width:760px;margin:0 auto;padding:26px 20px 80px}
+.stage-badge{display:inline-block;background:#fef3c7;color:#92400e;font-size:12px;font-weight:800;padding:4px 12px;border-radius:999px;margin-bottom:12px}
+.stage-badge.real{background:#dbeafe;color:#1e40af}
+h1{font-size:20px;color:var(--navy);margin:0 0 10px}
+.instructions{background:#eff6ff;border-left:4px solid var(--blue);border-radius:12px;padding:14px 16px;font-size:13.5px;color:#1e3a8a;line-height:1.8;margin-bottom:20px;white-space:pre-wrap}
+.card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:20px;margin-bottom:16px;box-shadow:0 4px 14px rgba(15,23,42,.04)}
+.q-index{font-size:12px;font-weight:800;color:var(--muted);margin-bottom:6px}
+.q-text{font-size:14.5px;color:var(--navy);line-height:1.8;white-space:pre-wrap;margin-bottom:12px}
+.q-image{max-width:100%;border-radius:10px;margin-bottom:12px;border:1px solid var(--line)}
+.choices{display:grid;gap:8px}
+.choice-opt{display:flex;align-items:flex-start;gap:10px;border:1.5px solid #bfdbfe;border-radius:10px;padding:10px 12px;cursor:pointer;font-size:13.5px}
+.choice-opt:hover{background:#f8fafc}
+.choice-opt.selected{background:#eff6ff;border-color:var(--blue)}
+.choice-opt input{margin-top:3px}
+.fill-input{width:100%;border:1px solid #d1d5db;border-radius:9px;padding:10px 12px;font-size:14px;font-family:inherit}
+textarea.free-text{width:100%;border:1px solid #d1d5db;border-radius:9px;padding:10px 12px;font-size:14px;font-family:inherit;min-height:70px;resize:vertical}
+.typing-sample{background:#f8fafc;border:1px solid var(--line);border-radius:12px;padding:16px;font-size:14px;line-height:2;color:var(--navy);margin-bottom:14px;white-space:pre-wrap}
+textarea.typing-input{width:100%;min-height:140px;border:1.5px solid var(--blue);border-radius:12px;padding:14px;font-size:14px;line-height:2;font-family:inherit}
+.typing-stats{display:flex;gap:16px;font-size:12px;color:var(--muted);margin-top:8px}
+.footer-actions{position:sticky;bottom:0;background:linear-gradient(0deg,#fff 60%,rgba(255,255,255,0));padding:20px 0 6px;text-align:center}
+button.primary{background:var(--blue);color:#fff;border:none;border-radius:999px;padding:13px 28px;font-size:14px;font-weight:800;cursor:pointer}
+button.primary:hover{background:var(--blue-dark)}
+button.primary:disabled{background:#cbd5e1;cursor:not-allowed}
+.feedback{margin-top:12px;font-size:13px;border-radius:10px;padding:10px 12px}
+.feedback.correct{background:#dcfce7;color:#166534}
+.feedback.wrong{background:#fee2e2;color:#b91c1c}
+.center-loading{text-align:center;color:var(--muted);padding:80px 20px}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="part-name" id="partName">読み込み中…</div>
+  <div class="timer" id="timerDisplay"></div>
+</div>
+<div class="wrap" id="examRoot">
+  <div class="center-loading">受験データを読み込んでいます…</div>
+</div>
+
+<script type="module">
+import { auth, db, PART_IDS, PART_LABELS } from "./firebase-config.js";
+import { signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import {
+  doc, getDoc, setDoc, updateDoc, collection, getDocs, query, orderBy, serverTimestamp,
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { escapeHtml } from "./operator-shared.js";
+
+const params = new URLSearchParams(location.search);
+const companyId = params.get("company") || sessionStorage.getItem("biztest_company");
+const token = params.get("token") || sessionStorage.getItem("biztest_token");
+
+const root = document.getElementById("examRoot");
+const partNameEl = document.getElementById("partName");
+const timerEl = document.getElementById("timerDisplay");
+
+let examData = null;     // { typing:{settings,practice,real}, ... }
+let partIndex = 0;
+let stage = "instructions"; // instructions -> practice -> real -> (next part)
+let timerHandle = null;
+let timeLeft = 0;
+let started = false;
+
+const results = {
+  typing: null,
+  reading: null,
+  logical: null,
+  worklife: null,
+};
+
+window.addEventListener("beforeunload", (e) => {
+  if (started) { e.preventDefault(); e.returnValue = ""; }
+});
+
+onAuthStateChanged(auth, async (user) => {
+  if (!companyId || !token) {
+    root.innerHTML = '<div class="center-loading">受験リンクが正しくありません。</div>';
+    return;
+  }
+  let currentUser = user;
+  if (!currentUser) {
+    const cred = await signInAnonymously(auth);
+    currentUser = cred.user;
+  }
+  const inviteRef = doc(db, "companies", companyId, "examInvites", token);
+  const inviteSnap = await getDoc(inviteRef);
+  if (!inviteSnap.exists() || inviteSnap.data().anonUid !== currentUser.uid) {
+    root.innerHTML = '<div class="center-loading">この受験セッションを開始できません。exam-entry.html から改めて開始してください。</div>';
+    return;
+  }
+  if (inviteSnap.data().status === "completed") {
+    location.href = "exam-complete.html";
+    return;
+  }
+  started = true;
+  await loadAllExamData();
+  renderPart();
+});
+
+async function loadPartData(partId) {
+  const setSnap = await getDoc(doc(db, "companies", companyId, "questionSets", partId));
+  const settings = setSnap.exists() ? setSnap.data() : {};
+  const itemsSnap = await getDocs(query(collection(db, "companies", companyId, "questionSets", partId, "items"), orderBy("order", "asc")));
+  const all = [];
+  itemsSnap.forEach((d) => { const data = d.data(); if (data.active !== false) all.push({ id: d.id, ...data }); });
+  return {
+    settings,
+    practice: all.filter((i) => i.stage === "practice"),
+    real: all.filter((i) => i.stage === "real"),
+  };
+}
+
+async function loadAllExamData() {
+  examData = {};
+  for (const partId of PART_IDS) {
+    examData[partId] = await loadPartData(partId);
+  }
+}
+
+function clearTimer() {
+  if (timerHandle) { clearInterval(timerHandle); timerHandle = null; }
+}
+
+function startTimer(seconds, onExpire) {
+  clearTimer();
+  if (!seconds || seconds <= 0) { timerEl.textContent = ""; return; }
+  timeLeft = seconds;
+  updateTimerDisplay();
+  timerHandle = setInterval(() => {
+    timeLeft--;
+    updateTimerDisplay();
+    if (timeLeft <= 0) { clearTimer(); onExpire(); }
+  }, 1000);
+}
+
+function updateTimerDisplay() {
+  const m = Math.floor(timeLeft / 60);
+  const s = String(timeLeft % 60).padStart(2, "0");
+  timerEl.textContent = `残り ${m}:${s}`;
+  timerEl.classList.toggle("warn", timeLeft <= 10);
+}
+
+function renderPart() {
+  const partId = PART_IDS[partIndex];
+  if (!partId) { submitExam(); return; }
+  partNameEl.textContent = PART_LABELS[partId];
+  stage = "instructions";
+  renderInstructions(partId);
+}
+
+function renderInstructions(partId) {
+  clearTimer();
+  timerEl.textContent = "";
+  const data = examData[partId];
+  root.innerHTML = `
+    <div class="card">
+      <h1>${PART_LABELS[partId]}</h1>
+      <div class="instructions">${escapeHtml(data.settings.instructions || "")}</div>
+      <p style="font-size:13px;color:#64748b">まずは練習問題があります。準備ができたら開始してください。</p>
+      <div class="footer-actions"><button class="primary" id="toPractice">練習を始める</button></div>
+    </div>
+  `;
+  document.getElementById("toPractice").addEventListener("click", () => runStage(partId, "practice"));
+}
+
+function runStage(partId, targetStage) {
+  stage = targetStage;
+  const data = examData[partId];
+  const items = targetStage === "practice" ? data.practice : data.real;
+  const timeLimit = targetStage === "practice" ? data.settings.practiceTimeLimitSec : data.settings.realTimeLimitSec;
+
+  if (!items.length) {
+    afterStage(partId, targetStage);
+    return;
+  }
+
+  if (partId === "typing") {
+    renderTyping(partId, targetStage, items[0], timeLimit);
+  } else if (partId === "worklife") {
+    renderFreeTextSet(partId, targetStage, items, timeLimit);
+  } else {
+    renderChoiceSet(partId, targetStage, items, timeLimit);
+  }
+}
+
+function afterStage(partId, fromStage) {
+  if (fromStage === "practice") {
+    runStage(partId, "real");
+  } else {
+    partIndex++;
+    renderPart();
+  }
+}
+
+// ---------- 選択式（reading / logical） ----------
+function renderChoiceSet(partId, targetStage, items, timeLimit) {
+  const isPractice = targetStage === "practice";
+  const answers = {}; // itemId -> value
+
+  const itemsHtml = items.map((item, idx) => {
+    const img = item.imageUrl ? `<img class="q-image" src="${escapeHtml(item.imageUrl)}" alt="図版">` : "";
+    let body = "";
+    if (item.type === "fill_blank") {
+      body = `<input class="fill-input" data-item="${item.id}" placeholder="解答を入力">`;
+    } else {
+      const inputType = item.type === "multi_select" ? "checkbox" : "radio";
+      body = `<div class="choices" data-item="${item.id}">` + item.choices.map((c) => `
+        <label class="choice-opt">
+          <input type="${inputType}" name="q_${item.id}" value="${escapeHtml(c.key)}">
+          <span><strong>${escapeHtml(c.key)}</strong>：${escapeHtml(c.text)}</span>
+        </label>`).join("") + `</div>`;
+    }
+    return `
+      <div class="card" data-card="${item.id}">
+        <div class="q-index">問${idx + 1}</div>
+        <div class="q-text">${escapeHtml(item.questionText)}</div>
+        ${img}
+        ${body}
+        <div class="feedback" data-feedback="${item.id}" style="display:none"></div>
+      </div>
+    `;
+  }).join("");
+
+  root.innerHTML = `
+    <div class="stage-badge ${isPractice ? "" : "real"}">${isPractice ? "練習問題" : "本番"}</div>
+    ${itemsHtml}
+    <div class="footer-actions">
+      ${isPractice ? '<button class="primary" id="stageNext">解答を確認して本番へ進む</button>' : '<button class="primary" id="stageNext">提出する</button>'}
+    </div>
+  `;
+
+  root.querySelectorAll('input[type="radio"], input[type="checkbox"]').forEach((el) => {
+    el.addEventListener("change", () => {
+      const card = el.closest(".card");
+      card.querySelectorAll(".choice-opt").forEach((o) => o.classList.remove("selected"));
+      card.querySelectorAll(`input[name="${el.name}"]:checked`).forEach((c) => c.closest(".choice-opt").classList.add("selected"));
+    });
+  });
+
+  const finish = () => {
+    items.forEach((item) => {
+      if (item.type === "fill_blank") {
+        const input = root.querySelector(`input[data-item="${item.id}"]`);
+        answers[item.id] = input ? input.value.trim() : "";
+      } else if (item.type === "multi_select") {
+        const checked = Array.from(root.querySelectorAll(`input[name="q_${item.id}"]:checked`)).map((c) => c.value);
+        answers[item.id] = checked;
+      } else {
+        const checked = root.querySelector(`input[name="q_${item.id}"]:checked`);
+        answers[item.id] = checked ? checked.value : "";
+      }
+    });
+
+    if (isPractice) {
+      let correctCount = 0;
+      items.forEach((item) => {
+        const isCorrect = judgeAnswer(item, answers[item.id]);
+        if (isCorrect) correctCount++;
+        const fb = root.querySelector(`[data-feedback="${item.id}"]`);
+        fb.style.display = "block";
+        fb.className = "feedback " + (isCorrect ? "correct" : "wrong");
+        fb.textContent = (isCorrect ? "正解です。" : "不正解です。") +
+          (item.explanation ? "　" + item.explanation : "") +
+          "　正解：" + (Array.isArray(item.correctAnswer) ? item.correctAnswer.join(",") : item.correctAnswer);
+      });
+      document.getElementById("stageNext").textContent = "本番へ進む";
+      document.getElementById("stageNext").onclick = () => afterStage(partId, "practice");
+      clearTimer();
+      timerEl.textContent = "";
+    } else {
+      clearTimer();
+      let correctCount = 0;
+      let totalScore = 0;
+      const detail = items.map((item) => {
+        const isCorrect = judgeAnswer(item, answers[item.id]);
+        if (isCorrect) { correctCount++; totalScore += (item.score || 0); }
+        return { itemId: item.id, selected: answers[item.id], correct: item.correctAnswer, isCorrect };
+      });
+      results[partId] = { score: totalScore, correctCount, totalCount: items.length, answers: detail };
+      afterStage(partId, "real");
+    }
+  };
+
+  document.getElementById("stageNext").addEventListener("click", finish);
+  if (!isPractice && timeLimit > 0) startTimer(timeLimit, finish);
+  else timerEl.textContent = "";
+}
+
+function judgeAnswer(item, given) {
+  if (item.type === "multi_select") {
+    const a = [...given].map(String).sort();
+    const b = [...(item.correctAnswer || [])].map(String).sort();
+    return a.length === b.length && a.every((v, i) => v === b[i]);
+  }
+  if (item.type === "fill_blank") {
+    const norm = (v) => String(v ?? "").trim().toLowerCase();
+    const g = norm(given), c = norm(item.correctAnswer);
+    if (g === "" ) return false;
+    if (!isNaN(Number(g)) && !isNaN(Number(c)) && g !== "" && c !== "") return Number(g) === Number(c);
+    return g === c;
+  }
+  return String(given || "").trim().toUpperCase() === String(item.correctAnswer || "").trim().toUpperCase();
+}
+
+// ---------- 自由記述（worklife） ----------
+function renderFreeTextSet(partId, targetStage, items, timeLimit) {
+  const isPractice = targetStage === "practice";
+  const itemsHtml = items.map((item, idx) => `
+    <div class="card">
+      <div class="q-index">問${idx + 1}</div>
+      <div class="q-text">${escapeHtml(item.questionText)}</div>
+      <textarea class="free-text" data-item="${item.id}" placeholder="自由にご記入ください"></textarea>
+    </div>
+  `).join("");
+
+  root.innerHTML = `
+    <div class="stage-badge ${isPractice ? "" : "real"}">${isPractice ? "練習問題" : "本番"}</div>
+    ${itemsHtml}
+    <div class="footer-actions"><button class="primary" id="stageNext">${isPractice ? "本番へ進む" : "提出する"}</button></div>
+  `;
+
+  const finish = () => {
+    clearTimer();
+    const answers = items.map((item) => ({
+      itemId: item.id,
+      questionText: item.questionText,
+      freeText: root.querySelector(`[data-item="${item.id}"]`).value.trim(),
+    }));
+    if (!isPractice) {
+      results.worklife = { answers };
+    }
+    afterStage(partId, targetStage);
+  };
+  document.getElementById("stageNext").addEventListener("click", finish);
+  if (!isPractice && timeLimit > 0) startTimer(timeLimit, finish);
+  else timerEl.textContent = "";
+}
+
+// ---------- タイピング ----------
+function renderTyping(partId, targetStage, item, timeLimit) {
+  const isPractice = targetStage === "practice";
+  const sample = item.questionText || "";
+  root.innerHTML = `
+    <div class="stage-badge ${isPractice ? "" : "real"}">${isPractice ? "練習問題" : "本番"}</div>
+    <div class="card">
+      <div class="q-text" style="margin-bottom:14px">下のお手本と同じ文章を、正確に入力してください。</div>
+      <div class="typing-sample">${escapeHtml(sample)}</div>
+      <textarea class="typing-input" id="typingInput" placeholder="ここに入力してください" ${isPractice ? "" : "autofocus"}></textarea>
+      <div class="typing-stats" id="typingStats"></div>
+    </div>
+    <div class="footer-actions"><button class="primary" id="stageNext">${isPractice ? "本番へ進む" : "提出する"}</button></div>
+  `;
+
+  const input = document.getElementById("typingInput");
+  const statsEl = document.getElementById("typingStats");
+  const startedAt = Date.now();
+
+  input.addEventListener("input", () => {
+    const stat = diffTyping(sample, input.value);
+    statsEl.textContent = `入力文字数: ${input.value.length} ／ 一致文字数: ${stat.matched} ／ 誤り: ${stat.errors}`;
+  });
+
+  const finish = () => {
+    clearTimer();
+    const elapsedMin = Math.max((Date.now() - startedAt) / 60000, 1 / 60);
+    const stat = diffTyping(sample, input.value);
+    const cpm = Math.round(input.value.length / elapsedMin);
+    if (!isPractice) {
+      results.typing = {
+        score: stat.matched,
+        charsPerMinute: cpm,
+        errorCount: stat.errors,
+        missCount: Math.max(sample.length - stat.matched, 0),
+        rawInputLength: input.value.length,
+      };
+    }
+    afterStage(partId, targetStage);
+  };
+  document.getElementById("stageNext").addEventListener("click", finish);
+  if (!isPractice && timeLimit > 0) startTimer(timeLimit, finish);
+  else timerEl.textContent = "";
+}
+
+function diffTyping(sample, typed) {
+  const len = Math.max(sample.length, typed.length);
+  let matched = 0, errors = 0;
+  for (let i = 0; i < len; i++) {
+    if (sample[i] === undefined || typed[i] === undefined) { errors++; continue; }
+    if (sample[i] === typed[i]) matched++; else errors++;
+  }
+  return { matched, errors };
+}
+
+// ---------- 提出 ----------
+async function submitExam() {
+  clearTimer();
+  started = false;
+  root.innerHTML = '<div class="center-loading">結果を送信しています…</div>';
+  partNameEl.textContent = "送信中";
+  timerEl.textContent = "";
+
+  const totalScore = (results.reading?.score || 0) + (results.logical?.score || 0);
+  const resultRef = doc(db, "companies", companyId, "examResults", token);
+  const inviteSnap = await getDoc(doc(db, "companies", companyId, "examInvites", token));
+  const invite = inviteSnap.data() || {};
+
+  await setDoc(resultRef, {
+    applicantName: invite.applicantName || "",
+    applicantEmail: invite.applicantEmail || "",
+    startedAt: invite.startedAt || serverTimestamp(),
+    completedAt: serverTimestamp(),
+    parts: results,
+    totalScore,
+    status: "completed",
+  });
+  await updateDoc(doc(db, "companies", companyId, "examInvites", token), {
+    status: "completed",
+    completedAt: serverTimestamp(),
+  });
+
+  location.href = "exam-complete.html";
+}
+</script>
+</body>
+</html>

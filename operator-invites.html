@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ビズてす 受験招待・結果</title>
+<style>
+:root{--blue:#2563eb;--blue-dark:#1d4ed8;--navy:#0f172a;--line:#e5e7eb;--bg:#f5f7fb;--muted:#64748b}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Hiragino Maru Gothic ProN","BIZ UDPGothic","Yu Gothic UI","Meiryo",sans-serif;background:var(--bg);color:#111827}
+.header{background:#fff;border-bottom:1px solid var(--line);padding:16px 24px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+.header h1{font-size:17px;margin:0;color:var(--blue-dark)}
+.header a.back{font-size:12px;color:var(--muted);text-decoration:none}
+.wrap{max-width:980px;margin:24px auto;padding:0 20px}
+.panel{background:#fff;border:1px solid var(--line);border-radius:18px;padding:22px;margin-bottom:20px;box-shadow:0 4px 14px rgba(15,23,42,.04)}
+.panel h2{font-size:15px;margin:0 0 14px;color:var(--navy)}
+.form-row label{display:block;font-size:12px;font-weight:800;color:var(--navy);margin-bottom:5px}
+.form-row select,.form-row input{width:100%;border:1px solid #d1d5db;border-radius:9px;padding:9px 11px;font-size:13px;font-family:inherit}
+.form-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;align-items:end;margin-bottom:14px}
+button.primary{background:var(--blue);color:#fff;border:none;border-radius:9px;padding:10px 18px;font-size:13px;font-weight:800;cursor:pointer}
+button.primary:hover{background:var(--blue-dark)}
+button.ghost{background:#fff;border:1px solid #cbd5e1;color:var(--navy);border-radius:8px;padding:6px 10px;font-size:11.5px;font-weight:800;cursor:pointer}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line)}
+th{color:var(--muted);font-weight:800;font-size:11.5px}
+.badge{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:800}
+.badge.not_started{background:#f3f4f6;color:#6b7280}
+.badge.in_progress{background:#fef3c7;color:#92400e}
+.badge.completed{background:#dcfce7;color:#166534}
+.link-cell{font-size:11px;color:var(--muted);word-break:break-all;max-width:260px}
+.empty{color:var(--muted);font-size:13px;padding:12px 0}
+.status-line{font-size:12px;color:var(--muted);margin-top:8px}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>受験招待・結果一覧</h1>
+  <a class="back" href="operator-home.html">← 運営ホームへ戻る</a>
+</div>
+
+<div class="wrap">
+  <div class="panel">
+    <h2>企業を選択</h2>
+    <div class="form-row"><select id="companySelect"><option value="">選択してください</option></select></div>
+  </div>
+
+  <div class="panel">
+    <h2>受験招待を発行</h2>
+    <div class="form-grid">
+      <div class="form-row"><label>応募者氏名</label><input id="applicantName"></div>
+      <div class="form-row"><label>応募者メールアドレス</label><input id="applicantEmail" type="email"></div>
+      <div class="form-row"><button class="primary" id="createInviteBtn" type="button">招待リンクを発行</button></div>
+    </div>
+    <div class="status-line" id="inviteStatus"></div>
+  </div>
+
+  <div class="panel">
+    <h2>招待・受験状況一覧</h2>
+    <table>
+      <thead><tr><th>応募者</th><th>状態</th><th>発行日</th><th>受験リンク</th><th>合計スコア</th><th></th></tr></thead>
+      <tbody id="inviteRows"></tbody>
+    </table>
+    <div id="emptyInvites" class="empty" style="display:none">まだ招待がありません。</div>
+  </div>
+</div>
+
+<script type="module">
+import { auth, db } from "./firebase-config.js";
+import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import {
+  doc, getDoc, setDoc, collection, getDocs, onSnapshot, query, orderBy, serverTimestamp,
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { escapeHtml } from "./operator-shared.js";
+
+let companyId = "";
+let unsubInvites = null;
+let resultsCache = {};
+
+onAuthStateChanged(auth, async (user) => {
+  if (!user) { location.href = "operator-login.html"; return; }
+  const opSnap = await getDoc(doc(db, "operators", user.uid));
+  if (!opSnap.exists()) { await signOut(auth); location.href = "operator-login.html"; return; }
+  await loadCompanies();
+});
+
+async function loadCompanies() {
+  const snap = await getDocs(query(collection(db, "companies"), orderBy("createdAt", "desc")));
+  const select = document.getElementById("companySelect");
+  snap.forEach((d) => {
+    const opt = document.createElement("option");
+    opt.value = d.id;
+    opt.textContent = d.data().companyName;
+    select.appendChild(opt);
+  });
+  const preselect = new URLSearchParams(location.search).get("company");
+  if (preselect) select.value = preselect;
+  select.addEventListener("change", () => {
+    companyId = select.value;
+    watchInvites();
+  });
+  if (select.value) { companyId = select.value; watchInvites(); }
+}
+
+function watchInvites() {
+  if (unsubInvites) unsubInvites();
+  const rows = document.getElementById("inviteRows");
+  const empty = document.getElementById("emptyInvites");
+  rows.innerHTML = "";
+  if (!companyId) return;
+
+  const q = query(collection(db, "companies", companyId, "examInvites"), orderBy("createdAt", "desc"));
+  unsubInvites = onSnapshot(q, async (snap) => {
+    rows.innerHTML = "";
+    if (snap.empty) { empty.style.display = "block"; return; }
+    empty.style.display = "none";
+    for (const d of snap.docs) {
+      const invite = d.data();
+      const token = d.id;
+      const link = `${location.origin}${location.pathname.replace("operator-invites.html", "")}exam-entry.html?company=${companyId}&token=${token}`;
+      const created = invite.createdAt && invite.createdAt.toDate ? invite.createdAt.toDate().toLocaleString("ja-JP") : "-";
+      let scoreText = "-";
+      if (invite.status === "completed") {
+        const resultSnap = await getDoc(doc(db, "companies", companyId, "examResults", token));
+        if (resultSnap.exists()) scoreText = String(resultSnap.data().totalScore ?? "-");
+      }
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${escapeHtml(invite.applicantName)}<br><span style="color:#94a3b8">${escapeHtml(invite.applicantEmail || "")}</span></td>
+        <td><span class="badge ${invite.status}">${statusLabel(invite.status)}</span></td>
+        <td>${created}</td>
+        <td class="link-cell">${escapeHtml(link)}</td>
+        <td>${scoreText}</td>
+        <td><button class="ghost" data-link="${escapeHtml(link)}">コピー</button></td>
+      `;
+      tr.querySelector("button").addEventListener("click", (e) => {
+        navigator.clipboard.writeText(e.target.dataset.link);
+        e.target.textContent = "コピー済み";
+        setTimeout(() => { e.target.textContent = "コピー"; }, 1500);
+      });
+      rows.appendChild(tr);
+    }
+  });
+}
+
+function statusLabel(status) {
+  return { not_started: "未受験", in_progress: "受験中", completed: "受験完了" }[status] || status;
+}
+
+function generateToken() {
+  if (crypto.randomUUID) return crypto.randomUUID().replace(/-/g, "");
+  return Array.from({ length: 32 }, () => Math.floor(Math.random() * 16).toString(16)).join("");
+}
+
+document.getElementById("createInviteBtn").addEventListener("click", async () => {
+  const status = document.getElementById("inviteStatus");
+  if (!companyId) { status.textContent = "先に企業を選択してください。"; return; }
+  const applicantName = document.getElementById("applicantName").value.trim();
+  const applicantEmail = document.getElementById("applicantEmail").value.trim();
+  if (!applicantName) { status.textContent = "応募者氏名を入力してください。"; return; }
+
+  const token = generateToken();
+  await setDoc(doc(db, "companies", companyId, "examInvites", token), {
+    applicantName,
+    applicantEmail,
+    status: "not_started",
+    createdAt: serverTimestamp(),
+    expiresAt: null,
+    startedAt: null,
+    completedAt: null,
+    anonUid: null,
+  });
+  status.textContent = "招待リンクを発行しました。下の一覧からコピーできます。";
+  document.getElementById("applicantName").value = "";
+  document.getElementById("applicantEmail").value = "";
+});
+</script>
+</body>
+</html>

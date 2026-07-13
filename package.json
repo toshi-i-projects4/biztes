@@ -1,0 +1,13 @@
+{
+  "name": "biztest-scripts",
+  "private": true,
+  "type": "module",
+  "description": "ビズてす: Firestoreへの初期データ投入・運用スクリプト（サイト本体はビルド不要の静的HTMLです）",
+  "scripts": {
+    "seed-templates": "node scripts/seed-templates.mjs",
+    "create-operator": "node scripts/create-operator.mjs"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.0.0"
+  }
+}

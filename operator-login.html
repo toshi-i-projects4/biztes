@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ビズてす 運営ログイン</title>
+<style>
+:root{--blue:#2563eb;--blue-dark:#1d4ed8;--navy:#0f172a;--line:#e5e7eb;--bg:#f5f7fb}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Hiragino Maru Gothic ProN","BIZ UDPGothic","Yu Gothic UI","Meiryo",sans-serif;background:var(--bg);color:#111827;display:flex;align-items:center;justify-content:center;min-height:100vh}
+.card{background:#fff;border-radius:20px;box-shadow:0 10px 30px rgba(15,23,42,.08);padding:36px;width:100%;max-width:380px}
+h1{font-size:20px;color:var(--navy);margin:0 0 4px}
+.sub{font-size:13px;color:#64748b;margin-bottom:24px}
+label{display:block;font-size:13px;font-weight:800;color:var(--navy);margin-bottom:6px}
+input{width:100%;border:1px solid #d1d5db;border-radius:10px;padding:11px 12px;font-size:14px;margin-bottom:16px;font-family:inherit}
+input:focus{outline:2px solid #bfdbfe}
+button{width:100%;background:var(--blue);color:#fff;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:800;cursor:pointer}
+button:hover{background:var(--blue-dark)}
+.msg{font-size:13px;border-radius:10px;padding:10px 12px;margin-bottom:16px;display:none}
+.msg.show{display:block}
+.msg.error{background:#fef2f2;color:#dc2626;border:1px solid #fecaca}
+.footer-note{margin-top:18px;font-size:12px;color:#94a3b8;text-align:center}
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>ビズてす 運営ログイン</h1>
+  <div class="sub">オペレーター（ビズてす運営者）専用のログイン画面です。</div>
+  <div id="msg" class="msg error"></div>
+  <form id="loginForm">
+    <label for="email">メールアドレス</label>
+    <input id="email" type="email" required autocomplete="username">
+    <label for="password">パスワード</label>
+    <input id="password" type="password" required autocomplete="current-password">
+    <button type="submit">ログイン</button>
+  </form>
+  <div class="footer-note">このアカウントはFirebase Authenticationで事前に発行されたオペレーターアカウントのみ利用できます。</div>
+</div>
+
+<script type="module">
+import { auth, db } from "./firebase-config.js";
+import { signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const form = document.getElementById("loginForm");
+const msg = document.getElementById("msg");
+
+function showError(text) {
+  msg.textContent = text;
+  msg.classList.add("show");
+}
+
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  msg.classList.remove("show");
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value;
+  try {
+    const cred = await signInWithEmailAndPassword(auth, email, password);
+    const opSnap = await getDoc(doc(db, "operators", cred.user.uid));
+    if (!opSnap.exists()) {
+      showError("このアカウントはオペレーターとして登録されていません。管理者にお問い合わせください。");
+      await auth.signOut();
+      return;
+    }
+    location.href = "operator-home.html";
+  } catch (err) {
+    console.error(err);
+    showError("ログインに失敗しました。メールアドレスとパスワードをご確認ください。");
+  }
+});
+</script>
+</body>
+</html>
