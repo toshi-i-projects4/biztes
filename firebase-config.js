@@ -1,25 +1,22 @@
 // ビズてす 共通Firebase初期化モジュール
 //
-// 【重要】下記 firebaseConfig はプレースホルダーです。
-// Firebaseコンソールで「ビズてす」専用の新規プロジェクトを作成し、
-// ウェブアプリを追加した際に表示される設定値に置き換えてください。
-// （Firebaseコンソール → プロジェクトの設定 → 全般 → マイアプリ → SDK の設定と構成）
-//
-// 有効化しておく機能:
+// Firebaseプロジェクト: biztes-660ed（ビズてす専用、ビズもんとは別プロジェクト）
+// 有効化済みの機能:
 //  - Authentication: メール/パスワード（オペレーター用）、匿名（応募者用）
-//  - Firestore Database（本番モードで作成し、firestore.rules を適用）
+//  - Firestore Database（本番モード）
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
-  apiKey: "TODO_REPLACE_ME",
-  authDomain: "TODO_REPLACE_ME.firebaseapp.com",
-  projectId: "TODO_REPLACE_ME",
-  storageBucket: "TODO_REPLACE_ME.firebasestorage.app",
-  messagingSenderId: "TODO_REPLACE_ME",
-  appId: "TODO_REPLACE_ME",
+  apiKey: "AIzaSyDrIECUVLDVFtCtLfDB7Yl0JLZBAR6-uHE",
+  authDomain: "biztes-660ed.firebaseapp.com",
+  projectId: "biztes-660ed",
+  storageBucket: "biztes-660ed.firebasestorage.app",
+  messagingSenderId: "802102508147",
+  appId: "1:802102508147:web:a52185943027f1df4ac806",
+  measurementId: "G-J4MJ2TQTCC",
 };
 
 export const app = initializeApp(firebaseConfig);
