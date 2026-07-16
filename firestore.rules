@@ -64,6 +64,15 @@ service cloud.firestore {
     function sameCompany(companyId) {
       return isCompanyAdmin() && myCompanyId() == companyId;
     }
+    // ビズてす申込者（自社の初回申込みを行った本人）かどうか
+    function isApplicantCompanyAdmin() {
+      return isCompanyAdmin() && myCompanyAdmin().isApplicant == true;
+    }
+    // terms-agreement.html：申込者本人が、自社の利用規約同意（termsAccepted /
+    // serviceEnabled を true にする）を行えるかどうか
+    function canAcceptCompanyTerms(companyId) {
+      return isApplicantCompanyAdmin() && sameCompany(companyId);
+    }
 
     // ---- pendingCompanyAdmins（企業管理者の招待） ----
     function isOwnPendingCompanyAdmin(pendingEmail) {
@@ -305,8 +314,36 @@ service cloud.firestore {
     match /companies/{companyId} {
       allow get: if isOperator() || isSignedIn();
       allow list: if isOperator();
-      // 企業の新規登録・状態変更（有効/停止など）はオペレーターのみ。
-      allow write: if isOperator();
+      // 企業の新規登録はオペレーターのみ。
+      allow create: if isOperator();
+      // 企業の状態変更（有効/停止など）はオペレーターのみ。
+      // ただし利用規約への同意（termsAccepted / serviceEnabled を true にする）だけは、
+      // その企業の「ビズてす申込者」である企業管理者本人が、terms-agreement.html から
+      // 専用の経路で行える（他のフィールドは一切変更できない）。
+      allow update: if isOperator() ||
+        (
+          canAcceptCompanyTerms(companyId)
+          && request.resource.data.companyId == resource.data.companyId
+          && request.resource.data.companyName == resource.data.companyName
+          && request.resource.data.status == resource.data.status
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            "termsAccepted",
+            "termsAcceptedAt",
+            "termsAcceptedBy",
+            "termsAcceptedByName",
+            "termsAcceptedSource",
+            "termsAcceptedNote",
+            "termsVersion",
+            "serviceEnabled",
+            "updatedAt"
+          ])
+          && request.resource.data.termsAccepted == true
+          && request.resource.data.serviceEnabled == true
+          && request.resource.data.termsAcceptedBy == request.auth.uid
+          && request.resource.data.termsAcceptedSource == "applicant_web_agreement"
+          && request.resource.data.termsVersion == "2026-07-16"
+        );
+      allow delete: if false;
 
       // ---- 出題セット（パート単位の設定） ----
       match /questionSets/{partId} {
