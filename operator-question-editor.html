@@ -189,7 +189,7 @@ const TYPE_LABELS = {
 };
 
 onAuthStateChanged(auth, async (user) => {
-  if (!user) { location.href = "operator-login.html"; return; }
+  if (!user) { location.href = "login.html"; return; }
 
   const opSnap = await getDoc(doc(db, "operators", user.uid));
   if (opSnap.exists()) {
@@ -201,7 +201,7 @@ onAuthStateChanged(auth, async (user) => {
   } else {
     const caSnap = await getDoc(doc(db, "companyAdmins", user.uid));
     if (!caSnap.exists() || caSnap.data().status !== "active") {
-      await signOut(auth); location.href = "operator-login.html"; return;
+      await signOut(auth); location.href = "login.html"; return;
     }
     // 企業管理者は、URLのパラメータに関わらず必ず自社のcompanyIdで動作する
     companyId = caSnap.data().companyId;

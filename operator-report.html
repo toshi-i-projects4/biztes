@@ -226,12 +226,12 @@ $("loadBtn").addEventListener("click", loadReport);
 $("csvBtn").addEventListener("click", downloadCsv);
 
 onAuthStateChanged(auth, async (user) => {
-  if (!user) { location.href = "operator-login.html"; return; }
+  if (!user) { location.href = "login.html"; return; }
   try {
     const opSnap = await getDoc(doc(db, "operators", user.uid));
     if (!opSnap.exists()) {
       await signOut(auth);
-      location.href = "operator-login.html";
+      location.href = "login.html";
       return;
     }
     const dr = defaultRange();

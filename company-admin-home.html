@@ -56,7 +56,7 @@ import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase
 let myCompanyId = "";
 
 onAuthStateChanged(auth, async (user) => {
-  if (!user) { location.href = "operator-login.html"; return; }
+  if (!user) { location.href = "login.html"; return; }
 
   const caSnap = await getDoc(doc(db, "companyAdmins", user.uid));
   if (caSnap.exists() && caSnap.data().status === "active") {
@@ -82,12 +82,12 @@ onAuthStateChanged(auth, async (user) => {
 
   alert("この画面は企業管理者アカウントでのログインが必要です。管理者にお問い合わせください。");
   await signOut(auth);
-  location.href = "operator-login.html";
+  location.href = "login.html";
 });
 
 document.getElementById("logoutBtn").addEventListener("click", async () => {
   await signOut(auth);
-  location.href = "operator-login.html";
+  location.href = "login.html";
 });
 
 function escapeHtml(v) {

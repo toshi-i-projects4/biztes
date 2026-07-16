@@ -143,7 +143,7 @@ function buildInviteMail(data) {
     "1. 下記URLを開き、このメールアドレスで初回登録（パスワード設定）を行ってください。\n" + signupUrl + "\n\n" +
     "【登録時のメールアドレス】\n" + data.contactEmail + "\n\n" +
     "パスワードは15文字以上で設定してください。単語をつなげた「パスフレーズ」を推奨しています。\n\n" +
-    "2. 初回登録後は、以下のログイン画面からログインしてください。\n" + location.origin + location.pathname.replace(/[^\/]*$/, "operator-login.html") + "\n\n" +
+    "2. 初回登録後は、以下のログイン画面からログインしてください。\n" + location.origin + location.pathname.replace(/[^\/]*$/, "login.html") + "\n\n" +
     "3. その後、管理画面から受験招待の発行・自社の追加管理者の招待などを行っていただけます。\n\n" +
     "ご不明点がございましたら、お気軽にお問い合わせください。\n\nビズてす運営";
   return { email: data.contactEmail, subject, body };
@@ -278,9 +278,9 @@ $("registerBtn").addEventListener("click", registerApplication);
 $("clearBtn").addEventListener("click", clearForm);
 
 onAuthStateChanged(auth, async (user) => {
-  if (!user) { location.href = "operator-login.html"; return; }
+  if (!user) { location.href = "login.html"; return; }
   const opSnap = await getDoc(doc(db, "operators", user.uid));
-  if (!opSnap.exists()) { await signOut(auth); location.href = "operator-login.html"; return; }
+  if (!opSnap.exists()) { await signOut(auth); location.href = "login.html"; return; }
   operatorUid = user.uid;
   try {
     await loadRecent();

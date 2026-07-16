@@ -150,7 +150,7 @@ function setInviteStatus(msg, type) { $("inviteStatus").textContent = msg || "";
 function setMailStatus(msg, type) { $("mailStatus").textContent = msg || ""; $("mailStatus").className = "status-line " + (type || ""); }
 
 onAuthStateChanged(auth, async (user) => {
-  if (!user) { location.href = "operator-login.html"; return; }
+  if (!user) { location.href = "login.html"; return; }
   currentUid = user.uid;
 
   const opSnap = await getDoc(doc(db, "operators", user.uid));
@@ -166,7 +166,7 @@ onAuthStateChanged(auth, async (user) => {
     const caSnap = await getDoc(doc(db, "companyAdmins", user.uid));
     if (!caSnap.exists() || caSnap.data().status !== "active") {
       await signOut(auth);
-      location.href = "operator-login.html";
+      location.href = "login.html";
       return;
     }
     companyId = caSnap.data().companyId;
@@ -199,7 +199,7 @@ function buildInviteMail(data) {
     "1. 下記URLを開き、このメールアドレスで初回登録を行ってください。\n" + signupUrl + "\n\n" +
     "【登録時のメールアドレス】\n" + data.email + "\n\n" +
     "パスワードは15文字以上で設定してください。単語をつなげた「パスフレーズ」を推奨しています。\n\n" +
-    "2. 初回登録後は、以下のログイン画面からログインしてください。\n" + location.origin + location.pathname.replace(/[^\/]*$/, "operator-login.html") + "\n\n" +
+    "2. 初回登録後は、以下のログイン画面からログインしてください。\n" + location.origin + location.pathname.replace(/[^\/]*$/, "login.html") + "\n\n" +
     "ご不明点がございましたら、お気軽にお問い合わせください。";
   return { email: data.email, subject, body };
 }

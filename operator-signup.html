@@ -69,7 +69,7 @@ h1{margin:0 0 10px;text-align:center;font-size:26px;color:#111827}
   <button type="button" id="signupBtn" class="primary-btn">初回登録する</button>
   <div id="statusMessage" class="status-message note"></div>
 
-  <div class="link-row"><a href="operator-login.html">ログイン画面へ戻る</a></div>
+  <div class="link-row"><a href="login.html">ログイン画面へ戻る</a></div>
 </div>
 
 <script type="module">
@@ -194,7 +194,7 @@ async function signup() {
     setStatus("初回登録が完了しました。このあとログイン画面に移動します。", "ok");
     emailEl.value = ""; passwordEl.value = ""; confirmPasswordEl.value = ""; updatePasswordCount();
     try { await signOut(auth); } catch (e) { console.warn("post-signup signout failed", e); }
-    setTimeout(() => { location.href = "operator-login.html"; }, 1800);
+    setTimeout(() => { location.href = "login.html"; }, 1800);
   } catch (error) {
     console.error(error);
     const code = error && error.code ? error.code : "unknown";

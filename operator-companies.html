@@ -176,9 +176,9 @@ $("companyTbody").addEventListener("click", (e) => {
 });
 
 onAuthStateChanged(auth, async (user) => {
-  if (!user) { location.href = "operator-login.html"; return; }
+  if (!user) { location.href = "login.html"; return; }
   const opSnap = await getDoc(doc(db, "operators", user.uid));
-  if (!opSnap.exists()) { await signOut(auth); location.href = "operator-login.html"; return; }
+  if (!opSnap.exists()) { await signOut(auth); location.href = "login.html"; return; }
   operatorUid = user.uid;
   await loadCompanies();
 });

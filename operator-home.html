@@ -99,13 +99,13 @@ function setStatus(msg) {
 }
 
 onAuthStateChanged(auth, async (user) => {
-  if (!user) { location.href = "operator-login.html"; return; }
+  if (!user) { location.href = "login.html"; return; }
   try {
     const opSnap = await getDoc(doc(db, "operators", user.uid));
     if (!opSnap.exists()) {
       setStatus("この画面は運営（オペレーター）権限が必要です。ログアウトします。");
       await signOut(auth);
-      setTimeout(() => { location.href = "operator-login.html"; }, 1200);
+      setTimeout(() => { location.href = "login.html"; }, 1200);
       hideLoading();
       return;
     }
@@ -137,7 +137,7 @@ onAuthStateChanged(auth, async (user) => {
 });
 
 document.getElementById("logoutBtn").addEventListener("click", async () => {
-  try { await signOut(auth); location.href = "operator-login.html"; }
+  try { await signOut(auth); location.href = "login.html"; }
   catch (e) { console.error(e); alert("ログアウトに失敗しました。"); }
 });
 

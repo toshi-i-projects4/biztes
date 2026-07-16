@@ -85,7 +85,7 @@ let unsubInvites = null;
 let resultsCache = {};
 
 onAuthStateChanged(auth, async (user) => {
-  if (!user) { location.href = "operator-login.html"; return; }
+  if (!user) { location.href = "login.html"; return; }
 
   const opSnap = await getDoc(doc(db, "operators", user.uid));
   if (opSnap.exists()) {
@@ -96,7 +96,7 @@ onAuthStateChanged(auth, async (user) => {
 
   const caSnap = await getDoc(doc(db, "companyAdmins", user.uid));
   if (!caSnap.exists() || caSnap.data().status !== "active") {
-    await signOut(auth); location.href = "operator-login.html"; return;
+    await signOut(auth); location.href = "login.html"; return;
   }
 
   companyId = caSnap.data().companyId;
@@ -142,7 +142,7 @@ function updateOperatorBanner() {
 
 document.getElementById("logoutBtn") && document.getElementById("logoutBtn").addEventListener("click", async () => {
   await signOut(auth);
-  location.href = "operator-login.html";
+  location.href = "login.html";
 });
 
 function watchInvites() {

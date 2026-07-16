@@ -11,10 +11,10 @@
 - 企業登録時に、あらかじめ用意したデフォルト問題（リーディング11問・ロジカル20問・仕事観27項目・タイピング文例）をテンプレートとしてコピーできる
 - オペレーターが応募者ごとに受験招待リンクを発行できる（`operator-invites.html`）
 - 応募者が招待リンクから、練習→本番の流れで4パートを通しで受験し、結果がFirestoreに保存される（`exam-entry.html` → `exam.html` → `exam-complete.html`）
-- **（v2で追加）企業管理者ロール**：オペレーターまたは既存の企業管理者が、自社の担当者を「企業管理者」として招待できる（`company-admin-invite.html`）。招待された本人は `company-admin-signup.html` からセルフサインアップし、以後は自社の問題編集・受験招待発行・受験結果確認だけができる、自社に閉じたアカウントとしてログインできる（`operator-login.html` → `company-admin-home.html`）。1社に複数の企業管理者アカウントを持たせられる。
+- **（v2で追加）企業管理者ロール**：オペレーターまたは既存の企業管理者が、自社の担当者を「企業管理者」として招待できる（`company-admin-invite.html`）。招待された本人は `company-admin-signup.html` からセルフサインアップし、以後は自社の問題編集・受験招待発行・受験結果確認だけができる、自社に閉じたアカウントとしてログインできる（`login.html` → `company-admin-home.html`）。1社に複数の企業管理者アカウントを持たせられる。
 - **（v2で追加）運営の代理操作モード**：オペレーターが `operator-home.html` の企業一覧から「問題を編集」「受験招待・結果」「企業管理者を招待・管理」のいずれかに入ると、画面上部にオレンジ色の「運営モード」バナーが表示され、どの企業を代理操作しているかが常に分かるようになっている（`operator-mode.js`）。あわせて、運営者として操作しているときはページ全体がオレンジ基調、企業管理者本人が操作しているときは青基調になるよう自動的に配色が切り替わる。
 - **（v3で追加）運営メンバーの招待**：`operator-home.html` から `operator-invite.html` に入り、①既に企業管理者として登録済みの人に運営権限だけを追加で付与・解除する、②企業に属さない運営専任メンバーを新規に招待する、のいずれもできる。②で招待された本人は `operator-signup.html` からセルフサインアップする。運営権限と企業管理者権限の両方を持つアカウントは、ログイン後まず `company-admin-home.html`（企業管理ページ）に入り、そこから「運営管理ページへ →」のリンクで `operator-home.html` に移動する動線になっている（逆に運営ホームにも「企業管理ページへ →」のリンクがある）。
-- **（v3で追加）パスワードの考え方・案内文言をビズもんと統一**：新規登録・招待セルフサインアップ時のパスワードは「15文字以上・128文字以内、パスフレーズ推奨、複雑さの強制なし」というビズもんと同一のポリシーを `password-policy.js` として共通化した。ログイン画面（`operator-login.html`）にも、ビズもんの`login.html`と同じ体裁で「パスワードを忘れた場合」のパスワード再設定メール送信ボタンと案内文言を追加している。
+- **（v3で追加）パスワードの考え方・案内文言をビズもんと統一**：新規登録・招待セルフサインアップ時のパスワードは「15文字以上・128文字以内、パスフレーズ推奨、複雑さの強制なし」というビズもんと同一のポリシーを `password-policy.js` として共通化した。ログイン画面（`login.html`）にも、ビズもんの`login.html`と同じ体裁で「パスワードを忘れた場合」のパスワード再設定メール送信ボタンと案内文言を追加している。
 - **（v4で追加）運営管理ページのサイドバー化**：`operator-home.html` を、ビズもんの運営管理ページと同じ「左サイドバー＋メインコンテンツ」の作りに変更した。サイドバーには「新規申込登録」「企業管理ページ」「ダッシュボード」「レポート」「運営権限設定」の各リンク、青系の「企業管理者ホーム」ボタン（運営権限・企業管理者権限の両方を持つアカウントのみ表示）、ログイン中のメールアドレス・権限・氏名・所属企業を表示するユーザー情報欄、ログアウトボタンを配置している。これに伴い、旧`operator-home.html`にあった「企業を新規登録」フォームは`operator-new-application.html`（新規申込登録：企業情報と最初の企業管理者情報をまとめて登録）へ、「企業一覧」は`operator-companies.html`（企業管理ページ：状態変更・各画面への導線）へ、それぞれ独立した画面として分離した。あわせて、全社横断で受験状況を確認できる`operator-dashboard.html`（ダッシュボード）と`operator-report.html`（レポート、CSV出力対応）を新設した。既存の`operator-invite.html`（運営メンバーの招待・管理）はサイドバー上「運営権限設定」としてリンクしている。
 
 **まだ実装していない／今後の相談ポイント**
@@ -66,7 +66,7 @@ v2では `companyAdmins` / `pendingCompanyAdmins`、v3では `pendingOperators` 
    GOOGLE_APPLICATION_CREDENTIALS=/path/to/serviceAccountKey.json \
      node scripts/create-operator.mjs "あなたの名前" "iwaya4@gmail.com" "十分に強いパスワード"
    ```
-3. 作成後、`operator-login.html` からログインできるようになります。
+3. 作成後、`login.html` からログインできるようになります。
 
 ## 4. デフォルト問題（テンプレート）を投入する
 
@@ -90,7 +90,7 @@ GOOGLE_APPLICATION_CREDENTIALS=/path/to/serviceAccountKey.json node scripts/seed
 2. 「新しい企業管理者を招待する」フォームに氏名・メールアドレスを入力して「招待する」を押す
 3. 表示された案内メールの本文をコピーするか、「メールを作成」でメールソフトを起動して本人に送付する
 4. 招待された本人が、案内メール内のURL（`company-admin-signup.html`）からメールアドレス確認＋パスワード設定を行うと、企業管理者アカウントが有効化される
-5. 以後は `operator-login.html` から、発行したメールアドレス・パスワードでログインすると `company-admin-home.html` に入り、自社の問題編集・受験招待発行・受験結果確認・自社の追加管理者の招待ができる
+5. 以後は `login.html` から、発行したメールアドレス・パスワードでログインすると `company-admin-home.html` に入り、自社の問題編集・受験招待発行・受験結果確認・自社の追加管理者の招待ができる
 
 同じ企業に複数の企業管理者アカウントを持たせたい場合は、既に登録済みの企業管理者本人が
 `company-admin-home.html` → 「自社の管理者を管理する」からも追加招待ができます（オペレーターを介さなくてよい）。
@@ -116,15 +116,15 @@ GOOGLE_APPLICATION_CREDENTIALS=/path/to/serviceAccountKey.json node scripts/seed
 
 1. このフォルダをGitリポジトリ化する（またはビズてす_vercelフォルダに配置する）
 2. Vercelで「Add New Project」→ リポジトリを選択 → Framework Preset は "Other"（ビルドコマンドなし）
-3. デプロイ後、`https://<your-project>.vercel.app/operator-login.html` にアクセスして動作確認する
+3. デプロイ後、`https://<your-project>.vercel.app/login.html` にアクセスして動作確認する
 
 ## 8. 動作確認の流れ
 
-1. `operator-login.html` でオペレーターとしてログイン後、運営管理ページ（`operator-home.html`）のサイドバーが表示されることを確認する
+1. `login.html` でオペレーターとしてログイン後、運営管理ページ（`operator-home.html`）のサイドバーが表示されることを確認する
 2. サイドバー「新規申込登録」（`operator-new-application.html`）で企業のお申し込みを登録する（テンプレートコピーにチェック）。登録と同時に最初の企業管理者への招待も作成される
 3. `operator-question-editor.html` で問題内容を確認・調整
 4. サイドバー「企業管理ページ」（`operator-companies.html`）に、登録した企業が一覧表示されることを確認する
-5. 招待された担当者が `company-admin-signup.html` からセルフサインアップし、`operator-login.html` からログインして `company-admin-home.html` に入れることを確認する
+5. 招待された担当者が `company-admin-signup.html` からセルフサインアップし、`login.html` からログインして `company-admin-home.html` に入れることを確認する
 6. 企業管理者としてログインした状態で、自社の問題編集・受験招待発行ができ、他社のデータには一切アクセスできないことを確認する
 7. `operator-invite.html`（サイドバー「運営権限設定」）から運営メンバーをもう1人招待し、`operator-signup.html` からセルフサインアップしてログインできることを確認する
 8. `operator-invites.html` で応募者向けの受験招待リンクを発行する
