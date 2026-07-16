@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ダッシュボード｜運営管理ページ｜ビズてす</title>
+<style>
+body{margin:0;font-family:"Hiragino Maru Gothic ProN","BIZ UDPGothic","Yu Gothic UI","Meiryo",sans-serif;background:#fff7ed;color:#111827;padding:24px;box-sizing:border-box}
+.wrap{max-width:1480px;margin:0 auto;background:#fff;border-radius:18px;box-shadow:0 4px 12px rgba(0,0,0,.08);padding:28px;box-sizing:border-box;border:1px solid #fed7aa}
+.header{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:14px}
+h1{margin:0;font-size:26px}
+.top-link,.bottom-link{color:#c2410c;text-decoration:none;font-weight:bold;font-size:14px}
+.bottom-link{display:inline-block;margin-top:20px}
+.status{display:none;background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:14px 16px;margin-bottom:16px;line-height:1.7;white-space:pre-wrap}
+.status.error{display:block;background:#fee2e2;border-color:#fca5a5;color:#991b1b}
+.filter-box{background:#fff7ed;border:1px solid #fed7aa;border-radius:14px;padding:16px;margin:16px 0}
+.filter-title{font-weight:bold;margin-bottom:12px;color:#7c2d12}
+.controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;align-items:end}
+.control-item label{display:block;font-size:12px;color:#7c2d12;font-weight:bold;margin-bottom:5px}
+select,input{width:100%;box-sizing:border-box;border:1px solid #d1d5db;border-radius:10px;padding:10px 12px;font-size:14px;background:#fff}
+.btn{border:none;border-radius:10px;padding:10px 16px;font-size:14px;font-weight:bold;cursor:pointer;background:#f97316;color:#fff;min-height:40px}
+.btn:hover{background:#ea580c}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin:16px 0}
+.card{background:#fff;border:1px solid #fed7aa;border-radius:14px;padding:14px;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+.card-label{font-size:12px;color:#7c2d12;font-weight:bold;margin-bottom:5px}
+.card-value{font-size:28px;font-weight:900;color:#111827}
+.panel{background:#fff;border:1px solid #fed7aa;border-radius:16px;padding:18px;margin-top:16px;box-sizing:border-box}
+.panel-title{font-size:18px;font-weight:bold;margin:0 0 12px}
+.table-wrap{overflow:auto;border:1px solid #f3f4f6;border-radius:12px;max-height:520px}
+table{width:100%;border-collapse:collapse;min-width:1100px;background:#fff}
+th,td{border-bottom:1px solid #f3f4f6;padding:10px 12px;text-align:left;vertical-align:top;font-size:13px;white-space:nowrap}
+th{background:#fff7ed;color:#7c2d12;font-weight:bold;position:sticky;top:0;z-index:1}
+.bar-cell{min-width:160px}
+.bar-track{height:10px;background:#f3f4f6;border-radius:999px;overflow:hidden;margin-top:4px}
+.bar-fill{height:100%;border-radius:999px;background:#f97316}
+.empty{text-align:center;color:#6b7280;padding:24px}
+.note{font-size:12px;color:#6b7280;line-height:1.7;margin-top:10px}
+.rank-list{display:grid;gap:8px}
+.rank-item{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;padding:10px 12px}
+.rank-name{font-weight:bold;color:#111827}
+.rank-sub{font-size:12px;color:#7c2d12}
+.page-loading{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:#fff7ed;color:#7c2d12;font-weight:bold}
+.page-loading.hidden{display:none!important}
+.loading-box{display:flex;flex-direction:column;align-items:center;gap:12px;background:#fff;border:1px solid #fed7aa;border-radius:16px;padding:24px 28px;box-shadow:0 4px 12px rgba(0,0,0,.08)}
+.loading-spinner{width:42px;height:42px;border:5px solid #fed7aa;border-top-color:#f97316;border-radius:50%;animation:spin .9s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media(max-width:640px){body{padding:14px}.wrap{padding:20px}.header{align-items:flex-start}.card-value{font-size:24px}}
+</style>
+</head>
+<body>
+<div id="pageLoading" class="page-loading"><div class="loading-box"><div class="loading-spinner"></div><div>ダッシュボードを読み込み中...</div></div></div>
+<div class="wrap">
+  <div class="header"><h1>ダッシュボード</h1><a class="top-link" href="operator-home.html">← 運営管理ページへ戻る</a></div>
+  <div id="status" class="status"></div>
+  <div class="filter-box">
+    <div class="filter-title">表示条件（招待発行日ベース）</div>
+    <div class="controls">
+      <div class="control-item"><label for="startDate">開始日</label><input type="date" id="startDate"></div>
+      <div class="control-item"><label for="endDate">終了日</label><input type="date" id="endDate"></div>
+      <div class="control-item"><label for="companyFilter">企業</label><select id="companyFilter"><option value="all">すべての企業</option></select></div>
+      <div class="control-item"><label>&nbsp;</label><button class="btn" id="reloadBtn" type="button">再読み込み</button></div>
+    </div>
+    <div class="note" id="periodHelp"></div>
+  </div>
+  <div class="cards" id="summaryCardsTop" style="display:none">
+    <div class="card"><div class="card-label">対象企業数</div><div class="card-value" id="companyCount">0</div></div>
+    <div class="card"><div class="card-label">受験招待数</div><div class="card-value" id="inviteTotal">0</div></div>
+    <div class="card"><div class="card-label">受験完了数</div><div class="card-value" id="completedTotal">0</div></div>
+    <div class="card"><div class="card-label">受験完了率</div><div class="card-value" id="completionRate">0%</div></div>
+    <div class="card"><div class="card-label">平均総合スコア</div><div class="card-value" id="avgTotalScore">-</div></div>
+  </div>
+  <div class="panel" id="companyPanel" style="display:none">
+    <p class="panel-title">企業別サマリー</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>企業名</th><th>招待数</th><th>未受験</th><th>受験中</th><th>完了</th><th>完了率</th><th>平均総合スコア</th><th>操作</th></tr></thead>
+        <tbody id="companyBody"><tr><td colspan="8" class="empty">読み込み中です。</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="panel" id="partPanel" style="display:none">
+    <p class="panel-title">パート別 平均スコア（受験完了分）</p>
+    <div id="partRanking" class="rank-list"></div>
+  </div>
+  <a class="bottom-link" href="operator-home.html">← 運営管理ページへ戻る</a>
+</div>
+<script type="module">
+import { auth, db } from "./firebase-config.js";
+import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import {
+  collection, collectionGroup, query, where, getDocs, doc, getDoc,
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { escapeHtml as esc } from "./operator-shared.js";
+
+const PART_LABELS = { typing: "①タイピング試験", reading: "②リーディングスキル", logical: "③ロジカルシンキング", worklife: "④仕事観アセスメント" };
+const $ = (id) => document.getElementById(id);
+let allCompanies = [];
+
+function hideLoading() { const l = $("pageLoading"); if (l) { l.classList.add("hidden"); l.style.display = "none"; } }
+function setStatus(msg, type) { const e = $("status"); e.textContent = msg || ""; e.className = "status " + (msg ? (type || "") : ""); }
+function pad2(n) { return String(n).padStart(2, "0"); }
+function dateKey(d) { return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate()); }
+function round1(n) { return Math.round(n * 10) / 10; }
+function average(arr) { if (!arr.length) return 0; return arr.reduce((a, b) => a + b, 0) / arr.length; }
+
+function getDateRange() { return { start: $("startDate").value, end: $("endDate").value }; }
+function isValidRange(r) { return !!(r.start && r.end && r.start <= r.end); }
+function updatePeriodHelp(r) {
+  if (isValidRange(r)) { $("periodHelp").textContent = "対象期間：" + r.start + " 〜 " + r.end + "　※この期間に発行された受験招待を集計します。"; }
+  else { $("periodHelp").textContent = "開始日・終了日を指定してください（開始日は終了日以前の日付にしてください）。"; }
+}
+function defaultRange() { const d = new Date(); return { start: dateKey(new Date(d.getFullYear(), d.getMonth(), 1)), end: dateKey(d) }; }
+
+async function loadCompanyOptions() {
+  const snap = await getDocs(collection(db, "companies"));
+  allCompanies = [];
+  snap.forEach((ds) => { const d = ds.data() || {}; allCompanies.push({ companyId: ds.id, companyName: d.companyName || "" }); });
+  allCompanies.sort((a, b) => String(a.companyName).localeCompare(String(b.companyName), "ja"));
+  const sel = $("companyFilter");
+  const cur = sel.value || "all";
+  sel.innerHTML = '<option value="all">すべての企業</option>' + allCompanies.map((c) => '<option value="' + esc(c.companyId) + '">' + esc(c.companyName) + "</option>").join("");
+  sel.value = allCompanies.some((c) => c.companyId === cur) ? cur : "all";
+}
+
+async function loadData() {
+  const r = getDateRange();
+  updatePeriodHelp(r);
+  if (!isValidRange(r)) {
+    setStatus("開始日・終了日を正しく指定してください（開始日は終了日以前の日付にしてください）。", "error");
+    $("summaryCardsTop").style.display = "none";
+    $("companyPanel").style.display = "none";
+    $("partPanel").style.display = "none";
+    return;
+  }
+  setStatus("", "");
+  $("summaryCardsTop").style.display = "none";
+  $("companyPanel").style.display = "none";
+  $("partPanel").style.display = "none";
+  $("companyBody").innerHTML = '<tr><td colspan="8" class="empty">読み込み中です。</td></tr>';
+  try {
+    const startDate = new Date(r.start + "T00:00:00");
+    const endDate = new Date(r.end + "T23:59:59.999");
+    const invitesQ = query(collectionGroup(db, "examInvites"), where("createdAt", ">=", startDate), where("createdAt", "<=", endDate));
+    const [invitesSnap, resultsSnap] = await Promise.all([getDocs(invitesQ), getDocs(collectionGroup(db, "examResults"))]);
+
+    const resultMap = {};
+    resultsSnap.forEach((ds) => {
+      const companyId = ds.ref.parent.parent ? ds.ref.parent.parent.id : "";
+      resultMap[companyId + "/" + ds.id] = ds.data() || {};
+    });
+
+    const invites = [];
+    invitesSnap.forEach((ds) => {
+      const companyId = ds.ref.parent.parent ? ds.ref.parent.parent.id : "";
+      const d = ds.data() || {};
+      invites.push({ companyId, token: ds.id, status: d.status || "not_started", result: resultMap[companyId + "/" + ds.id] || null });
+    });
+    render(invites);
+  } catch (e) {
+    console.error(e);
+    let msg = "データの取得に失敗しました。\n" + (e.code || e.message || e);
+    if (e.code === "failed-precondition") msg += "\n\nFirestoreのコレクショングループ用インデックスが未作成の可能性があります。エラー詳細のリンクから作成してください（examInvites の createdAt、examResults に対する「コレクショングループ」範囲のインデックス）。";
+    setStatus(msg, "error");
+  } finally {
+    hideLoading();
+  }
+}
+
+function render(invitesAll) {
+  const companyFilter = $("companyFilter").value;
+  const invites = companyFilter === "all" ? invitesAll : invitesAll.filter((i) => i.companyId === companyFilter);
+
+  function blankCompany(id, name) { return { companyId: id, companyName: name, invited: 0, notStarted: 0, inProgress: 0, completed: 0, scores: [] }; }
+  const byCompany = {};
+  allCompanies.forEach((c) => { byCompany[c.companyId] = blankCompany(c.companyId, c.companyName); });
+
+  invites.forEach((inv) => {
+    if (!byCompany[inv.companyId]) byCompany[inv.companyId] = blankCompany(inv.companyId, "");
+    const c = byCompany[inv.companyId];
+    c.invited++;
+    if (inv.status === "completed") {
+      c.completed++;
+      if (inv.result && typeof inv.result.totalScore === "number") c.scores.push(inv.result.totalScore);
+    } else if (inv.status === "in_progress") { c.inProgress++; }
+    else { c.notStarted++; }
+  });
+
+  const rows = Object.values(byCompany).filter((c) => (companyFilter === "all" ? true : c.companyId === companyFilter));
+  rows.sort((a, b) => String(a.companyName).localeCompare(String(b.companyName), "ja"));
+
+  const totalInvited = rows.reduce((a, c) => a + c.invited, 0);
+  const totalCompleted = rows.reduce((a, c) => a + c.completed, 0);
+  const allScores = rows.reduce((a, c) => a.concat(c.scores), []);
+  const completionRate = totalInvited ? round1((totalCompleted / totalInvited) * 100) : 0;
+  const avgScore = allScores.length ? round1(average(allScores)) : null;
+
+  $("companyCount").textContent = rows.filter((c) => c.invited > 0).length;
+  $("inviteTotal").textContent = totalInvited;
+  $("completedTotal").textContent = totalCompleted;
+  $("completionRate").textContent = completionRate + "%";
+  $("avgTotalScore").textContent = avgScore === null ? "-" : avgScore;
+  $("summaryCardsTop").style.display = "grid";
+  $("companyPanel").style.display = "block";
+  $("partPanel").style.display = "block";
+
+  const rowsWithInvites = rows.filter((c) => c.invited > 0 || companyFilter !== "all");
+  if (!rowsWithInvites.length) { $("companyBody").innerHTML = '<tr><td colspan="8" class="empty">データがありません。</td></tr>'; }
+  else {
+    $("companyBody").innerHTML = rowsWithInvites.map((c) => {
+      const rate = c.invited ? round1((c.completed / c.invited) * 100) : 0;
+      const avg = c.scores.length ? round1(average(c.scores)) : "-";
+      return "<tr>"
+        + "<td>" + esc(c.companyName) + "</td>"
+        + "<td>" + c.invited + "</td>"
+        + "<td>" + c.notStarted + "</td>"
+        + "<td>" + c.inProgress + "</td>"
+        + "<td>" + c.completed + "</td>"
+        + '<td class="bar-cell">' + rate + '%<div class="bar-track"><div class="bar-fill" style="width:' + rate + '%"></div></div></td>'
+        + "<td>" + avg + "</td>"
+        + '<td><a href="operator-invites.html?company=' + encodeURIComponent(c.companyId) + '">受験招待・結果へ</a></td>'
+        + "</tr>";
+    }).join("");
+  }
+
+  const partScores = { typing: [], reading: [], logical: [] };
+  let worklifeCount = 0;
+  invites.forEach((inv) => {
+    if (inv.status !== "completed" || !inv.result || !inv.result.parts) return;
+    const parts = inv.result.parts;
+    ["typing", "reading", "logical"].forEach((p) => {
+      if (parts[p] && typeof parts[p].score === "number") partScores[p].push(parts[p].score);
+    });
+    if (parts.worklife) worklifeCount++;
+  });
+  const partRows = ["typing", "reading", "logical"].map((p) => {
+    const arr = partScores[p];
+    return { label: PART_LABELS[p], count: arr.length, avg: arr.length ? round1(average(arr)) : null };
+  });
+  if (!partRows.some((p) => p.count > 0) && !worklifeCount) {
+    $("partRanking").innerHTML = '<div class="empty">パート別データがありません。</div>';
+  } else {
+    let html = partRows.map((p) => (
+      '<div class="rank-item"><div><div class="rank-name">' + esc(p.label) + '</div><div class="rank-sub">回答 ' + p.count + '件</div></div><div><strong>' + (p.avg === null ? "-" : p.avg) + '</strong></div></div>'
+    )).join("");
+    html += '<div class="rank-item"><div><div class="rank-name">' + esc(PART_LABELS.worklife) + '</div><div class="rank-sub">自由記述のため採点なし</div></div><div><strong>回答 ' + worklifeCount + '件</strong></div></div>';
+    $("partRanking").innerHTML = html;
+  }
+}
+
+$("startDate").addEventListener("change", loadData);
+$("endDate").addEventListener("change", loadData);
+$("companyFilter").addEventListener("change", loadData);
+$("reloadBtn").addEventListener("click", loadData);
+
+onAuthStateChanged(auth, async (user) => {
+  if (!user) { location.href = "operator-login.html"; return; }
+  try {
+    const opSnap = await getDoc(doc(db, "operators", user.uid));
+    if (!opSnap.exists()) {
+      await signOut(auth);
+      location.href = "operator-login.html";
+      return;
+    }
+    const dr = defaultRange();
+    $("startDate").value = dr.start;
+    $("endDate").value = dr.end;
+    await loadCompanyOptions();
+    await loadData();
+  } catch (e) {
+    console.error(e);
+    setStatus("読み込みに失敗しました。\n" + (e.message || e), "error");
+    hideLoading();
+  }
+});
+</script>
+</body>
+</html>

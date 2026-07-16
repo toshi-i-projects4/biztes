@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>新規申込登録｜運営管理ページ｜ビズてす</title>
+<style>
+body{margin:0;font-family:"Hiragino Maru Gothic ProN","BIZ UDPGothic","Yu Gothic UI","Meiryo",sans-serif;background:#fff7ed;color:#111827;padding:24px;box-sizing:border-box;line-height:1.7}
+.page{max-width:1000px;margin:0 auto;background:#fff;border-radius:18px;box-shadow:0 4px 12px rgba(0,0,0,.08);padding:32px;box-sizing:border-box;border:1px solid #fed7aa}
+.header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:14px;flex-wrap:wrap}
+h1{margin:0;font-size:26px}
+.top-link,.bottom-link{color:#c2410c;text-decoration:none;font-weight:bold;font-size:14px}
+.bottom-link{display:inline-block;margin-top:20px}
+.section-title{font-size:18px;font-weight:bold;margin:0 0 12px}
+.description{font-size:14px;line-height:1.7;color:#6b7280;margin:0 0 16px}
+.card{margin:0 0 26px}
+.card+.card{border-top:1px solid #fde8d0;padding-top:22px}
+.info-box,.warning-box{border-radius:10px;padding:14px 16px;margin-bottom:14px;font-size:14px;white-space:pre-wrap}
+.info-box{background:#fff7ed;border:1px solid #fed7aa;color:#7c2d12}
+.warning-box{background:#fffbeb;border:1px solid #fde68a;color:#92400e;margin-top:14px}
+.form-grid{display:grid;grid-template-columns:200px 1fr;gap:12px 16px;align-items:center}
+.label{font-size:14px;font-weight:bold;color:#374151}
+.required{color:#dc2626;font-size:12px;margin-left:4px}
+input,select,textarea{width:100%;border:1px solid #d1d5db;border-radius:10px;padding:11px 12px;font-size:15px;box-sizing:border-box;background:#fff;color:#111827}
+input:focus,select:focus,textarea:focus{outline:none;border-color:#f97316;box-shadow:0 0 0 3px rgba(249,115,22,.15)}
+textarea{min-height:80px;resize:vertical}
+.checkbox-row{display:flex;align-items:center;gap:8px;margin:14px 0;font-size:14px;color:#374151}
+.checkbox-row input{width:auto}
+.invite-textarea{min-height:220px;background:#fff7ed}
+.button-row,.invite-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px;flex-wrap:wrap}
+.primary-btn,.secondary-btn{border:none;border-radius:10px;padding:12px 18px;font-size:15px;font-weight:bold;cursor:pointer}
+.primary-btn{background:#f97316;color:#fff}.primary-btn:hover{background:#ea580c}
+.secondary-btn{background:#64748b;color:#fff}.secondary-btn:hover{background:#475569}
+.primary-btn:disabled,.secondary-btn:disabled{opacity:.6;cursor:not-allowed}
+.status{border-radius:10px;padding:14px 16px;margin:14px 0;font-size:14px;font-weight:bold;white-space:pre-wrap;display:none}
+.status.ok{display:block;background:#dcfce7;border:1px solid #86efac;color:#166534}
+.status.error{display:block;background:#fee2e2;border:1px solid #fca5a5;color:#991b1b}
+.status.warn{display:block;background:#fef3c7;border:1px solid #fbbf24;color:#92400e}
+.table-wrap{overflow:auto;max-height:340px;margin-top:16px;border:1px solid #f3f4f6;border-radius:10px}
+table{width:100%;border-collapse:collapse;background:#fff;font-size:13px;min-width:820px}
+th,td{border-bottom:1px solid #f3f4f6;padding:8px 10px;text-align:left;white-space:nowrap}
+th{background:#fff7ed;color:#7c2d12;position:sticky;top:0}
+.hidden{display:none!important}
+.page-loading{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:#fff7ed;color:#7c2d12;font-weight:bold}
+.page-loading.hidden{display:none!important}
+.loading-box{display:flex;flex-direction:column;align-items:center;gap:12px;background:#fff;border:1px solid #fed7aa;border-radius:16px;padding:24px 28px;box-shadow:0 4px 12px rgba(0,0,0,.08)}
+.loading-spinner{width:42px;height:42px;border:5px solid #fed7aa;border-top-color:#f97316;border-radius:50%;animation:spin .9s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media(max-width:640px){body{padding:16px}.page{padding:22px}.form-grid{grid-template-columns:1fr;gap:6px 0}.button-row,.invite-actions{flex-direction:column}.primary-btn,.secondary-btn{width:100%}}
+</style>
+</head>
+<body>
+<div id="pageLoading" class="page-loading"><div class="loading-box"><div class="loading-spinner"></div><div>読み込み中...</div></div></div>
+<div class="page">
+  <div class="header"><h1>新規申込登録</h1><a class="top-link" href="operator-home.html">← 運営管理ページへ戻る</a></div>
+
+  <div class="card">
+    <p class="description">お申し込みのあった企業の情報と、最初の企業管理者（申込者）の招待情報をまとめて登録します。この画面から登録すると、企業の作成と招待の発行が同時に行われます。<br>登録後、最初の企業管理者は案内メールのURLから、ご自身でパスワードを設定して初回登録（セルフサインアップ）を行います。</p>
+
+    <p class="section-title">企業情報</p>
+    <div class="form-grid">
+      <div class="label">企業名<span class="required">必須</span></div><input id="companyName" placeholder="例：株式会社サンプル">
+    </div>
+    <div class="checkbox-row">
+      <input type="checkbox" id="copyTemplates" checked>
+      <label for="copyTemplates">テンプレートの初期問題（リーディング11問・ロジカル20問・仕事観27項目・タイピング文例）をコピーする</label>
+    </div>
+
+    <p class="section-title" style="margin-top:22px">最初の企業管理者（申込者）情報</p>
+    <div class="description" style="margin-bottom:12px">この方が「ビズてす申込者」として初回登録を行い、以後は自社の問題編集・受験招待発行・受験結果確認・自社の追加管理者の招待ができます。</div>
+    <div class="form-grid">
+      <div class="label">社員コード</div><input id="employeeCode" placeholder="任意入力（例：C0001）">
+      <div class="label">氏名<span class="required">必須</span></div><input id="contactName" placeholder="例：山田 太郎">
+      <div class="label">部署</div><input id="department" placeholder="任意入力（例：総務部）">
+      <div class="label">役職</div><input id="position" placeholder="任意入力（例：部長）">
+      <div class="label">メールアドレス<span class="required">必須</span></div><input id="contactEmail" type="email" placeholder="例：admin@example.com">
+      <div class="label">備考</div><textarea id="note" placeholder="任意入力"></textarea>
+    </div>
+    <div class="warning-box">注意：この画面で登録した時点では、まだログイン用アカウントは作成されません。最初の企業管理者本人が「初回登録」画面でパスワードを設定して初めて本登録されます。</div>
+    <div id="status" class="status"></div>
+    <div class="button-row"><button class="secondary-btn" id="clearBtn" type="button">入力をクリア</button><button class="primary-btn" id="registerBtn" type="button">お申し込みを登録する</button></div>
+  </div>
+
+  <div class="card hidden" id="inviteMailCard">
+    <p class="section-title">案内メール</p>
+    <p class="description">登録した最初の企業管理者に、初回登録の案内メールを作成できます。内容を確認のうえ送信してください。</p>
+    <div class="form-grid">
+      <div class="label">送信先</div><input id="inviteTo" readonly>
+      <div class="label">件名</div><input id="inviteSubject" readonly>
+      <div class="label">本文</div><textarea id="inviteBody" class="invite-textarea" readonly></textarea>
+    </div>
+    <div id="inviteStatus" class="status"></div>
+    <div class="invite-actions"><button class="secondary-btn" type="button" id="copyInviteBtn">本文をコピー</button><button class="secondary-btn" type="button" id="mailtoBtn">メールを作成</button></div>
+  </div>
+
+  <div class="card">
+    <p class="section-title">最近登録したお申し込み</p>
+    <div class="table-wrap">
+      <table><thead><tr><th>企業名</th><th>担当者</th><th>メール</th><th>登録日時</th><th>操作</th></tr></thead><tbody id="recentTbody"><tr><td colspan="5">読み込み中です。</td></tr></tbody></table>
+    </div>
+  </div>
+  <a class="bottom-link" href="operator-home.html">← 運営管理ページへ戻る</a>
+</div>
+<script type="module">
+import { auth, db } from "./firebase-config.js";
+import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import {
+  doc, getDoc, getDocs, setDoc, collection, query, orderBy, limit, writeBatch, serverTimestamp,
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { escapeHtml, ensureCompanyQuestionSets, copyAllTemplatesToCompany } from "./operator-shared.js";
+
+const $ = (id) => document.getElementById(id);
+let operatorUid = "";
+let lastInvite = { email: "", subject: "", body: "" };
+
+function hideLoading() { const l = $("pageLoading"); if (l) { l.classList.add("hidden"); l.style.display = "none"; } }
+function normText(v) { return String(v || "").trim(); }
+function normEmail(v) { return String(v || "").trim().toLowerCase(); }
+function setStatus(msg, type) { $("status").textContent = msg || ""; $("status").className = "status " + (msg ? (type || "") : ""); }
+function setInviteStatus(msg, type) { $("inviteStatus").textContent = msg || ""; $("inviteStatus").className = "status " + (msg ? (type || "") : ""); }
+function fmtDate(v) {
+  try {
+    if (v && typeof v.toDate === "function") {
+      const d = v.toDate();
+      return d.getFullYear() + "/" + String(d.getMonth() + 1).padStart(2, "0") + "/" + String(d.getDate()).padStart(2, "0")
+        + " " + String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
+    }
+  } catch (e) { /* noop */ }
+  return "-";
+}
+
+function getSignupUrl() {
+  const base = location.origin + location.pathname.replace(/[^\/]*$/, "");
+  return base + "company-admin-signup.html";
+}
+function buildInviteMail(data) {
+  const signupUrl = getSignupUrl();
+  const subject = "【ビズてす】ご契約のご案内と初回登録のお願い";
+  const body = data.contactName + " 様\n\n" +
+    "この度は「ビズてす」へのお申し込みをいただき、誠にありがとうございます。\n" +
+    "貴社の企業管理者アカウントを準備いたしましたので、以下の手順で初回登録をお願いいたします。\n\n" +
+    "【手順】\n" +
+    "1. 下記URLを開き、このメールアドレスで初回登録（パスワード設定）を行ってください。\n" + signupUrl + "\n\n" +
+    "【登録時のメールアドレス】\n" + data.contactEmail + "\n\n" +
+    "パスワードは15文字以上で設定してください。単語をつなげた「パスフレーズ」を推奨しています。\n\n" +
+    "2. 初回登録後は、以下のログイン画面からログインしてください。\n" + location.origin + location.pathname.replace(/[^\/]*$/, "operator-login.html") + "\n\n" +
+    "3. その後、管理画面から受験招待の発行・自社の追加管理者の招待などを行っていただけます。\n\n" +
+    "ご不明点がございましたら、お気軽にお問い合わせください。\n\nビズてす運営";
+  return { email: data.contactEmail, subject, body };
+}
+function showInviteMail(data) {
+  lastInvite = buildInviteMail(data);
+  $("inviteTo").value = lastInvite.email;
+  $("inviteSubject").value = lastInvite.subject;
+  $("inviteBody").value = lastInvite.body;
+  $("inviteMailCard").classList.remove("hidden");
+  setInviteStatus("", "");
+}
+$("copyInviteBtn").addEventListener("click", async () => {
+  try { await navigator.clipboard.writeText(lastInvite.body); setInviteStatus("メール本文をコピーしました。", "ok"); }
+  catch (e) { $("inviteBody").focus(); $("inviteBody").select(); setInviteStatus("自動コピーできませんでした。本文欄を選択したので手動でコピーしてください。", "error"); }
+});
+$("mailtoBtn").addEventListener("click", () => {
+  if (!lastInvite.email) { setInviteStatus("送信先メールアドレスがありません。", "error"); return; }
+  location.href = "mailto:" + encodeURIComponent(lastInvite.email) + "?subject=" + encodeURIComponent(lastInvite.subject) + "&body=" + encodeURIComponent(lastInvite.body);
+  setInviteStatus("メールソフトを起動しました。送信前に内容を確認してください。", "ok");
+});
+
+function clearForm() {
+  ["companyName", "employeeCode", "contactName", "contactEmail", "department", "position", "note"].forEach((id) => { $(id).value = ""; });
+  $("copyTemplates").checked = true;
+  setStatus("", "");
+}
+
+function validate(company, admin) {
+  if (!company.companyName) return "企業名を入力してください。";
+  if (!admin.name) return "氏名を入力してください。";
+  if (!admin.email) return "メールアドレスを入力してください。";
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(admin.email)) return "メールアドレスの形式が正しくありません。";
+  return "";
+}
+
+async function registerApplication() {
+  const company = { companyName: normText($("companyName").value) };
+  const admin = {
+    employeeCode: normText($("employeeCode").value),
+    name: normText($("contactName").value),
+    email: normEmail($("contactEmail").value),
+    department: normText($("department").value),
+    position: normText($("position").value),
+    note: normText($("note").value),
+  };
+  const copyTemplates = $("copyTemplates").checked;
+  const err = validate(company, admin);
+  if (err) { setStatus(err, "error"); return; }
+  try {
+    $("registerBtn").disabled = true;
+    setStatus("重複を確認しています...", "warn");
+    const [adminSnap, pendingSnap] = await Promise.all([
+      getDocs(query(collection(db, "companyAdmins"))),
+      getDoc(doc(db, "pendingCompanyAdmins", admin.email)),
+    ]);
+    const emailTaken = adminSnap.docs.some((d) => (d.data().email || "").toLowerCase() === admin.email);
+    if (emailTaken) { setStatus("このメールアドレスは既に企業管理者として登録済みです。", "error"); $("registerBtn").disabled = false; return; }
+    if (pendingSnap.exists() && pendingSnap.data().status === "pending") { setStatus("このメールアドレスは既に招待済みです。", "error"); $("registerBtn").disabled = false; return; }
+
+    setStatus("登録中...", "warn");
+    const companyRef = doc(collection(db, "companies"));
+    const batch = writeBatch(db);
+    batch.set(companyRef, {
+      companyName: company.companyName,
+      status: "active",
+      contactName: admin.name,
+      contactEmail: admin.email,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+    batch.set(doc(db, "pendingCompanyAdmins", admin.email), {
+      email: admin.email,
+      name: admin.name,
+      companyId: companyRef.id,
+      companyName: company.companyName,
+      employeeCode: admin.employeeCode,
+      department: admin.department,
+      position: admin.position,
+      isApplicant: true,
+      note: admin.note,
+      status: "pending",
+      createdAt: serverTimestamp(),
+      createdBy: operatorUid,
+      updatedAt: serverTimestamp(),
+      updatedBy: operatorUid,
+      registeredAt: null,
+      registeredUid: null,
+    });
+    await batch.commit();
+
+    await ensureCompanyQuestionSets(companyRef.id);
+    if (copyTemplates) {
+      const result = await copyAllTemplatesToCompany(companyRef.id);
+      const total = Object.values(result).reduce((a, b) => a + b, 0);
+      setStatus("お申し込みを登録しました（テンプレート問題をコピーしました：" + total + "問）。下の「案内メール」より、案内メールを作成してください。", "ok");
+    } else {
+      setStatus("お申し込みを登録しました。下の「案内メール」より、案内メールを作成してください。", "ok");
+    }
+    showInviteMail({ contactName: admin.name, contactEmail: admin.email });
+    clearForm();
+    await loadRecent();
+  } catch (e) {
+    console.error(e);
+    setStatus("登録に失敗しました。\n" + (e.code || "") + " " + (e.message || e), "error");
+  } finally {
+    $("registerBtn").disabled = false;
+  }
+}
+
+async function loadRecent() {
+  try {
+    const q = query(collection(db, "companies"), orderBy("createdAt", "desc"), limit(20));
+    const snap = await getDocs(q);
+    const rows = [];
+    snap.forEach((d) => {
+      const v = d.data() || {};
+      rows.push({ companyId: d.id, companyName: v.companyName || "", contactName: v.contactName || "", contactEmail: v.contactEmail || "", createdAt: v.createdAt });
+    });
+    if (!rows.length) { $("recentTbody").innerHTML = '<tr><td colspan="5">登録済みのお申し込みはまだありません。</td></tr>'; return; }
+    $("recentTbody").innerHTML = rows.map((r) => (
+      "<tr><td>" + escapeHtml(r.companyName) + "</td><td>" + escapeHtml(r.contactName) + "</td><td>" + escapeHtml(r.contactEmail) + "</td><td>" + fmtDate(r.createdAt) + "</td>"
+      + '<td><a href="company-admin-invite.html?company=' + encodeURIComponent(r.companyId) + '">企業管理者を招待・管理</a></td></tr>'
+    )).join("");
+  } catch (e) {
+    console.error(e);
+    $("recentTbody").innerHTML = '<tr><td colspan="5">取得に失敗しました：' + escapeHtml(e.message || e) + "</td></tr>";
+  }
+}
+
+$("registerBtn").addEventListener("click", registerApplication);
+$("clearBtn").addEventListener("click", clearForm);
+
+onAuthStateChanged(auth, async (user) => {
+  if (!user) { location.href = "operator-login.html"; return; }
+  const opSnap = await getDoc(doc(db, "operators", user.uid));
+  if (!opSnap.exists()) { await signOut(auth); location.href = "operator-login.html"; return; }
+  operatorUid = user.uid;
+  try {
+    await loadRecent();
+  } catch (e) {
+    console.error(e);
+    setStatus("読み込みに失敗しました。\n" + (e.message || e), "error");
+  } finally {
+    hideLoading();
+  }
+});
+</script>
+</body>
+</html>

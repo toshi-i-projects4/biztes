@@ -86,11 +86,45 @@ service cloud.firestore {
         && pendingCompanyAdmin(request.resource.data.email).status == "pending"
         && request.resource.data.companyId == pendingCompanyAdmin(request.resource.data.email).companyId
         && request.resource.data.name == pendingCompanyAdmin(request.resource.data.email).name
+        && request.resource.data.employeeCode == pendingCompanyAdmin(request.resource.data.email).employeeCode
+        && request.resource.data.department == pendingCompanyAdmin(request.resource.data.email).department
+        && request.resource.data.position == pendingCompanyAdmin(request.resource.data.email).position
+        && request.resource.data.isApplicant == pendingCompanyAdmin(request.resource.data.email).isApplicant
+        && request.resource.data.role == "companyAdmin"
         && request.resource.data.status == "active"
         && request.resource.data.keys().hasOnly([
-          "uid", "name", "email", "companyId", "status", "note",
+          "uid", "name", "email", "companyId", "employeeCode", "department", "position",
+          "role", "status", "isApplicant", "note",
           "createdAt", "createdBy", "updatedAt", "updatedBy"
         ]);
+    }
+    // 同じ企業内の他の企業管理者（自分自身を含む）のプロフィール項目を編集する際の型検証
+    function validCompanyAdminProfileFields() {
+      return (!("employeeCode" in request.resource.data) || request.resource.data.employeeCode is string)
+        && (!("name" in request.resource.data) || request.resource.data.name is string)
+        && (!("department" in request.resource.data) || request.resource.data.department is string)
+        && (!("position" in request.resource.data) || request.resource.data.position is string)
+        && (!("note" in request.resource.data) || request.resource.data.note is string)
+        && (!("isApplicant" in request.resource.data) || request.resource.data.isApplicant is bool)
+        && (!("status" in request.resource.data) || request.resource.data.status in ["active", "inactive"]);
+    }
+    // company-admin-invite.html：企業管理者が、同じ企業の企業管理者（自分自身も含む）の
+    // 社員コード・氏名・部署・役職・備考・ビズてす申込者フラグを編集できる。
+    // ただし自分自身のstatus（有効/無効）だけは、この経路からは変更できない
+    // （誤って自分自身を無効化してしまうことを防止）。
+    function canCompanyAdminUpdateSameCompanyAdmin(uid) {
+      return isCompanyAdmin()
+        && resource.data.companyId == myCompanyId()
+        && request.resource.data.companyId == myCompanyId()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          "employeeCode", "name", "department", "position", "note", "isApplicant", "status",
+          "updatedAt", "updatedBy"
+        ])
+        && (
+          request.auth.uid != uid ||
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny(["status"])
+        )
+        && validCompanyAdminProfileFields();
     }
 
     // ---- pendingOperators（運営専任メンバーの招待） ----
@@ -195,19 +229,11 @@ service cloud.firestore {
       // オペレーターは任意企業の管理者アカウントを直接作成できる。
       // 企業管理者本人によるセルフサインアップは canCreateOwnCompanyAdminFromPending() 経由。
       allow create: if isOperator() || canCreateOwnCompanyAdminFromPending(uid);
-      // status（有効/無効）の切り替えのみ許可。companyId・email等の付け替えは不可。
-      // 企業管理者は、同じ企業の「他の」管理者のstatusは変更できるが、自分自身は不可
-      // （誤って自分の権限を剥奪することを防止）。
-      allow update: if isOperator() ||
-        (
-          isCompanyAdmin()
-          && request.auth.uid != uid
-          && resource.data.companyId == myCompanyId()
-          && request.resource.data.companyId == myCompanyId()
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-            "status", "updatedAt", "updatedBy"
-          ])
-        );
+      // 社員コード・氏名・部署・役職・備考・ビズてす申込者フラグ・status（有効/無効）の
+      // 編集を許可。companyId・email・uid・role等の付け替えは不可。
+      // 企業管理者は、同じ企業の管理者（自分自身を含む）のプロフィール項目を編集できるが、
+      // 自分自身のstatusだけはこの経路から変更できない（誤って自分を無効化することを防止）。
+      allow update: if isOperator() || canCompanyAdminUpdateSameCompanyAdmin(uid);
       // アカウントの完全削除は行わず、statusの無効化のみを運用とする。
       allow delete: if false;
     }
@@ -223,7 +249,8 @@ service cloud.firestore {
           && request.resource.data.email == email
           && request.resource.data.status == "pending"
           && request.resource.data.keys().hasOnly([
-            "email", "name", "companyId", "companyName", "note", "status",
+            "email", "name", "companyId", "companyName", "employeeCode", "department",
+            "position", "isApplicant", "note", "status",
             "createdAt", "createdBy", "updatedAt", "updatedBy",
             "registeredAt", "registeredUid"
           ])
@@ -235,7 +262,8 @@ service cloud.firestore {
           && request.resource.data.status == "pending"
           && request.resource.data.companyId == myCompanyId()
           && request.resource.data.keys().hasOnly([
-            "email", "name", "companyId", "companyName", "note", "status",
+            "email", "name", "companyId", "companyName", "employeeCode", "department",
+            "position", "isApplicant", "note", "status",
             "createdAt", "createdBy", "updatedAt", "updatedBy",
             "registeredAt", "registeredUid"
           ])

@@ -3,159 +3,161 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ビズてす 運営ホーム</title>
+<title>運営管理ページ｜ビズてす</title>
 <style>
-:root{--blue:#f97316;--blue-dark:#ea580c;--navy:#0f172a;--line:#fed7aa;--bg:#fff7ed;--muted:#64748b}
+:root{--orange:#f97316;--orange-dark:#ea580c;--orange-deep:#c2410c;--navy:#0f172a;--line:#fed7aa;--bg:#fff7ed;--muted:#64748b}
 *{box-sizing:border-box}
 body{margin:0;font-family:"Hiragino Maru Gothic ProN","BIZ UDPGothic","Yu Gothic UI","Meiryo",sans-serif;background:var(--bg);color:#111827}
-.header{background:#fff;border-bottom:1px solid var(--line);padding:16px 24px;display:flex;justify-content:space-between;align-items:center}
-.header h1{font-size:18px;margin:0;color:var(--blue-dark)}
-.header .userbox{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:12px}
-.header button{background:#111827;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:12px;cursor:pointer}
-.wrap{max-width:1100px;margin:28px auto;padding:0 20px}
-.panel{background:#fff;border:1px solid var(--line);border-radius:18px;padding:24px;margin-bottom:22px;box-shadow:0 4px 14px rgba(15,23,42,.04)}
-.panel h2{font-size:16px;margin:0 0 14px;color:var(--navy)}
-table{width:100%;border-collapse:collapse;font-size:13px}
-th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line)}
-th{color:var(--muted);font-weight:800;font-size:12px}
-tr:hover td{background:#f8fafc}
-.badge{display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:800}
-.badge.active{background:#dcfce7;color:#166534}
-.badge.suspended{background:#f3f4f6;color:#6b7280}
-a.link-btn{color:var(--blue-dark);font-weight:800;text-decoration:none;font-size:13px}
-a.link-btn:hover{text-decoration:underline}
-.row-links{display:flex;flex-direction:column;gap:4px}
-.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
-.form-row label{display:block;font-size:12px;font-weight:800;color:var(--navy);margin-bottom:5px}
-.form-row input{width:100%;border:1px solid #d1d5db;border-radius:9px;padding:9px 11px;font-size:13px;font-family:inherit}
-.checkbox-row{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--navy);margin:10px 0 16px}
-button.primary{background:var(--blue);color:#fff;border:none;border-radius:9px;padding:11px 18px;font-size:13px;font-weight:800;cursor:pointer}
-button.primary:hover{background:var(--blue-dark)}
-.empty{color:var(--muted);font-size:13px;padding:16px 0}
-.status-line{font-size:12px;color:var(--muted);margin-top:10px}
+.top-bar{max-width:1400px;margin:0 auto;padding:20px 20px 4px;display:flex;align-items:center;gap:16px;box-sizing:border-box}
+.top-bar img{width:48px;height:48px;object-fit:contain;border-radius:10px}
+.top-bar h1{font-size:22px;margin:0;color:var(--orange-deep)}
+.layout{max-width:1400px;margin:0 auto 24px;display:flex;gap:24px;align-items:flex-start;padding:0 20px;box-sizing:border-box}
+.left-sidebar{width:240px;background:linear-gradient(180deg,var(--orange),var(--orange-deep));padding:18px 24px;border-radius:16px;box-shadow:0 4px 12px rgba(0,0,0,.10);box-sizing:border-box;color:#fff;margin-top:16px;flex-shrink:0}
+.sidebar-heading{font-size:15px;font-weight:900;letter-spacing:.02em;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,.3);text-align:center}
+.side-menu{display:grid;gap:8px;margin-bottom:12px}
+.side-menu-link{display:block;text-decoration:none;color:#fff;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.28);border-radius:10px;padding:10px 14px;font-size:14px;font-weight:bold}
+.side-menu-link:hover{background:rgba(255,255,255,.26)}
+.mypage-btn{display:block;width:100%;box-sizing:border-box;text-align:left;text-decoration:none;margin-top:10px;padding:10px 14px;border:2px solid #2563eb;border-radius:10px;background:#dbeafe;color:#2563eb;cursor:pointer;font-size:14px;font-weight:bold}
+.mypage-btn:hover{background:#bfdbfe}
+.user-info{margin-top:12px;font-size:13px;color:#fff;line-height:1.6;word-break:break-all;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.28);border-radius:10px;padding:10px 14px}
+.logout-btn{display:block;width:100%;box-sizing:border-box;margin-top:10px;padding:10px 24px;border:2px solid transparent;border-radius:10px;background:#111827;color:#fff;cursor:pointer;font-size:14px;font-weight:bold}
+.logout-btn:hover{background:#000}
+.main-content{flex:1;background:#fff;padding:26px 32px 30px;border-radius:16px;box-shadow:0 4px 12px rgba(0,0,0,.08);box-sizing:border-box;min-height:320px}
+.status{display:none;background:#fee2e2;border:1px solid #fca5a5;color:#991b1b;border-radius:10px;padding:14px 16px;margin:0 0 16px;white-space:pre-wrap;font-size:14px}
+.status.show{display:block}
+.welcome-title{font-size:20px;font-weight:900;color:var(--navy);margin:0 0 6px}
+.welcome-sub{font-size:13px;color:var(--muted);margin:0 0 20px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:24px}
+.card{background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:16px}
+.card-label{font-size:12px;color:var(--orange-deep);font-weight:bold;margin-bottom:6px}
+.card-value{font-size:26px;font-weight:900;color:var(--navy)}
+.quick-links{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.quick-links a{display:block;text-decoration:none;background:var(--bg);border:1px solid var(--line);color:var(--orange-deep);font-weight:bold;font-size:14px;border-radius:12px;padding:14px 16px}
+.quick-links a:hover{background:#ffedd5}
+.page-loading{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:var(--bg);color:#7c2d12;font-weight:bold}
+.page-loading.hidden{display:none!important}
+.loading-box{display:flex;flex-direction:column;align-items:center;gap:12px}
+.loading-spinner{width:42px;height:42px;border:5px solid var(--line);border-top-color:var(--orange);border-radius:50%;animation:spin .9s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media(max-width:1000px){
+  .layout{display:flex;flex-direction:column}
+  .main-content{order:1;width:100%}
+  .left-sidebar{order:2;width:100%;margin-top:0}
+}
 </style>
 </head>
 <body>
-<div class="header">
-  <h1>ビズてす 運営ホーム</h1>
-  <div class="userbox"><a class="link-btn" href="company-admin-home.html" id="toCompanyAdminLink" style="display:none;margin-right:6px">企業管理ページへ →</a><a class="link-btn" href="operator-invite.html" style="margin-right:6px">運営メンバーの招待・管理 →</a><a class="link-btn" href="operator-invites.html" style="margin-right:6px">受験招待・結果一覧 →</a><span id="opEmail"></span><button id="logoutBtn">ログアウト</button></div>
-</div>
-
-<div class="wrap">
-  <div class="panel">
-    <h2>企業を新規登録</h2>
-    <form id="companyForm">
-      <div class="form-grid">
-        <div class="form-row"><label>企業名</label><input id="companyName" required></div>
-        <div class="form-row"><label>担当者名</label><input id="contactName"></div>
-        <div class="form-row"><label>担当者メールアドレス</label><input id="contactEmail" type="email"></div>
-      </div>
-      <div class="checkbox-row">
-        <input type="checkbox" id="copyTemplates" checked>
-        <label for="copyTemplates">テンプレートの初期問題（リーディング11問・ロジカル20問・仕事観27項目・タイピング文例）をコピーする</label>
-      </div>
-      <button class="primary" type="submit">企業を登録</button>
-      <div class="status-line" id="formStatus"></div>
-    </form>
+<div id="pageLoading" class="page-loading"><div class="loading-box"><div class="loading-spinner"></div><div>運営管理ページを読み込み中...</div></div></div>
+<div class="top-bar"><img src="logo.png" alt="ビズてす ロゴ"><h1>ビズてす 運営管理</h1></div>
+<div class="layout">
+  <div class="left-sidebar">
+    <div class="sidebar-heading">運営管理ページ</div>
+    <nav class="side-menu">
+      <a class="side-menu-link" href="operator-new-application.html">新規申込登録</a>
+      <a class="side-menu-link" href="operator-companies.html">企業管理ページ</a>
+      <a class="side-menu-link" href="operator-dashboard.html">ダッシュボード</a>
+      <a class="side-menu-link" href="operator-report.html">レポート</a>
+      <a class="side-menu-link" href="operator-invite.html">運営権限設定</a>
+    </nav>
+    <a id="toCompanyAdminLink" class="mypage-btn" href="company-admin-home.html" style="display:none">企業管理者ホーム</a>
+    <div id="userInfo" class="user-info">確認中...</div>
+    <button class="logout-btn" id="logoutBtn" type="button">ログアウト</button>
   </div>
-
-  <div class="panel">
-    <h2>企業一覧</h2>
-    <table>
-      <thead><tr><th>企業名</th><th>状態</th><th>担当者</th><th>登録日</th><th>操作</th></tr></thead>
-      <tbody id="companyRows"></tbody>
-    </table>
-    <div id="emptyState" class="empty" style="display:none">まだ企業が登録されていません。</div>
+  <div class="main-content">
+    <div id="status" class="status"></div>
+    <p class="welcome-title">運営管理ページへようこそ</p>
+    <p class="welcome-sub">左のメニューから、新規申込登録・企業管理・ダッシュボード・レポート・運営権限設定に進めます。</p>
+    <div class="cards">
+      <div class="card"><div class="card-label">登録企業数</div><div class="card-value" id="statCompanies">-</div></div>
+      <div class="card"><div class="card-label">受験招待数（累計）</div><div class="card-value" id="statInvites">-</div></div>
+      <div class="card"><div class="card-label">受験完了数（累計）</div><div class="card-value" id="statCompleted">-</div></div>
+    </div>
+    <div class="quick-links">
+      <a href="operator-new-application.html">新しい企業のお申し込みを登録する →</a>
+      <a href="operator-companies.html">企業一覧を確認する →</a>
+      <a href="operator-dashboard.html">受験状況のダッシュボードを見る →</a>
+      <a href="operator-report.html">受験者データのレポートを見る →</a>
+    </div>
   </div>
 </div>
-
 <script type="module">
 import { auth, db } from "./firebase-config.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import {
-  collection, addDoc, doc, getDoc, onSnapshot, serverTimestamp, query, orderBy,
+  doc, getDoc, collection, getDocs, collectionGroup,
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { ensureCompanyQuestionSets, copyAllTemplatesToCompany, escapeHtml } from "./operator-shared.js";
+import { escapeHtml } from "./operator-shared.js";
+
+function hideLoading() {
+  const l = document.getElementById("pageLoading");
+  if (l) { l.classList.add("hidden"); l.style.display = "none"; }
+}
+function setStatus(msg) {
+  const e = document.getElementById("status");
+  if (!msg) { e.className = "status"; e.textContent = ""; return; }
+  e.textContent = msg; e.className = "status show";
+}
 
 onAuthStateChanged(auth, async (user) => {
   if (!user) { location.href = "operator-login.html"; return; }
-  const opSnap = await getDoc(doc(db, "operators", user.uid));
-  if (!opSnap.exists()) { await signOut(auth); location.href = "operator-login.html"; return; }
-  document.getElementById("opEmail").textContent = user.email;
+  try {
+    const opSnap = await getDoc(doc(db, "operators", user.uid));
+    if (!opSnap.exists()) {
+      setStatus("この画面は運営（オペレーター）権限が必要です。ログアウトします。");
+      await signOut(auth);
+      setTimeout(() => { location.href = "operator-login.html"; }, 1200);
+      hideLoading();
+      return;
+    }
+    const opData = opSnap.data();
 
-  // 運営権限に加えて企業管理者権限も持つアカウントの場合、企業管理ページへの導線を出す
-  const caSnap = await getDoc(doc(db, "companyAdmins", user.uid));
-  if (caSnap.exists() && caSnap.data().status === "active") {
-    document.getElementById("toCompanyAdminLink").style.display = "inline";
+    let userInfoHtml = "ログイン中：" + escapeHtml(user.email) + "<br>権限：運営権限"
+      + (opData.name ? "<br>氏名：" + escapeHtml(opData.name) : "");
+
+    const caSnap = await getDoc(doc(db, "companyAdmins", user.uid));
+    if (caSnap.exists() && caSnap.data().status === "active") {
+      const caData = caSnap.data();
+      document.getElementById("toCompanyAdminLink").style.display = "block";
+      let companyName = caData.companyId;
+      try {
+        const companySnap = await getDoc(doc(db, "companies", caData.companyId));
+        if (companySnap.exists()) companyName = companySnap.data().companyName || caData.companyId;
+      } catch (e) { console.warn(e); }
+      userInfoHtml += "<br>所属企業：" + escapeHtml(companyName);
+    }
+    document.getElementById("userInfo").innerHTML = userInfoHtml;
+
+    loadStats();
+  } catch (e) {
+    console.error(e);
+    setStatus("権限確認に失敗しました。もう一度ログインしてください。\n" + (e.message || e));
+  } finally {
+    hideLoading();
   }
-
-  watchCompanies();
 });
 
 document.getElementById("logoutBtn").addEventListener("click", async () => {
-  await signOut(auth);
-  location.href = "operator-login.html";
+  try { await signOut(auth); location.href = "operator-login.html"; }
+  catch (e) { console.error(e); alert("ログアウトに失敗しました。"); }
 });
 
-function watchCompanies() {
-  const q = query(collection(db, "companies"), orderBy("createdAt", "desc"));
-  onSnapshot(q, (snap) => {
-    const rows = document.getElementById("companyRows");
-    const empty = document.getElementById("emptyState");
-    rows.innerHTML = "";
-    if (snap.empty) { empty.style.display = "block"; return; }
-    empty.style.display = "none";
-    snap.forEach((d) => {
-      const c = d.data();
-      const tr = document.createElement("tr");
-      const created = c.createdAt && c.createdAt.toDate ? c.createdAt.toDate().toLocaleDateString("ja-JP") : "-";
-      tr.innerHTML = `
-        <td>${escapeHtml(c.companyName)}</td>
-        <td><span class="badge ${c.status === "active" ? "active" : "suspended"}">${c.status === "active" ? "有効" : "停止中"}</span></td>
-        <td>${escapeHtml(c.contactName || "-")}</td>
-        <td>${created}</td>
-        <td>
-          <div class="row-links">
-            <a class="link-btn" href="operator-question-editor.html?company=${d.id}">問題を編集 →</a>
-            <a class="link-btn" href="operator-invites.html?company=${d.id}">受験招待・結果 →</a>
-            <a class="link-btn" href="company-admin-invite.html?company=${d.id}">企業管理者を招待・管理 →</a>
-          </div>
-        </td>
-      `;
-      rows.appendChild(tr);
-    });
-  });
-}
-
-document.getElementById("companyForm").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const status = document.getElementById("formStatus");
-  status.textContent = "登録中です…";
-  const companyName = document.getElementById("companyName").value.trim();
-  const contactName = document.getElementById("contactName").value.trim();
-  const contactEmail = document.getElementById("contactEmail").value.trim();
-  const copyTemplates = document.getElementById("copyTemplates").checked;
+async function loadStats() {
   try {
-    const ref = await addDoc(collection(db, "companies"), {
-      companyName, contactName, contactEmail,
-      status: "active",
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    });
-    await ensureCompanyQuestionSets(ref.id);
-    if (copyTemplates) {
-      const result = await copyAllTemplatesToCompany(ref.id);
-      status.textContent = `登録が完了しました（テンプレート問題をコピーしました：${Object.values(result).reduce((a, b) => a + b, 0)}問）`;
-    } else {
-      status.textContent = "登録が完了しました。";
-    }
-    document.getElementById("companyForm").reset();
-    document.getElementById("copyTemplates").checked = true;
-  } catch (err) {
-    console.error(err);
-    status.textContent = "登録に失敗しました：" + err.message;
+    const companySnap = await getDocs(collection(db, "companies"));
+    document.getElementById("statCompanies").textContent = companySnap.size;
+  } catch (e) { console.warn(e); document.getElementById("statCompanies").textContent = "-"; }
+  try {
+    const inviteSnap = await getDocs(collectionGroup(db, "examInvites"));
+    let completed = 0;
+    inviteSnap.forEach((d) => { if (d.data().status === "completed") completed++; });
+    document.getElementById("statInvites").textContent = inviteSnap.size;
+    document.getElementById("statCompleted").textContent = completed;
+  } catch (e) {
+    console.warn(e);
+    document.getElementById("statInvites").textContent = "-";
+    document.getElementById("statCompleted").textContent = "-";
   }
-});
+}
 </script>
 </body>
 </html>

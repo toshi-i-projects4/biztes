@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>企業管理ページ｜運営管理ページ｜ビズてす</title>
+<style>
+body{margin:0;font-family:"Hiragino Maru Gothic ProN","BIZ UDPGothic","Yu Gothic UI","Meiryo",sans-serif;background:#fff7ed;color:#111827;padding:24px;box-sizing:border-box}
+.wrap{max-width:1400px;margin:0 auto;background:#fff;border-radius:18px;box-shadow:0 4px 12px rgba(0,0,0,.08);padding:28px;box-sizing:border-box;border:1px solid #fed7aa}
+.header{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:14px}
+h1{margin:0;font-size:26px;color:#111827}
+.top-link,.bottom-link{color:#c2410c;text-decoration:none;font-weight:bold;font-size:14px}
+.bottom-link{display:inline-block;margin-top:20px}
+.status{display:none;background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:14px 16px;margin-bottom:14px;line-height:1.7;white-space:pre-wrap;font-size:14px}
+.status.error{display:block;background:#fee2e2;border-color:#fca5a5;color:#991b1b}
+.status.ok{display:block;background:#dcfce7;border-color:#86efac;color:#166534}
+.toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+.toolbar input,.toolbar select{border:1px solid #d1d5db;border-radius:10px;padding:10px 12px;font-size:14px;max-width:320px}
+.btn{border:none;border-radius:10px;padding:10px 16px;font-size:13px;font-weight:bold;cursor:pointer;background:#f97316;color:#fff}
+.btn:hover{background:#ea580c}
+.btn.secondary{background:#9a3412}
+.btn.small{padding:6px 10px;font-size:12px}
+.table-wrap{overflow:auto;border:1px solid #e5e7eb;border-radius:12px;max-height:640px}
+table{width:100%;border-collapse:collapse;background:#fff;min-width:1200px}
+th,td{border-bottom:1px solid #f3f4f6;padding:10px 12px;text-align:left;vertical-align:top;font-size:13px;white-space:nowrap}
+th{background:#fff7ed;color:#7c2d12;font-weight:bold;position:sticky;top:0;z-index:1}
+.badge{display:inline-block;border-radius:999px;padding:3px 9px;font-size:12px;font-weight:bold}
+.badge.ok{background:#dcfce7;color:#166534}.badge.ng{background:#fee2e2;color:#991b1b}
+.enter-links{display:flex;flex-wrap:wrap;gap:6px}
+.enter-links a{display:inline-block;border:1px solid #fed7aa;background:#fff7ed;color:#9a3412;text-decoration:none;font-size:12px;font-weight:bold;border-radius:8px;padding:5px 9px}
+.enter-links a:hover{background:#ffedd5}
+.empty{text-align:center;color:#6b7280;padding:24px}
+.page-loading{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:#fff7ed;color:#7c2d12;font-weight:bold}
+.page-loading.hidden{display:none!important}
+.loading-box{display:flex;flex-direction:column;align-items:center;gap:12px;background:#fff;border:1px solid #fed7aa;border-radius:16px;padding:24px 28px;box-shadow:0 4px 12px rgba(0,0,0,.08)}
+.loading-spinner{width:42px;height:42px;border:5px solid #fed7aa;border-top-color:#f97316;border-radius:50%;animation:spin .9s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media(max-width:640px){body{padding:14px}.wrap{padding:20px}.header{align-items:flex-start}}
+</style>
+</head>
+<body>
+<div id="pageLoading" class="page-loading"><div class="loading-box"><div class="loading-spinner"></div><div>企業一覧を読み込み中...</div></div></div>
+<div class="wrap">
+  <div class="header"><h1>企業管理ページ</h1><a class="top-link" href="operator-home.html">← 運営管理ページへ戻る</a></div>
+  <div id="status" class="status"></div>
+  <div class="toolbar">
+    <input id="search" placeholder="企業名で検索">
+    <select id="filterStatus"><option value="all">すべての状態</option><option value="active">有効</option><option value="suspended">停止中</option></select>
+    <button class="btn secondary" id="reloadBtn" type="button">再読み込み</button>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr>
+        <th>企業名</th><th>状態</th><th>担当者</th><th>連絡先メール</th><th>企業管理者数</th><th>登録日</th>
+        <th>状態操作</th><th>管理画面へ入る</th>
+      </tr></thead>
+      <tbody id="companyTbody"><tr><td colspan="8" class="empty">読み込み中です。</td></tr></tbody>
+    </table>
+  </div>
+  <a class="bottom-link" href="operator-home.html">← 運営管理ページへ戻る</a>
+</div>
+<script type="module">
+import { auth, db } from "./firebase-config.js";
+import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import {
+  collection, getDocs, doc, getDoc, updateDoc, serverTimestamp,
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { escapeHtml as esc } from "./operator-shared.js";
+
+const $ = (id) => document.getElementById(id);
+let operatorUid = "", allCompanies = [], adminCounts = {};
+
+function hideLoading() { const l = $("pageLoading"); if (l) { l.classList.add("hidden"); l.style.display = "none"; } }
+function setStatus(msg, type) { const e = $("status"); e.textContent = msg || ""; e.className = "status " + (msg ? (type || "") : ""); }
+function fmtDate(v) { try { if (v && typeof v.toDate === "function") { const d = v.toDate(); return d.getFullYear() + "/" + String(d.getMonth() + 1).padStart(2, "0") + "/" + String(d.getDate()).padStart(2, "0"); } } catch (e) { /* noop */ } return "-"; }
+function badge(text, type) { return '<span class="badge ' + esc(type) + '">' + esc(text) + "</span>"; }
+
+function enterLinks(companyId) {
+  const cid = encodeURIComponent(companyId);
+  const items = [
+    ["operator-question-editor.html", "問題を編集"],
+    ["operator-invites.html", "受験招待・結果"],
+    ["company-admin-invite.html", "企業管理者を招待・管理"],
+  ];
+  return '<div class="enter-links">' + items.map((it) => '<a href="' + it[0] + "?company=" + cid + '">' + esc(it[1]) + "</a>").join("") + "</div>";
+}
+
+async function loadAdminCounts() {
+  const snap = await getDocs(collection(db, "companyAdmins"));
+  const counts = {};
+  snap.forEach((ds) => {
+    const d = ds.data() || {};
+    const cid = d.companyId || "";
+    if (!cid) return;
+    counts[cid] = (counts[cid] || 0) + 1;
+  });
+  return counts;
+}
+
+async function loadCompanies() {
+  setStatus("", "");
+  $("companyTbody").innerHTML = '<tr><td colspan="8" class="empty">読み込み中です。</td></tr>';
+  try {
+    const [compSnap, counts] = await Promise.all([getDocs(collection(db, "companies")), loadAdminCounts()]);
+    adminCounts = counts;
+    allCompanies = [];
+    compSnap.forEach((ds) => {
+      const d = ds.data() || {};
+      allCompanies.push({
+        companyId: ds.id,
+        companyName: d.companyName || "",
+        status: d.status || "active",
+        contactName: d.contactName || "",
+        contactEmail: d.contactEmail || "",
+        createdAt: d.createdAt,
+      });
+    });
+    allCompanies.sort((a, b) => String(a.companyName).localeCompare(String(b.companyName), "ja"));
+    render();
+  } catch (e) {
+    console.error(e);
+    setStatus("企業一覧の取得に失敗しました。\n" + (e.code || "") + "\n" + (e.message || e), "error");
+    $("companyTbody").innerHTML = '<tr><td colspan="8" class="empty">取得に失敗しました。</td></tr>';
+  } finally {
+    hideLoading();
+  }
+}
+
+function filtered() {
+  const q = ($("search").value || "").trim().toLowerCase();
+  const st = $("filterStatus").value;
+  return allCompanies.filter((c) => {
+    if (st !== "all" && c.status !== st) return false;
+    if (!q) return true;
+    return String(c.companyName).toLowerCase().includes(q);
+  });
+}
+
+async function toggleCompanyStatus(companyId, nextStatus) {
+  const ok = confirm(nextStatus === "suspended" ? "この企業のサービス利用を停止します。よろしいですか？" : "この企業の利用停止を解除します。よろしいですか？");
+  if (!ok) return;
+  try {
+    await updateDoc(doc(db, "companies", companyId), { status: nextStatus, updatedAt: serverTimestamp() });
+    setStatus("企業の状態を更新しました。", "ok");
+    await loadCompanies();
+  } catch (e) {
+    console.error(e);
+    setStatus("状態の更新に失敗しました。\n" + (e.code || "") + "\n" + (e.message || e), "error");
+  }
+}
+
+function render() {
+  const rows = filtered();
+  if (!rows.length) { $("companyTbody").innerHTML = '<tr><td colspan="8" class="empty">該当する企業がありません。</td></tr>'; return; }
+  $("companyTbody").innerHTML = rows.map((c) => {
+    const suspended = c.status === "suspended";
+    return "<tr>"
+      + "<td>" + esc(c.companyName) + "</td>"
+      + "<td>" + (suspended ? badge("停止中", "ng") : badge("有効", "ok")) + "</td>"
+      + "<td>" + esc(c.contactName) + "</td>"
+      + "<td>" + esc(c.contactEmail) + "</td>"
+      + "<td>" + (adminCounts[c.companyId] || 0) + "</td>"
+      + "<td>" + fmtDate(c.createdAt) + "</td>"
+      + '<td><button class="btn small ' + (suspended ? "" : "secondary") + '" type="button" data-action="toggle" data-company="' + esc(c.companyId) + '" data-next="' + (suspended ? "active" : "suspended") + '">' + (suspended ? "利用再開" : "利用停止") + "</button></td>"
+      + "<td>" + enterLinks(c.companyId) + "</td>"
+      + "</tr>";
+  }).join("");
+}
+
+$("search").addEventListener("input", render);
+$("filterStatus").addEventListener("change", render);
+$("reloadBtn").addEventListener("click", loadCompanies);
+$("companyTbody").addEventListener("click", (e) => {
+  const btn = e.target.closest('button[data-action="toggle"]');
+  if (btn) toggleCompanyStatus(btn.dataset.company, btn.dataset.next);
+});
+
+onAuthStateChanged(auth, async (user) => {
+  if (!user) { location.href = "operator-login.html"; return; }
+  const opSnap = await getDoc(doc(db, "operators", user.uid));
+  if (!opSnap.exists()) { await signOut(auth); location.href = "operator-login.html"; return; }
+  operatorUid = user.uid;
+  await loadCompanies();
+});
+</script>
+</body>
+</html>

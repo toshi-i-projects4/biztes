@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>レポート｜運営管理ページ｜ビズてす</title>
+<style>
+body{margin:0;font-family:"Hiragino Maru Gothic ProN","BIZ UDPGothic","Yu Gothic UI","Meiryo",sans-serif;background:#fff7ed;color:#111827;padding:24px;box-sizing:border-box}
+.wrap{max-width:1500px;margin:0 auto;background:#fff;border-radius:18px;box-shadow:0 4px 12px rgba(0,0,0,.08);padding:28px;box-sizing:border-box;border:1px solid #fed7aa}
+.header{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:14px}
+h1{margin:0;font-size:26px}
+.top-link,.bottom-link{color:#c2410c;text-decoration:none;font-weight:bold;font-size:14px}
+.bottom-link{display:inline-block;margin-top:20px}
+.status{display:none;background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:14px 16px;margin-bottom:16px;line-height:1.7;white-space:pre-wrap}
+.status.error{display:block;background:#fee2e2;border-color:#fca5a5;color:#991b1b}
+.filter-box{background:#fff7ed;border:1px solid #fed7aa;border-radius:14px;padding:16px;margin:16px 0}
+.filter-title{font-weight:bold;margin-bottom:12px;color:#7c2d12}
+.controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;align-items:end}
+.control-item label{display:block;font-size:12px;color:#7c2d12;font-weight:bold;margin-bottom:5px}
+select,input{width:100%;box-sizing:border-box;border:1px solid #d1d5db;border-radius:10px;padding:10px 12px;font-size:14px;background:#fff}
+.btn-row{display:flex;gap:10px;flex-wrap:wrap}
+.btn{border:none;border-radius:10px;padding:10px 16px;font-size:14px;font-weight:bold;cursor:pointer;background:#f97316;color:#fff;min-height:40px}
+.btn:hover{background:#ea580c}
+.btn.secondary{background:#9a3412}
+.btn:disabled{opacity:.6;cursor:not-allowed}
+.table-wrap{overflow:auto;border:1px solid #f3f4f6;border-radius:12px;margin-top:12px;max-height:600px}
+table{width:100%;border-collapse:collapse;min-width:1400px;background:#fff}
+th,td{border-bottom:1px solid #f3f4f6;padding:10px 12px;text-align:left;vertical-align:top;font-size:13px;white-space:nowrap}
+th{background:#fff7ed;color:#7c2d12;font-weight:bold;position:sticky;top:0;z-index:1}
+.badge{display:inline-block;border-radius:999px;padding:4px 10px;font-weight:bold;font-size:12px}
+.badge.not_started{background:#f3f4f6;color:#6b7280}
+.badge.in_progress{background:#fef3c7;color:#92400e}
+.badge.completed{background:#dcfce7;color:#166534}
+.empty{text-align:center;color:#6b7280;padding:24px}
+.note{font-size:12px;color:#6b7280;line-height:1.7;margin-top:10px}
+.page-loading{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:#fff7ed;color:#7c2d12;font-weight:bold}
+.page-loading.hidden{display:none!important}
+.loading-box{display:flex;flex-direction:column;align-items:center;gap:12px;background:#fff;border:1px solid #fed7aa;border-radius:16px;padding:24px 28px;box-shadow:0 4px 12px rgba(0,0,0,.08)}
+.loading-spinner{width:42px;height:42px;border:5px solid #fed7aa;border-top-color:#f97316;border-radius:50%;animation:spin .9s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media(max-width:640px){body{padding:14px}.wrap{padding:20px}.header{align-items:flex-start}.btn{width:100%}.btn-row{display:grid}}
+</style>
+</head>
+<body>
+<div id="pageLoading" class="page-loading"><div class="loading-box"><div class="loading-spinner"></div><div>レポートを読み込み中...</div></div></div>
+<div class="wrap">
+  <div class="header"><h1>レポート</h1><a class="top-link" href="operator-home.html">← 運営管理ページへ戻る</a></div>
+  <div id="status" class="status"></div>
+  <div class="filter-box">
+    <div class="filter-title">表示条件（招待発行日ベース）</div>
+    <div class="controls">
+      <div class="control-item"><label for="startDate">開始日</label><input type="date" id="startDate"></div>
+      <div class="control-item"><label for="endDate">終了日</label><input type="date" id="endDate"></div>
+      <div class="control-item"><label for="companyFilter">企業</label><select id="companyFilter"><option value="all">すべての企業</option></select></div>
+      <div class="control-item"><label>&nbsp;</label><div class="btn-row"><button class="btn" id="loadBtn" type="button">表示更新</button><button class="btn secondary" id="csvBtn" type="button" disabled>CSV出力</button></div></div>
+    </div>
+    <div class="note" id="periodHelp"></div>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>企業名</th><th>応募者氏名</th><th>応募者メール</th><th>状態</th><th>招待発行日時</th><th>開始日時</th><th>完了日時</th><th>タイピングスコア</th><th>リーディングスコア</th><th>ロジカルスコア</th><th>総合スコア</th></tr></thead>
+      <tbody id="resultBody"><tr><td colspan="11" class="empty">データを読み込み中です。</td></tr></tbody>
+    </table>
+  </div>
+  <a class="bottom-link" href="operator-home.html">← 運営管理ページへ戻る</a>
+</div>
+<script type="module">
+import { auth, db } from "./firebase-config.js";
+import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import {
+  collection, collectionGroup, query, where, getDocs, doc, getDoc,
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { escapeHtml as esc } from "./operator-shared.js";
+
+const $ = (id) => document.getElementById(id);
+let allCompanies = [], companyNameMap = {}, rows = [];
+
+function hideLoading() { const l = $("pageLoading"); if (l) { l.classList.add("hidden"); l.style.display = "none"; } }
+function setStatus(msg, type) { const e = $("status"); e.textContent = msg || ""; e.className = "status " + (msg ? (type || "") : ""); }
+function pad2(n) { return String(n).padStart(2, "0"); }
+function dateKey(d) { return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate()); }
+function fmtDateTime(v) {
+  try {
+    if (v && typeof v.toDate === "function") {
+      const d = v.toDate();
+      return d.getFullYear() + "/" + pad2(d.getMonth() + 1) + "/" + pad2(d.getDate()) + " " + pad2(d.getHours()) + ":" + pad2(d.getMinutes());
+    }
+  } catch (e) { /* noop */ }
+  return "-";
+}
+function statusLabel(status) { return { not_started: "未受験", in_progress: "受験中", completed: "受験完了" }[status] || status || ""; }
+function badge(text, type) { return '<span class="badge ' + esc(type) + '">' + esc(text) + "</span>"; }
+
+function getDateRange() { return { start: $("startDate").value, end: $("endDate").value }; }
+function isValidRange(r) { return !!(r.start && r.end && r.start <= r.end); }
+function updatePeriodHelp(r) {
+  if (isValidRange(r)) { $("periodHelp").textContent = "対象期間：" + r.start + " 〜 " + r.end + "　※この期間に発行された受験招待を対象とします。"; }
+  else { $("periodHelp").textContent = "開始日・終了日を指定してください（開始日は終了日以前の日付にしてください）。"; }
+}
+function defaultRange() { const d = new Date(); return { start: dateKey(new Date(d.getFullYear(), d.getMonth(), 1)), end: dateKey(d) }; }
+
+async function loadCompanyOptions() {
+  const snap = await getDocs(collection(db, "companies"));
+  allCompanies = []; companyNameMap = {};
+  snap.forEach((ds) => { const d = ds.data() || {}; allCompanies.push({ companyId: ds.id, companyName: d.companyName || "" }); companyNameMap[ds.id] = d.companyName || ""; });
+  allCompanies.sort((a, b) => String(a.companyName).localeCompare(String(b.companyName), "ja"));
+  const sel = $("companyFilter");
+  const cur = sel.value || "all";
+  sel.innerHTML = '<option value="all">すべての企業</option>' + allCompanies.map((c) => '<option value="' + esc(c.companyId) + '">' + esc(c.companyName) + "</option>").join("");
+  sel.value = allCompanies.some((c) => c.companyId === cur) ? cur : "all";
+}
+
+function render() {
+  const body = $("resultBody");
+  if (!rows.length) { body.innerHTML = '<tr><td colspan="11" class="empty">指定条件の受験データはありません。</td></tr>'; return; }
+  const sorted = rows.slice().sort((a, b) => String(b.createdAtSort || "").localeCompare(String(a.createdAtSort || "")));
+  body.innerHTML = sorted.map((r) => (
+    "<tr><td>" + esc(companyNameMap[r.companyId] || r.companyId) + "</td>"
+    + "<td>" + esc(r.applicantName) + "</td>"
+    + "<td>" + esc(r.applicantEmail) + "</td>"
+    + "<td>" + badge(statusLabel(r.status), r.status) + "</td>"
+    + "<td>" + fmtDateTime(r.createdAt) + "</td>"
+    + "<td>" + fmtDateTime(r.startedAt) + "</td>"
+    + "<td>" + fmtDateTime(r.completedAt) + "</td>"
+    + "<td>" + (r.typingScore == null ? "-" : r.typingScore) + "</td>"
+    + "<td>" + (r.readingScore == null ? "-" : r.readingScore) + "</td>"
+    + "<td>" + (r.logicalScore == null ? "-" : r.logicalScore) + "</td>"
+    + "<td>" + (r.totalScore == null ? "-" : r.totalScore) + "</td></tr>"
+  )).join("");
+}
+
+async function loadReport() {
+  const range = getDateRange();
+  updatePeriodHelp(range);
+  if (!isValidRange(range)) {
+    setStatus("開始日・終了日を正しく指定してください（開始日は終了日以前の日付にしてください）。", "error");
+    $("resultBody").innerHTML = '<tr><td colspan="11" class="empty">開始日・終了日を指定してください。</td></tr>';
+    $("csvBtn").disabled = true;
+    rows = [];
+    return;
+  }
+  setStatus("", "");
+  $("loadBtn").disabled = true; $("csvBtn").disabled = true;
+  $("resultBody").innerHTML = '<tr><td colspan="11" class="empty">データを読み込み中です。</td></tr>';
+  try {
+    const startDate = new Date(range.start + "T00:00:00");
+    const endDate = new Date(range.end + "T23:59:59.999");
+    const invitesQ = query(collectionGroup(db, "examInvites"), where("createdAt", ">=", startDate), where("createdAt", "<=", endDate));
+    const [invitesSnap, resultsSnap] = await Promise.all([getDocs(invitesQ), getDocs(collectionGroup(db, "examResults"))]);
+
+    const resultMap = {};
+    resultsSnap.forEach((ds) => {
+      const companyId = ds.ref.parent.parent ? ds.ref.parent.parent.id : "";
+      resultMap[companyId + "/" + ds.id] = ds.data() || {};
+    });
+
+    let all = [];
+    invitesSnap.forEach((ds) => {
+      const companyId = ds.ref.parent.parent ? ds.ref.parent.parent.id : "";
+      const d = ds.data() || {};
+      const result = resultMap[companyId + "/" + ds.id] || null;
+      const parts = result && result.parts ? result.parts : {};
+      all.push({
+        companyId,
+        applicantName: d.applicantName || "",
+        applicantEmail: d.applicantEmail || "",
+        status: d.status || "not_started",
+        createdAt: d.createdAt,
+        createdAtSort: d.createdAt && d.createdAt.toDate ? d.createdAt.toDate().toISOString() : "",
+        startedAt: d.startedAt,
+        completedAt: d.completedAt,
+        typingScore: parts.typing && typeof parts.typing.score === "number" ? parts.typing.score : null,
+        readingScore: parts.reading && typeof parts.reading.score === "number" ? parts.reading.score : null,
+        logicalScore: parts.logical && typeof parts.logical.score === "number" ? parts.logical.score : null,
+        totalScore: result && typeof result.totalScore === "number" ? result.totalScore : null,
+      });
+    });
+    const companyFilter = $("companyFilter").value;
+    if (companyFilter !== "all") all = all.filter((r) => r.companyId === companyFilter);
+    rows = all;
+    render();
+    $("csvBtn").disabled = rows.length === 0;
+    setStatus("", "");
+  } catch (e) {
+    console.error(e);
+    let msg = "取得に失敗しました：" + (e.code || e.message || e);
+    if (e.code === "failed-precondition") msg += "\n\nFirestoreのコレクショングループ用インデックスが未作成の可能性があります。エラー詳細のリンクから作成してください。";
+    setStatus(msg, "error");
+    $("resultBody").innerHTML = '<tr><td colspan="11" class="empty">取得に失敗しました。</td></tr>';
+  } finally {
+    $("loadBtn").disabled = false;
+    hideLoading();
+  }
+}
+
+function csvCell(v) { v = String(v == null ? "" : v); return /[",\n\r]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
+function downloadCsv() {
+  const headers = ["企業名", "応募者氏名", "応募者メール", "状態", "招待発行日時", "開始日時", "完了日時", "タイピングスコア", "リーディングスコア", "ロジカルスコア", "総合スコア"];
+  const lines = [headers.map(csvCell).join(",")];
+  rows.forEach((r) => {
+    lines.push([
+      companyNameMap[r.companyId] || r.companyId, r.applicantName, r.applicantEmail, statusLabel(r.status),
+      fmtDateTime(r.createdAt), fmtDateTime(r.startedAt), fmtDateTime(r.completedAt),
+      r.typingScore == null ? "" : r.typingScore, r.readingScore == null ? "" : r.readingScore,
+      r.logicalScore == null ? "" : r.logicalScore, r.totalScore == null ? "" : r.totalScore,
+    ].map(csvCell).join(","));
+  });
+  const csv = "﻿" + lines.join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  const range = getDateRange();
+  const companyFilter = $("companyFilter").value;
+  a.href = url;
+  a.download = "biztes_operator_report_" + (companyFilter === "all" ? "all" : companyFilter) + "_" + range.start + "_" + range.end + ".csv";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+$("startDate").addEventListener("change", loadReport);
+$("endDate").addEventListener("change", loadReport);
+$("companyFilter").addEventListener("change", loadReport);
+$("loadBtn").addEventListener("click", loadReport);
+$("csvBtn").addEventListener("click", downloadCsv);
+
+onAuthStateChanged(auth, async (user) => {
+  if (!user) { location.href = "operator-login.html"; return; }
+  try {
+    const opSnap = await getDoc(doc(db, "operators", user.uid));
+    if (!opSnap.exists()) {
+      await signOut(auth);
+      location.href = "operator-login.html";
+      return;
+    }
+    const dr = defaultRange();
+    $("startDate").value = dr.start;
+    $("endDate").value = dr.end;
+    await loadCompanyOptions();
+    await loadReport();
+  } catch (e) {
+    console.error(e);
+    setStatus("読み込みに失敗しました。\n" + (e.message || e), "error");
+    hideLoading();
+  }
+});
+</script>
+</body>
+</html>
