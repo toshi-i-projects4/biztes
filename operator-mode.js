@@ -25,6 +25,11 @@
     const style = document.createElement("style");
     style.id = "biztesOperatorModeStyle";
     style.textContent = [
+      // ビズてすの各画面は、ボタン・タブ・見出しリンクの配色をすべて
+      // CSSカスタムプロパティ --blue / --blue-dark 経由で参照しているため、
+      // body に運営モード用クラスが付くと、この1行だけでページ全体が
+      // オレンジ基調（運営ページの色）に切り替わる。
+      "body.biztes-operator-mode{--blue:#f97316;--blue-dark:#ea580c;--orange:#f97316}",
       ".biztes-operator-banner{position:sticky;top:0;z-index:10000;background:linear-gradient(90deg,#f97316,#ea580c);color:#fff;padding:10px 20px;font-size:13px;font-weight:800;display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;justify-content:space-between;box-shadow:0 2px 10px rgba(0,0,0,.18)}",
       ".biztes-operator-banner .bo-left{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center}",
       ".biztes-operator-banner .bo-badge{background:rgba(255,255,255,.28);border-radius:999px;padding:3px 10px;font-size:11px;white-space:nowrap}",
@@ -35,6 +40,7 @@
 
   function ensureBannerEl() {
     injectStyle();
+    document.body.classList.add("biztes-operator-mode");
     const existing = document.getElementById("biztesOperatorBanner");
     if (existing) existing.remove();
     const banner = document.createElement("div");

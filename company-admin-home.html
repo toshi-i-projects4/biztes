@@ -11,6 +11,8 @@ body{margin:0;font-family:"Hiragino Maru Gothic ProN","BIZ UDPGothic","Yu Gothic
 .header{background:#fff;border-bottom:1px solid var(--line);padding:16px 24px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
 .header h1{font-size:18px;margin:0;color:var(--blue-dark)}
 .header .userbox{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:12px}
+.header .userbox a{color:var(--blue-dark);font-weight:800;text-decoration:none;font-size:13px}
+.header .userbox a:hover{text-decoration:underline}
 .header button{background:#111827;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:12px;cursor:pointer}
 .wrap{max-width:880px;margin:28px auto;padding:0 20px}
 .panel{background:#fff;border:1px solid var(--line);border-radius:18px;padding:24px;margin-bottom:22px;box-shadow:0 4px 14px rgba(15,23,42,.04)}
@@ -31,7 +33,7 @@ a.link-card .sub{display:block;font-weight:400;color:var(--muted);font-size:12px
 <body>
 <div class="header">
   <h1>ビズてす 企業管理者ホーム</h1>
-  <div class="userbox"><span id="adminEmail"></span><button id="logoutBtn">ログアウト</button></div>
+  <div class="userbox"><a class="link-btn" href="operator-home.html" id="toOperatorLink" style="display:none;margin-right:6px">運営管理ページへ →</a><span id="adminEmail"></span><button id="logoutBtn">ログアウト</button></div>
 </div>
 
 <div class="wrap">
@@ -56,21 +58,31 @@ let myCompanyId = "";
 onAuthStateChanged(auth, async (user) => {
   if (!user) { location.href = "operator-login.html"; return; }
 
-  const opSnap = await getDoc(doc(db, "operators", user.uid));
-  if (opSnap.exists()) { location.href = "operator-home.html"; return; }
-
   const caSnap = await getDoc(doc(db, "companyAdmins", user.uid));
-  if (!caSnap.exists() || caSnap.data().status !== "active") {
-    alert("この画面は企業管理者アカウントでのログインが必要です。管理者にお問い合わせください。");
-    await signOut(auth);
-    location.href = "operator-login.html";
+  if (caSnap.exists() && caSnap.data().status === "active") {
+    // 企業管理者としてこの画面にとどまる。
+    // 運営（オペレーター）権限も併せ持つアカウントの場合は、運営管理ページへの導線を出す
+    // （ビズもんと同様、ログイン直後は企業管理ページを優先し、そこから運営管理ページへ移動する）。
+    document.getElementById("adminEmail").textContent = user.email;
+    myCompanyId = caSnap.data().companyId;
+
+    const opSnap = await getDoc(doc(db, "operators", user.uid));
+    if (opSnap.exists()) {
+      document.getElementById("toOperatorLink").style.display = "inline";
+    }
+
+    await loadCompany();
+    renderLinks();
     return;
   }
 
-  document.getElementById("adminEmail").textContent = user.email;
-  myCompanyId = caSnap.data().companyId;
-  await loadCompany();
-  renderLinks();
+  // 企業管理者としての登録がない場合、運営者アカウントであれば運営ホームへ案内する
+  const opSnapOnly = await getDoc(doc(db, "operators", user.uid));
+  if (opSnapOnly.exists()) { location.href = "operator-home.html"; return; }
+
+  alert("この画面は企業管理者アカウントでのログインが必要です。管理者にお問い合わせください。");
+  await signOut(auth);
+  location.href = "operator-login.html";
 });
 
 document.getElementById("logoutBtn").addEventListener("click", async () => {

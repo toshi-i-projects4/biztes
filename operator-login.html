@@ -62,15 +62,17 @@ form.addEventListener("submit", async (e) => {
   try {
     const cred = await signInWithEmailAndPassword(auth, email, password);
 
-    const opSnap = await getDoc(doc(db, "operators", cred.user.uid));
-    if (opSnap.exists()) {
-      location.href = "operator-home.html";
-      return;
-    }
-
+    // 企業管理者権限を優先する：運営権限も併せ持つアカウントの場合、
+    // まず企業管理ページに入り、そこから運営管理ページへ移動する動線にする。
     const caSnap = await getDoc(doc(db, "companyAdmins", cred.user.uid));
     if (caSnap.exists() && caSnap.data().status === "active") {
       location.href = "company-admin-home.html";
+      return;
+    }
+
+    const opSnap = await getDoc(doc(db, "operators", cred.user.uid));
+    if (opSnap.exists()) {
+      location.href = "operator-home.html";
       return;
     }
 

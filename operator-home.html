@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ビズてす 運営ホーム</title>
 <style>
-:root{--blue:#2563eb;--blue-dark:#1d4ed8;--navy:#0f172a;--line:#e5e7eb;--bg:#f5f7fb;--muted:#64748b}
+:root{--blue:#f97316;--blue-dark:#ea580c;--navy:#0f172a;--line:#fed7aa;--bg:#fff7ed;--muted:#64748b}
 *{box-sizing:border-box}
 body{margin:0;font-family:"Hiragino Maru Gothic ProN","BIZ UDPGothic","Yu Gothic UI","Meiryo",sans-serif;background:var(--bg);color:#111827}
 .header{background:#fff;border-bottom:1px solid var(--line);padding:16px 24px;display:flex;justify-content:space-between;align-items:center}
@@ -38,7 +38,7 @@ button.primary:hover{background:var(--blue-dark)}
 <body>
 <div class="header">
   <h1>ビズてす 運営ホーム</h1>
-  <div class="userbox"><a class="link-btn" href="operator-invites.html" style="margin-right:6px">受験招待・結果一覧 →</a><span id="opEmail"></span><button id="logoutBtn">ログアウト</button></div>
+  <div class="userbox"><a class="link-btn" href="company-admin-home.html" id="toCompanyAdminLink" style="display:none;margin-right:6px">企業管理ページへ →</a><a class="link-btn" href="operator-invites.html" style="margin-right:6px">受験招待・結果一覧 →</a><span id="opEmail"></span><button id="logoutBtn">ログアウト</button></div>
 </div>
 
 <div class="wrap">
@@ -82,6 +82,13 @@ onAuthStateChanged(auth, async (user) => {
   const opSnap = await getDoc(doc(db, "operators", user.uid));
   if (!opSnap.exists()) { await signOut(auth); location.href = "operator-login.html"; return; }
   document.getElementById("opEmail").textContent = user.email;
+
+  // 運営権限に加えて企業管理者権限も持つアカウントの場合、企業管理ページへの導線を出す
+  const caSnap = await getDoc(doc(db, "companyAdmins", user.uid));
+  if (caSnap.exists() && caSnap.data().status === "active") {
+    document.getElementById("toCompanyAdminLink").style.display = "inline";
+  }
+
   watchCompanies();
 });
 
