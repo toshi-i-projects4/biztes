@@ -1,20 +1,37 @@
 rules_version = '2';
 
-// ビズてす専用 Firestore セキュリティルール（v1ドラフト）
+// ビズてす専用 Firestore セキュリティルール（v2：企業管理者ロール追加版）
 //
 // 前提:
 // - オペレーター（ビズてす運営者）は Firebase Auth のメール/パスワードでログインし、
-//   operators/{uid} ドキュメントが存在することで判定する。
+//   operators/{uid} ドキュメントが存在することで判定する。全企業のデータを横断して
+//   閲覧・操作できる（企業の新規登録・停止もオペレーターのみ）。
+// - 企業管理者（応募企業側の担当者）も同じく Firebase Auth のメール/パスワードで
+//   ログインし、companyAdmins/{uid} ドキュメントが存在し status が "active" で
+//   あることで判定する。companyAdmins/{uid}.companyId に一致する自社の範囲でのみ、
+//   問題編集・受験招待発行・受験結果確認・自社の追加管理者の招待ができる。
+//   1社に複数の企業管理者アカウントを持たせることができる。
+// - 企業管理者アカウントは、オペレーターまたは既存の企業管理者が
+//   pendingCompanyAdmins/{email} に招待レコードを作成し、招待された本人が
+//   company-admin-signup.html でパスワードを設定して本登録（セルフサインアップ）する。
+// - オペレーターアカウントも同様に、既存のオペレーターが pendingOperators/{email} に
+//   招待レコードを作成し、招待された本人が operator-signup.html でパスワードを設定して
+//   本登録する（scripts/create-operator.mjs による作成は、最初の1名を用意する場合のみ使用）。
+//   また、既に企業管理者として登録済みのアカウントに運営権限だけを追加で付与すること、
+//   その逆に運営権限だけを解除すること（企業管理者としての登録は維持）もできる。
 // - 応募者（受験者）は Firebase Anonymous Auth でサインインし、
 //   companies/{companyId}/examInvites/{token} の招待トークンを知っていることを前提に受験する。
 //
-// 既知の制約（v1時点であえて厳密にしていない箇所）:
+// 既知の制約（v1時点であえて厳密にしていない箇所、v2でも維持）:
 // - questionSets / items は「サインイン済みであれば companyId が分かれば読める」設計にしている。
 //   応募者は受験中に自社の問題を読めればよく、他社の問題も理論上読める状態になる
 //   （companyIdは推測困難ではないため）。問題文自体は機密性が極めて高い情報ではない想定で
 //   割り切っているが、将来的にはCloud Functions経由でトークン検証してから問題を配信する方式へ
 //   強化することを推奨する。
 // - examInvites / examResults は token（ドキュメントID）を知らなければ辿り着けない前提。
+// - companies/{companyId} 自体の get は、応募者の受験導線（企業名表示など）を壊さないため、
+//   引き続き「サインイン済みであれば誰でも閲覧可」の広い設定を維持する。企業の新規登録・
+//   状態変更（write）はオペレーターのみに限定している。
 
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -23,17 +40,228 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    // ---- オペレーター（運営者）判定 ----
     function isOperator() {
       return isSignedIn() &&
         exists(/databases/$(database)/documents/operators/$(request.auth.uid));
     }
 
+    // ---- 企業管理者判定 ----
+    function hasCompanyAdminDoc() {
+      return isSignedIn() &&
+        exists(/databases/$(database)/documents/companyAdmins/$(request.auth.uid));
+    }
+    function myCompanyAdmin() {
+      return get(/databases/$(database)/documents/companyAdmins/$(request.auth.uid)).data;
+    }
+    function isCompanyAdmin() {
+      return hasCompanyAdminDoc() && myCompanyAdmin().status == "active";
+    }
+    function myCompanyId() {
+      return myCompanyAdmin().companyId;
+    }
+    // 指定した companyId が、自分（企業管理者）の所属企業と一致するか
+    function sameCompany(companyId) {
+      return isCompanyAdmin() && myCompanyId() == companyId;
+    }
+
+    // ---- pendingCompanyAdmins（企業管理者の招待） ----
+    function isOwnPendingCompanyAdmin(pendingEmail) {
+      return isSignedIn() && request.auth.token.email == pendingEmail;
+    }
+    function pendingCompanyAdmin(email) {
+      return get(/databases/$(database)/documents/pendingCompanyAdmins/$(email)).data;
+    }
+    function pendingCompanyAdminExists(email) {
+      return exists(/databases/$(database)/documents/pendingCompanyAdmins/$(email));
+    }
+    // 招待された本人が company-admin-signup.html で本登録する際の書き込み検証
+    function canCreateOwnCompanyAdminFromPending(uid) {
+      return isSignedIn()
+        && request.auth.uid == uid
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.email == request.auth.token.email
+        && pendingCompanyAdminExists(request.resource.data.email)
+        && pendingCompanyAdmin(request.resource.data.email).email == request.auth.token.email
+        && pendingCompanyAdmin(request.resource.data.email).status == "pending"
+        && request.resource.data.companyId == pendingCompanyAdmin(request.resource.data.email).companyId
+        && request.resource.data.name == pendingCompanyAdmin(request.resource.data.email).name
+        && request.resource.data.status == "active"
+        && request.resource.data.keys().hasOnly([
+          "uid", "name", "email", "companyId", "status", "note",
+          "createdAt", "createdBy", "updatedAt", "updatedBy"
+        ]);
+    }
+
+    // ---- pendingOperators（運営専任メンバーの招待） ----
+    function isOwnPendingOperator(pendingEmail) {
+      return isSignedIn() && request.auth.token.email == pendingEmail;
+    }
+    function pendingOperator(email) {
+      return get(/databases/$(database)/documents/pendingOperators/$(email)).data;
+    }
+    function pendingOperatorExists(email) {
+      return exists(/databases/$(database)/documents/pendingOperators/$(email));
+    }
+    // 招待された本人が operator-signup.html で本登録する際の書き込み検証
+    // （企業に属さない運営専任メンバーの新規登録）
+    function canCreateOwnOperatorFromPending(uid) {
+      return isSignedIn()
+        && request.auth.uid == uid
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.email == request.auth.token.email
+        && pendingOperatorExists(request.resource.data.email)
+        && pendingOperator(request.resource.data.email).email == request.auth.token.email
+        && pendingOperator(request.resource.data.email).status == "pending"
+        && request.resource.data.name == pendingOperator(request.resource.data.email).name
+        && request.resource.data.role == "operator"
+        && request.resource.data.keys().hasOnly([
+          "uid", "name", "email", "role", "createdAt", "createdBy"
+        ]);
+    }
+    // 既存の企業管理者アカウントに、運営権限だけを追加で付与する
+    // （operator-invite.html の「①」）。companyAdmins側の登録はそのまま維持され、
+    // 対象uidにoperators/{uid}ドキュメントが新たに作られることで運営権限を持つ。
+    function canGrantOperatorToExistingCompanyAdmin(uid) {
+      return isOperator()
+        && request.auth.uid != uid
+        && exists(/databases/$(database)/documents/companyAdmins/$(uid))
+        && get(/databases/$(database)/documents/companyAdmins/$(uid)).data.email == request.resource.data.email
+        && request.resource.data.uid == uid
+        && request.resource.data.name is string
+        && request.resource.data.email is string
+        && request.resource.data.role == "operator"
+        && request.resource.data.keys().hasOnly([
+          "uid", "name", "email", "role", "createdAt", "createdBy"
+        ]);
+    }
+
     // ---- オペレーターアカウント ----
     match /operators/{uid} {
-      allow get: if isSignedIn() && request.auth.uid == uid;
-      allow list: if false;
-      // 運営アカウントの作成・変更はFirebase Admin SDK / コンソールからのみ行う想定
-      allow write: if false;
+      // 本人に加えて、他のオペレーターも一覧・招待管理画面のために閲覧できる
+      allow get: if isSignedIn() && (request.auth.uid == uid || isOperator());
+      allow list: if isOperator();
+      // 新規オペレーター専任メンバーのセルフサインアップ、または
+      // オペレーターによる既存企業管理者への運営権限付与のいずれか
+      allow create: if canCreateOwnOperatorFromPending(uid) || canGrantOperatorToExistingCompanyAdmin(uid);
+      allow update: if false;
+      // 運営権限の解除＝ドキュメント削除。自分自身は解除できない（誤操作防止）。
+      allow delete: if isOperator() && request.auth.uid != uid;
+    }
+
+    // ---- 運営専任メンバーの招待（pending） ----
+    match /pendingOperators/{email} {
+      allow read: if isOperator() ||
+        (isOwnPendingOperator(email) && resource.data.email == request.auth.token.email);
+      allow create: if isOperator()
+        && request.resource.data.email == email
+        && request.resource.data.status == "pending"
+        && request.resource.data.keys().hasOnly([
+          "email", "name", "note", "status",
+          "createdAt", "createdBy", "updatedAt", "updatedBy",
+          "registeredAt", "registeredUid"
+        ]);
+      allow update: if
+        (
+          isOperator()
+          && request.resource.data.email == resource.data.email
+          && request.resource.data.status in ["pending", "registered", "cancelled"]
+        )
+        ||
+        (
+          isOwnPendingOperator(email)
+          && resource.data.email == request.auth.token.email
+          && resource.data.status == "pending"
+          && request.resource.data.email == resource.data.email
+          && request.resource.data.name == resource.data.name
+          && request.resource.data.status == "registered"
+          && request.resource.data.registeredUid == request.auth.uid
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            "status", "registeredAt", "registeredUid", "updatedAt", "updatedBy"
+          ])
+        );
+      allow delete: if false;
+    }
+
+    // ---- 企業管理者アカウント ----
+    match /companyAdmins/{uid} {
+      allow get: if isSignedIn() &&
+        (request.auth.uid == uid || isOperator() ||
+          (isCompanyAdmin() && resource.data.companyId == myCompanyId()));
+      // list はクエリ結果の各ドキュメントに対してこのルールが評価されるため、
+      // 自社の companyId で絞り込んだクエリのみが実質的に許可される。
+      allow list: if isOperator() ||
+        (isCompanyAdmin() && resource.data.companyId == myCompanyId());
+      // オペレーターは任意企業の管理者アカウントを直接作成できる。
+      // 企業管理者本人によるセルフサインアップは canCreateOwnCompanyAdminFromPending() 経由。
+      allow create: if isOperator() || canCreateOwnCompanyAdminFromPending(uid);
+      // status（有効/無効）の切り替えのみ許可。companyId・email等の付け替えは不可。
+      // 企業管理者は、同じ企業の「他の」管理者のstatusは変更できるが、自分自身は不可
+      // （誤って自分の権限を剥奪することを防止）。
+      allow update: if isOperator() ||
+        (
+          isCompanyAdmin()
+          && request.auth.uid != uid
+          && resource.data.companyId == myCompanyId()
+          && request.resource.data.companyId == myCompanyId()
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            "status", "updatedAt", "updatedBy"
+          ])
+        );
+      // アカウントの完全削除は行わず、statusの無効化のみを運用とする。
+      allow delete: if false;
+    }
+
+    // ---- 企業管理者の招待（pending） ----
+    match /pendingCompanyAdmins/{email} {
+      allow read: if isOperator() ||
+        (isCompanyAdmin() && resource.data.companyId == myCompanyId()) ||
+        (isOwnPendingCompanyAdmin(email) && resource.data.email == request.auth.token.email);
+      allow create: if
+        (
+          isOperator()
+          && request.resource.data.email == email
+          && request.resource.data.status == "pending"
+          && request.resource.data.keys().hasOnly([
+            "email", "name", "companyId", "companyName", "note", "status",
+            "createdAt", "createdBy", "updatedAt", "updatedBy",
+            "registeredAt", "registeredUid"
+          ])
+        )
+        ||
+        (
+          isCompanyAdmin()
+          && request.resource.data.email == email
+          && request.resource.data.status == "pending"
+          && request.resource.data.companyId == myCompanyId()
+          && request.resource.data.keys().hasOnly([
+            "email", "name", "companyId", "companyName", "note", "status",
+            "createdAt", "createdBy", "updatedAt", "updatedBy",
+            "registeredAt", "registeredUid"
+          ])
+        );
+      allow update: if
+        (
+          (isOperator() || (isCompanyAdmin() && resource.data.companyId == myCompanyId()))
+          && request.resource.data.email == resource.data.email
+          && request.resource.data.companyId == resource.data.companyId
+          && request.resource.data.status in ["pending", "registered", "cancelled"]
+        )
+        ||
+        (
+          isOwnPendingCompanyAdmin(email)
+          && resource.data.email == request.auth.token.email
+          && resource.data.status == "pending"
+          && request.resource.data.email == resource.data.email
+          && request.resource.data.companyId == resource.data.companyId
+          && request.resource.data.name == resource.data.name
+          && request.resource.data.status == "registered"
+          && request.resource.data.registeredUid == request.auth.uid
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            "status", "registeredAt", "registeredUid", "updatedAt", "updatedBy"
+          ])
+        );
+      allow delete: if false;
     }
 
     // ---- デフォルト問題テンプレート（オペレーターのみ） ----
@@ -49,31 +277,33 @@ service cloud.firestore {
     match /companies/{companyId} {
       allow get: if isOperator() || isSignedIn();
       allow list: if isOperator();
+      // 企業の新規登録・状態変更（有効/停止など）はオペレーターのみ。
       allow write: if isOperator();
 
       // ---- 出題セット（パート単位の設定） ----
       match /questionSets/{partId} {
         allow get, list: if isOperator() || isSignedIn();
-        allow write: if isOperator();
+        allow write: if isOperator() || sameCompany(companyId);
 
         // ---- 個別の問題（練習/本番） ----
         match /items/{itemId} {
           allow get, list: if isOperator() || isSignedIn();
-          allow write: if isOperator();
+          allow write: if isOperator() || sameCompany(companyId);
         }
       }
 
       // ---- 受験招待 ----
       match /examInvites/{token} {
-        // オペレーターは全件、応募者は「自分が開始した招待」または「まだ誰も開始していない招待」のみ読める
-        allow get: if isOperator() ||
+        // オペレーター・自社の企業管理者は全件、応募者は「自分が開始した招待」
+        // または「まだ誰も開始していない招待」のみ読める
+        allow get: if isOperator() || sameCompany(companyId) ||
           (isSignedIn() &&
             (resource.data.anonUid == request.auth.uid || resource.data.status == "not_started"));
-        allow list: if isOperator();
-        allow create, delete: if isOperator();
+        allow list: if isOperator() || sameCompany(companyId);
+        allow create, delete: if isOperator() || sameCompany(companyId);
 
         // 応募者が受験開始する瞬間だけ、自分のUIDを紐付ける更新を許可する
-        allow update: if isOperator() || (
+        allow update: if isOperator() || sameCompany(companyId) || (
           isSignedIn() &&
           resource.data.status == "not_started" &&
           request.resource.data.anonUid == request.auth.uid &&
@@ -85,11 +315,11 @@ service cloud.firestore {
 
       // ---- 受験結果 ----
       match /examResults/{token} {
-        allow get, list: if isOperator();
+        allow get, list: if isOperator() || sameCompany(companyId);
         // 応募者は、自分が開始した招待に紐づく結果を「1回だけ」作成できる（更新・削除は不可）
         allow create: if isSignedIn() &&
           get(/databases/$(database)/documents/companies/$(companyId)/examInvites/$(token)).data.anonUid == request.auth.uid;
-        allow update, delete: if isOperator();
+        allow update, delete: if isOperator() || sameCompany(companyId);
       }
     }
   }

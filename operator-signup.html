@@ -3,46 +3,49 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>企業管理者 初回登録｜ビズてす</title>
+<title>運営メンバー 初回登録｜ビズてす</title>
 <style>
-body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:"Hiragino Maru Gothic ProN","BIZ UDPGothic","Yu Gothic UI","Meiryo",sans-serif;background:#eef2f7;color:#111827;padding:20px;box-sizing:border-box}
-.card{width:100%;max-width:560px;background:#fff;border-radius:18px;box-shadow:0 6px 18px rgba(0,0,0,.10);padding:34px;box-sizing:border-box}
+body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:"Hiragino Maru Gothic ProN","BIZ UDPGothic","Yu Gothic UI","Meiryo",sans-serif;background:#fff7ed;color:#111827;padding:20px;box-sizing:border-box}
+.card{width:100%;max-width:560px;background:#fff;border-radius:18px;box-shadow:0 6px 18px rgba(0,0,0,.10);padding:34px;box-sizing:border-box;border:1px solid #fed7aa}
 h1{margin:0 0 10px;text-align:center;font-size:26px;color:#111827}
+.badge-op{display:block;text-align:center;margin:0 0 18px}
+.badge-op span{background:#ffedd5;color:#9a3412;font-weight:bold;font-size:12px;border-radius:999px;padding:4px 12px}
 .lead{margin:0 0 22px;text-align:center;color:#6b7280;font-size:14px;line-height:1.7}
 .field-label{display:block;margin:16px 0 8px;font-size:14px;font-weight:bold;color:#374151}
 .text-input{width:100%;height:46px;padding:0 12px;border:1px solid #d1d5db;border-radius:10px;box-sizing:border-box;font-size:15px;outline:none;background:#fff}
-.text-input:focus{border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.15)}
+.text-input:focus{border-color:#f97316;box-shadow:0 0 0 3px rgba(249,115,22,.15)}
 .password-wrap{position:relative}
 .password-wrap .text-input{padding-right:48px}
 .password-toggle{position:absolute;right:10px;top:50%;transform:translateY(-50%);width:34px;height:34px;border:none;border-radius:8px;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#6b7280;padding:0}
 .password-toggle:hover{background:#f3f4f6;color:#111827}
 .password-toggle svg{width:22px;height:22px;display:block}
-.policy-box{background:#eff6ff;border-left:4px solid #2563eb;border-radius:10px;padding:14px 16px;color:#1e3a8a;font-size:14px;line-height:1.7;margin:18px 0;white-space:pre-wrap}
+.policy-box{background:#fff7ed;border-left:4px solid #f97316;border-radius:10px;padding:14px 16px;color:#7c2d12;font-size:14px;line-height:1.7;margin:18px 0;white-space:pre-wrap}
 .warning-box{background:#fffbeb;border-left:4px solid #f59e0b;border-radius:10px;padding:12px 14px;color:#92400e;font-size:13px;line-height:1.7;margin:16px 0;white-space:pre-wrap}
 .count{font-size:13px;margin-top:6px;color:#6b7280}
-.primary-btn{width:100%;margin-top:22px;height:48px;border:none;border-radius:12px;background:#2563eb;color:#fff;font-size:16px;font-weight:bold;cursor:pointer}
-.primary-btn:hover{background:#1d4ed8}
+.primary-btn{width:100%;margin-top:22px;height:48px;border:none;border-radius:12px;background:#f97316;color:#fff;font-size:16px;font-weight:bold;cursor:pointer}
+.primary-btn:hover{background:#ea580c}
 .primary-btn:disabled{opacity:.65;cursor:not-allowed}
 .status-message{min-height:22px;margin-top:16px;font-size:14px;line-height:1.6;white-space:pre-wrap;text-align:left;word-break:break-word}
 .status-message.error{color:#dc2626}
 .status-message.ok{color:#166534}
 .status-message.note{color:#374151}
 .link-row{text-align:center;margin-top:20px}
-.link-row a{color:#2563eb;text-decoration:none;font-size:14px;font-weight:bold}
+.link-row a{color:#c2410c;text-decoration:none;font-size:14px;font-weight:bold}
 .link-row a:hover{text-decoration:underline}
 .small{font-size:12px;color:#6b7280;line-height:1.6;margin-top:8px}
 </style>
 </head>
 <body>
 <div class="card">
-  <h1>企業管理者 初回登録</h1>
-  <p class="lead">運営またはすでに登録済みの企業管理者から案内されたメールアドレスで、ビズてすの企業管理者としての利用を開始します。</p>
+  <h1>運営メンバー 初回登録</h1>
+  <div class="badge-op"><span>運営（オペレーター）モード</span></div>
+  <p class="lead">運営から案内されたメールアドレスで、ビズてすの運営（オペレーター）としての利用を開始します。</p>
 
   <div id="passwordPolicy" class="policy-box"></div>
 
   <label class="field-label" for="email">メールアドレス</label>
-  <input id="email" class="text-input" type="email" autocomplete="email" placeholder="招待されたメールアドレスを入力">
-  <div class="small">招待されたメールアドレスと一致している必要があります。</div>
+  <input id="email" class="text-input" type="email" autocomplete="email" placeholder="運営に登録されたメールアドレスを入力">
+  <div class="small">運営が招待登録したメールアドレスと一致している必要があります。</div>
 
   <label class="field-label" for="password">パスワード</label>
   <div class="password-wrap">
@@ -61,7 +64,7 @@ h1{margin:0 0 10px;text-align:center;font-size:26px;color:#111827}
     </button>
   </div>
 
-  <div class="warning-box">初回登録の対象として招待されていないメールアドレスでは登録できません。既に登録済みの場合はログイン画面からログインしてください。</div>
+  <div class="warning-box">運営専任メンバーとして招待登録されていないメールアドレスでは登録できません。既に企業管理者として登録済みの方に運営権限を追加する場合は、運営担当者が「運営メンバーの招待・管理」画面から直接付与しますので、この画面からの登録は不要です。</div>
 
   <button type="button" id="signupBtn" class="primary-btn">初回登録する</button>
   <div id="statusMessage" class="status-message note"></div>
@@ -110,28 +113,24 @@ function updatePasswordCount() {
   applyPasswordCountStyle(passwordCountEl, status);
 }
 
-async function getPendingCompanyAdmin(email) {
-  const snap = await getDoc(doc(db, "pendingCompanyAdmins", email));
+async function getPendingOperator(email) {
+  const snap = await getDoc(doc(db, "pendingOperators", email));
   if (!snap.exists()) return null;
   return snap.data() || null;
 }
 
-async function createCompanyAdminFromPending(user, pending, email) {
+async function createOperatorFromPending(user, pending, email) {
   const data = {
     uid: user.uid,
     name: pending.name || "",
     email: email,
-    companyId: pending.companyId || "",
-    status: "active",
-    note: pending.note || "",
+    role: "operator",
     createdAt: serverTimestamp(),
     createdBy: user.uid,
-    updatedAt: serverTimestamp(),
-    updatedBy: user.uid,
   };
   const batch = writeBatch(db);
-  batch.set(doc(db, "companyAdmins", user.uid), data);
-  batch.update(doc(db, "pendingCompanyAdmins", email), {
+  batch.set(doc(db, "operators", user.uid), data);
+  batch.update(doc(db, "pendingOperators", email), {
     status: "registered",
     registeredAt: serverTimestamp(),
     registeredUid: user.uid,
@@ -171,24 +170,24 @@ async function signup() {
     signupBtn.textContent = "招待情報確認中...";
     let pending;
     try {
-      pending = await getPendingCompanyAdmin(email);
+      pending = await getPendingOperator(email);
     } catch (pendingError) {
       console.error(pendingError);
       await cleanupOrphanAccount(user);
-      setStatus("招待情報の確認に失敗しました。招待元にご確認ください。\n\nエラー：" + (pendingError.message || pendingError), "error");
+      setStatus("招待情報の確認に失敗しました。運営担当者に確認してください。\n\nエラー：" + (pendingError.message || pendingError), "error");
       return;
     }
-    if (!pending) { await cleanupOrphanAccount(user); setStatus("このメールアドレスは初回登録対象として招待されていません。招待元にご確認ください。", "error"); return; }
+    if (!pending) { await cleanupOrphanAccount(user); setStatus("このメールアドレスは運営メンバーの初回登録対象として登録されていません。運営担当者に確認してください。", "error"); return; }
     if (pending.status !== "pending") { await cleanupOrphanAccount(user); setStatus("このメールアドレスは初回登録待ちの状態ではありません（現在の状態：" + (pending.status || "未設定") + "）。\n既に登録済みの場合はログイン画面からログインしてください。", "error"); return; }
-    if ((pending.email || "").toLowerCase() !== email) { await cleanupOrphanAccount(user); setStatus("招待情報のメールアドレスが一致しません。招待元にご確認ください。", "error"); return; }
+    if ((pending.email || "").toLowerCase() !== email) { await cleanupOrphanAccount(user); setStatus("招待情報のメールアドレスが一致しません。運営担当者に確認してください。", "error"); return; }
 
-    signupBtn.textContent = "アカウント情報登録中...";
+    signupBtn.textContent = "運営情報登録中...";
     try {
-      await createCompanyAdminFromPending(user, pending, email);
+      await createOperatorFromPending(user, pending, email);
     } catch (createError) {
       console.error(createError);
       await cleanupOrphanAccount(user);
-      setStatus("アカウント情報の登録に失敗しました。時間をおいて再度お試しください。\n\nエラー：" + (createError.message || createError), "error");
+      setStatus("運営情報の登録に失敗しました。時間をおいて再度お試しください。\n\nエラー：" + (createError.message || createError), "error");
       return;
     }
 
@@ -203,7 +202,7 @@ async function signup() {
     if (code === "auth/email-already-in-use") message = "このメールアドレスは既に認証登録されています。ログイン画面からログインしてください。ログインできない場合は、パスワード再設定を行ってください。";
     if (code === "auth/invalid-email") message = "メールアドレスの形式が正しくありません。";
     if (code === "auth/weak-password") message = "パスワードが弱すぎます。15文字以上のパスフレーズを設定してください。";
-    if (code === "permission-denied") message = "登録情報の保存権限がありません。招待元にご連絡ください。";
+    if (code === "permission-denied") message = "登録情報の保存権限がありません。運営担当者に連絡してください。";
     setStatus(message + "\n\nエラーコード：" + code, "error");
   } finally {
     signupBtn.disabled = false;

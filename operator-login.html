@@ -7,18 +7,29 @@
 <style>
 :root{--blue:#2563eb;--blue-dark:#1d4ed8;--navy:#0f172a;--line:#e5e7eb;--bg:#f5f7fb}
 *{box-sizing:border-box}
-body{margin:0;font-family:"Hiragino Maru Gothic ProN","BIZ UDPGothic","Yu Gothic UI","Meiryo",sans-serif;background:var(--bg);color:#111827;display:flex;align-items:center;justify-content:center;min-height:100vh}
-.card{background:#fff;border-radius:20px;box-shadow:0 10px 30px rgba(15,23,42,.08);padding:36px;width:100%;max-width:380px}
+body{margin:0;font-family:"Hiragino Maru Gothic ProN","BIZ UDPGothic","Yu Gothic UI","Meiryo",sans-serif;background:var(--bg);color:#111827;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+.card{background:#fff;border-radius:20px;box-shadow:0 10px 30px rgba(15,23,42,.08);padding:36px;width:100%;max-width:400px}
 h1{font-size:20px;color:var(--navy);margin:0 0 4px}
 .sub{font-size:13px;color:#64748b;margin-bottom:24px}
 label{display:block;font-size:13px;font-weight:800;color:var(--navy);margin-bottom:6px}
-input{width:100%;border:1px solid #d1d5db;border-radius:10px;padding:11px 12px;font-size:14px;margin-bottom:16px;font-family:inherit}
-input:focus{outline:2px solid #bfdbfe}
+.text-input{width:100%;height:46px;border:1px solid #d1d5db;border-radius:10px;padding:0 12px;font-size:14px;margin-bottom:16px;font-family:inherit;box-sizing:border-box}
+.text-input:focus{outline:2px solid #bfdbfe}
+.password-wrap{position:relative}
+.password-wrap .text-input{padding-right:48px}
+.password-toggle{position:absolute;right:6px;top:9px;width:34px;height:34px;border:none;border-radius:8px;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#6b7280;padding:0}
+.password-toggle:hover{background:#f3f4f6;color:#111827}
+.password-toggle svg{width:20px;height:20px;display:block}
 button{width:100%;background:var(--blue);color:#fff;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:800;cursor:pointer}
 button:hover{background:var(--blue-dark)}
-.msg{font-size:13px;border-radius:10px;padding:10px 12px;margin-bottom:16px;display:none}
+.msg{font-size:13px;border-radius:10px;padding:10px 12px;margin-bottom:16px;display:none;white-space:pre-wrap;line-height:1.6}
 .msg.show{display:block}
 .msg.error{background:#fef2f2;color:#dc2626;border:1px solid #fecaca}
+.msg.ok{background:#f0fdf4;color:#166534;border:1px solid #bbf7d0}
+.msg.note{background:#f8fafc;color:#374151;border:1px solid var(--line)}
+.forgot-row{margin-top:14px;text-align:center}
+.forgot-link{border:none;background:transparent;color:var(--blue);font-size:13px;font-weight:800;cursor:pointer;text-decoration:underline;padding:4px}
+.forgot-link:hover{color:var(--blue-dark)}
+.note-box{margin-top:16px;background:#f9fafb;border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:12px;color:#6b7280;line-height:1.7}
 .footer-note{margin-top:18px;font-size:12px;color:#94a3b8;text-align:center}
 .link-row{margin-top:14px;text-align:center}
 .link-row a{color:var(--blue);text-decoration:none;font-size:13px;font-weight:800}
@@ -29,36 +40,78 @@ button:hover{background:var(--blue-dark)}
 <div class="card">
   <h1>ビズてす ログイン</h1>
   <div class="sub">運営（オペレーター）と企業管理者、共通のログイン画面です。</div>
-  <div id="msg" class="msg error"></div>
+  <div id="msg" class="msg"></div>
   <form id="loginForm">
     <label for="email">メールアドレス</label>
-    <input id="email" type="email" required autocomplete="username">
+    <input id="email" class="text-input" type="email" required autocomplete="username">
     <label for="password">パスワード</label>
-    <input id="password" type="password" required autocomplete="current-password">
+    <div class="password-wrap">
+      <input id="password" class="text-input" type="password" required autocomplete="current-password">
+      <button type="button" id="togglePassword" class="password-toggle" aria-label="パスワードを表示" title="パスワードを表示">
+        <svg id="eyeOpenIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"></path>
+          <circle cx="12" cy="12" r="3"></circle>
+        </svg>
+        <svg id="eyeClosedIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:none">
+          <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20C5 20 1 12 1 12a21.8 21.8 0 0 1 5.06-5.94"></path>
+          <path d="M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a21.8 21.8 0 0 1-3.22 4.31"></path>
+          <path d="M14.12 14.12A3 3 0 0 1 9.88 9.88"></path>
+          <path d="M1 1l22 22"></path>
+        </svg>
+      </button>
+    </div>
     <button type="submit">ログイン</button>
   </form>
+
+  <div class="forgot-row"><button type="button" id="forgotPasswordBtn" class="forgot-link">パスワードを忘れた場合</button></div>
+
+  <div class="note-box">
+    パスワードを忘れた場合は、メールアドレスを入力してから「パスワードを忘れた場合」を押してください。<br>
+    パスワード再設定メールは @biztes-660ed.firebaseapp.com から送信されます。<br>
+    再設定時は、15文字以上・最大128文字のパスワードを設定してください。<br>
+    単語をつなげた「パスフレーズ」を推奨しています。<br>
+    ※英大文字・小文字・数字・記号の組み合わせは必須ではありません。<br>
+    ※再設定メールが複数ある場合は、一番新しいメールのリンクだけを使用してください。
+  </div>
+
   <div class="link-row"><a href="company-admin-signup.html">企業管理者として招待された方はこちら（初回登録）</a></div>
   <div class="footer-note">このアカウントは、事前に発行された運営者アカウントまたは企業管理者アカウントのみ利用できます。</div>
 </div>
 
 <script type="module">
 import { auth, db } from "./firebase-config.js";
-import { signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { signInWithEmailAndPassword, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const form = document.getElementById("loginForm");
 const msg = document.getElementById("msg");
+const emailInput = document.getElementById("email");
+const passwordInput = document.getElementById("password");
+const togglePassword = document.getElementById("togglePassword");
+const eyeOpenIcon = document.getElementById("eyeOpenIcon");
+const eyeClosedIcon = document.getElementById("eyeClosedIcon");
+const forgotPasswordBtn = document.getElementById("forgotPasswordBtn");
 
-function showError(text) {
+function setMsg(text, type) {
   msg.textContent = text;
-  msg.classList.add("show");
+  msg.className = "msg show " + (type || "");
 }
+
+togglePassword.addEventListener("click", () => {
+  const isHidden = passwordInput.type === "password";
+  passwordInput.type = isHidden ? "text" : "password";
+  eyeOpenIcon.style.display = isHidden ? "none" : "block";
+  eyeClosedIcon.style.display = isHidden ? "block" : "none";
+  togglePassword.setAttribute("aria-label", isHidden ? "パスワードを非表示" : "パスワードを表示");
+  togglePassword.setAttribute("title", isHidden ? "パスワードを非表示" : "パスワードを表示");
+  passwordInput.focus();
+});
 
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
-  msg.classList.remove("show");
-  const email = document.getElementById("email").value.trim();
-  const password = document.getElementById("password").value;
+  msg.className = "msg";
+  const email = emailInput.value.trim();
+  const password = passwordInput.value;
   try {
     const cred = await signInWithEmailAndPassword(auth, email, password);
 
@@ -76,11 +129,39 @@ form.addEventListener("submit", async (e) => {
       return;
     }
 
-    showError("このアカウントは運営者・企業管理者いずれとしても登録されていません（または無効化されています）。管理者にお問い合わせください。");
+    setMsg("このアカウントは運営者・企業管理者いずれとしても登録されていません（または無効化されています）。管理者にお問い合わせください。", "error");
     await auth.signOut();
   } catch (err) {
     console.error(err);
-    showError("ログインに失敗しました。メールアドレスとパスワードをご確認ください。");
+    setMsg("ログインに失敗しました。メールアドレスとパスワードをご確認ください。", "error");
+  }
+});
+
+forgotPasswordBtn.addEventListener("click", async () => {
+  const email = emailInput.value.trim();
+  msg.className = "msg";
+  if (!email) {
+    setMsg("パスワード再設定メールを送るには、メールアドレスを入力してください。", "error");
+    emailInput.focus();
+    return;
+  }
+  try {
+    forgotPasswordBtn.disabled = true;
+    forgotPasswordBtn.textContent = "送信中...";
+    setMsg("パスワード再設定メールを送信中...", "note");
+    await sendPasswordResetEmail(auth, email);
+    setMsg("パスワード再設定用のメールを送信しました。\n届いたメールのリンクから新しいパスワードを設定してください。", "ok");
+  } catch (error) {
+    console.error(error);
+    const code = error && error.code ? error.code : "unknown";
+    let message = "パスワード再設定メールの送信に失敗しました。";
+    if (code === "auth/invalid-email") message = "メールアドレスの形式が正しくありません。";
+    if (code === "auth/user-not-found") message = "このメールアドレスのユーザーが見つかりません。";
+    if (code === "auth/too-many-requests") message = "短時間に何度も操作したため一時的に制限されています。しばらく時間を置いてください。";
+    setMsg(message, "error");
+  } finally {
+    forgotPasswordBtn.disabled = false;
+    forgotPasswordBtn.textContent = "パスワードを忘れた場合";
   }
 });
 </script>

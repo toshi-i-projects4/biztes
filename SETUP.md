@@ -12,7 +12,9 @@
 - オペレーターが応募者ごとに受験招待リンクを発行できる（`operator-invites.html`）
 - 応募者が招待リンクから、練習→本番の流れで4パートを通しで受験し、結果がFirestoreに保存される（`exam-entry.html` → `exam.html` → `exam-complete.html`）
 - **（v2で追加）企業管理者ロール**：オペレーターまたは既存の企業管理者が、自社の担当者を「企業管理者」として招待できる（`company-admin-invite.html`）。招待された本人は `company-admin-signup.html` からセルフサインアップし、以後は自社の問題編集・受験招待発行・受験結果確認だけができる、自社に閉じたアカウントとしてログインできる（`operator-login.html` → `company-admin-home.html`）。1社に複数の企業管理者アカウントを持たせられる。
-- **（v2で追加）運営の代理操作モード**：オペレーターが `operator-home.html` の企業一覧から「問題を編集」「受験招待・結果」「企業管理者を招待・管理」のいずれかに入ると、画面上部にオレンジ色の「運営モード」バナーが表示され、どの企業を代理操作しているかが常に分かるようになっている（`operator-mode.js`）。
+- **（v2で追加）運営の代理操作モード**：オペレーターが `operator-home.html` の企業一覧から「問題を編集」「受験招待・結果」「企業管理者を招待・管理」のいずれかに入ると、画面上部にオレンジ色の「運営モード」バナーが表示され、どの企業を代理操作しているかが常に分かるようになっている（`operator-mode.js`）。あわせて、運営者として操作しているときはページ全体がオレンジ基調、企業管理者本人が操作しているときは青基調になるよう自動的に配色が切り替わる。
+- **（v3で追加）運営メンバーの招待**：`operator-home.html` から `operator-invite.html` に入り、①既に企業管理者として登録済みの人に運営権限だけを追加で付与・解除する、②企業に属さない運営専任メンバーを新規に招待する、のいずれもできる。②で招待された本人は `operator-signup.html` からセルフサインアップする。運営権限と企業管理者権限の両方を持つアカウントは、ログイン後まず `company-admin-home.html`（企業管理ページ）に入り、そこから「運営管理ページへ →」のリンクで `operator-home.html` に移動する動線になっている（逆に運営ホームにも「企業管理ページへ →」のリンクがある）。
+- **（v3で追加）パスワードの考え方・案内文言をビズもんと統一**：新規登録・招待セルフサインアップ時のパスワードは「15文字以上・128文字以内、パスフレーズ推奨、複雑さの強制なし」というビズもんと同一のポリシーを `password-policy.js` として共通化した。ログイン画面（`operator-login.html`）にも、ビズもんの`login.html`と同じ体裁で「パスワードを忘れた場合」のパスワード再設定メール送信ボタンと案内文言を追加している。
 
 **まだ実装していない／今後の相談ポイント**
 - 既存社員（ビズもん利用者）への同一試験の展開・スコア比較機能（Firestoreのスキーマは`employeeBenchmarks`として予約済み、UI・集計ロジックは未実装）
@@ -39,10 +41,15 @@
 `firestore.rules` の内容を、Firebaseコンソールの「Firestore Database」→「ルール」に貼り付けて公開してください
 （Firebase CLIをお使いの場合は `firebase deploy --only firestore:rules` でも構いません）。
 
-v2では `companyAdmins` / `pendingCompanyAdmins` コレクションの権限判定が追加されているため、
-既存のFirebaseプロジェクトに反映する場合は、必ず最新の `firestore.rules` で上書きしてください。
+v2では `companyAdmins` / `pendingCompanyAdmins`、v3では `pendingOperators` コレクションの
+権限判定が追加され、`operators/{uid}` への書き込み許可も追加されているため、既存のFirebaseプロジェクトに
+反映する場合は、必ず最新の `firestore.rules` で上書きしてください。
 
 ## 3. 最初のオペレーターアカウントを作る
+
+`scripts/create-operator.mjs` によるアカウント作成は、まだ運営メンバーが1人もいない状態から
+最初の1人を用意するためだけに使います（招待する側のオペレーターがまだ存在しないため）。
+2人目以降の運営メンバーは、後述「6. 運営メンバーを追加で招待する」の画面から招待できます。
 
 1. Firebaseコンソール → プロジェクトの設定 → サービスアカウント → 「新しい秘密鍵の生成」でJSONをダウンロード
 2. ローカル環境（このファイル一式がある場所）で:
@@ -76,7 +83,22 @@ GOOGLE_APPLICATION_CREDENTIALS=/path/to/serviceAccountKey.json node scripts/seed
 同じ企業に複数の企業管理者アカウントを持たせたい場合は、既に登録済みの企業管理者本人が
 `company-admin-home.html` → 「自社の管理者を管理する」からも追加招待ができます（オペレーターを介さなくてよい）。
 
-## 6. Vercelにデプロイする
+## 6. 運営メンバーを追加で招待する（v3で追加）
+
+最初のオペレーター以降は、スクリプト不要で画面から運営メンバーを増やせます。`operator-home.html` の
+「運営メンバーの招待・管理 →」から `operator-invite.html` を開くと、次の2通りの方法があります。
+
+1. **既に企業管理者として登録済みの人に運営権限を追加する**：画面上部の「①」でメールアドレスを検索し、
+   見つかった企業管理者に「運営権限を付与する」を押す。企業管理者としての登録（所属企業）はそのまま維持され、
+   企業管理ページと運営管理ページの両方に入れるようになる。
+2. **企業に属さない運営専任メンバーを新規に招待する**：画面下部の「②」に氏名・メールアドレスを入力して
+   招待すると、案内メールの文面が生成される。招待された本人が `operator-signup.html` からメールアドレス確認＋
+   パスワード設定を行うと、運営（オペレーター）アカウントが有効化される。
+
+運営権限と企業管理者権限の両方を持つアカウントでログインすると、まず企業管理ページ（`company-admin-home.html`）
+に入ります。そこから画面右上の「運営管理ページへ →」で運営ホームに移動できます（逆方向のリンクも運営ホーム側にあります）。
+
+## 7. Vercelにデプロイする
 
 ビズもんと同様、ビルド不要の静的サイトとしてそのままVercelにデプロイできます。
 
@@ -84,7 +106,7 @@ GOOGLE_APPLICATION_CREDENTIALS=/path/to/serviceAccountKey.json node scripts/seed
 2. Vercelで「Add New Project」→ リポジトリを選択 → Framework Preset は "Other"（ビルドコマンドなし）
 3. デプロイ後、`https://<your-project>.vercel.app/operator-login.html` にアクセスして動作確認する
 
-## 7. 動作確認の流れ
+## 8. 動作確認の流れ
 
 1. `operator-login.html` でオペレーターとしてログイン
 2. `operator-home.html` で企業を登録（テンプレートコピーにチェック）
@@ -92,9 +114,10 @@ GOOGLE_APPLICATION_CREDENTIALS=/path/to/serviceAccountKey.json node scripts/seed
 4. `company-admin-invite.html` から、その企業の担当者を企業管理者として招待する
 5. 招待された担当者が `company-admin-signup.html` からセルフサインアップし、`operator-login.html` からログインして `company-admin-home.html` に入れることを確認する
 6. 企業管理者としてログインした状態で、自社の問題編集・受験招待発行ができ、他社のデータには一切アクセスできないことを確認する
-7. `operator-invites.html` で応募者向けの受験招待リンクを発行する
-8. 発行したリンク（`exam-entry.html?company=...&token=...`）を別ブラウザ／シークレットウィンドウで開いて受験してみる
-9. 受験完了後、`operator-invites.html`（または企業管理者の同画面）の一覧に合計スコアが表示されることを確認する
+7. `operator-invite.html` から運営メンバーをもう1人招待し、`operator-signup.html` からセルフサインアップしてログインできることを確認する
+8. `operator-invites.html` で応募者向けの受験招待リンクを発行する
+9. 発行したリンク（`exam-entry.html?company=...&token=...`）を別ブラウザ／シークレットウィンドウで開いて受験してみる
+10. 受験完了後、`operator-invites.html`（または企業管理者の同画面）の一覧に合計スコアが表示されることを確認する
 
 ## 次にご相談したいこと
 
