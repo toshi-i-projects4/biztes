@@ -37,6 +37,14 @@ th{color:var(--muted);font-weight:800;font-size:11.5px}
 .hidden{display:none!important}
 .invite-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:14px;flex-wrap:wrap}
 .invite-textarea{min-height:180px;background:#f8fafc}
+.checkbox-row{display:flex;align-items:center;gap:8px;margin-bottom:14px}
+.checkbox-row input[type="checkbox"]{width:auto}
+.checkbox-row label{margin:0;font-size:13px;font-weight:800;color:var(--navy)}
+.modal-overlay{position:fixed;inset:0;background:rgba(15,23,42,.45);display:flex;align-items:center;justify-content:center;padding:20px;z-index:100}
+.modal-overlay.hidden{display:none!important}
+.modal-box{background:#fff;border-radius:16px;padding:24px;width:100%;max-width:480px;box-shadow:0 10px 30px rgba(15,23,42,.2)}
+.modal-box h2{font-size:15px;margin:0 0 14px;color:var(--navy)}
+.modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:16px}
 </style>
 </head>
 <body>
@@ -50,9 +58,13 @@ th{color:var(--muted);font-weight:800;font-size:11.5px}
     <h2>新しい企業管理者を招待する</h2>
     <p class="description">招待した人は、案内メールのURLから自分でパスワードを設定してアカウントを作成します（Firestoreへ直接入力する必要はありません）。</p>
     <div class="form-grid">
+      <div class="form-row"><label>社員コード（任意）</label><input id="inviteEmployeeCode" placeholder="例：B0002"></div>
       <div class="form-row"><label>氏名</label><input id="inviteName" placeholder="例：山田 太郎"></div>
+      <div class="form-row"><label>部署（任意）</label><input id="inviteDepartment" placeholder="例：営業部"></div>
+      <div class="form-row"><label>役職（任意）</label><input id="invitePosition" placeholder="例：一般、主任、課長、部長"></div>
       <div class="form-row"><label>メールアドレス</label><input id="inviteEmail" type="email" placeholder="例：admin@example.co.jp"></div>
     </div>
+    <div class="checkbox-row"><input id="inviteIsApplicant" type="checkbox"><label for="inviteIsApplicant">ビズてす申込者（ビズてすを申し込んだ方）</label></div>
     <div class="form-row" style="margin-bottom:14px"><label>備考（任意）</label><textarea id="inviteNote"></textarea></div>
     <button class="primary" id="inviteBtn" type="button">招待する</button>
     <div id="inviteStatus" class="status-line"></div>
@@ -74,17 +86,38 @@ th{color:var(--muted);font-weight:800;font-size:11.5px}
   <div class="panel">
     <h2>招待状況</h2>
     <table>
-      <thead><tr><th>操作</th><th>状態</th><th>氏名</th><th>メールアドレス</th><th>備考</th></tr></thead>
-      <tbody id="pendingRows"><tr><td colspan="5" class="empty">読み込み中です。</td></tr></tbody>
+      <thead><tr><th>操作</th><th>状態</th><th>社員コード</th><th>氏名</th><th>部署</th><th>役職</th><th>メールアドレス</th><th>備考</th><th>ビズてす申込者</th></tr></thead>
+      <tbody id="pendingRows"><tr><td colspan="9" class="empty">読み込み中です。</td></tr></tbody>
     </table>
   </div>
 
   <div class="panel">
     <h2>企業管理者一覧</h2>
+    <p class="description">ビズてす権限（企業管理者としての権限）を持つアカウントの一覧です。社員コード・部署・役職・備考・ビズてす申込者は「編集」から変更できます。</p>
     <table>
-      <thead><tr><th>操作</th><th>氏名</th><th>メールアドレス</th><th>状態</th></tr></thead>
-      <tbody id="adminRows"><tr><td colspan="4" class="empty">読み込み中です。</td></tr></tbody>
+      <thead><tr><th>操作</th><th>状態</th><th>ビズてす権限</th><th>社員コード</th><th>氏名</th><th>部署</th><th>役職</th><th>メールアドレス</th><th>備考</th><th>UID</th><th>ビズてす申込者</th></tr></thead>
+      <tbody id="adminRows"><tr><td colspan="11" class="empty">読み込み中です。</td></tr></tbody>
     </table>
+  </div>
+</div>
+
+<div class="modal-overlay hidden" id="editModal">
+  <div class="modal-box">
+    <h2>企業管理者の編集</h2>
+    <input type="hidden" id="editUid">
+    <div class="form-grid">
+      <div class="form-row"><label>社員コード</label><input id="editEmployeeCode" placeholder="例：B0002"></div>
+      <div class="form-row"><label>氏名</label><input id="editName" placeholder="例：山田 太郎"></div>
+      <div class="form-row"><label>部署</label><input id="editDepartment" placeholder="例：営業部"></div>
+      <div class="form-row"><label>役職</label><input id="editPosition" placeholder="例：一般、主任、課長、部長"></div>
+    </div>
+    <div class="checkbox-row"><input id="editIsApplicant" type="checkbox"><label for="editIsApplicant">ビズてす申込者（ビズてすを申し込んだ方）</label></div>
+    <div class="form-row" style="margin-bottom:0"><label>備考</label><textarea id="editNote"></textarea></div>
+    <div id="editStatus" class="status-line"></div>
+    <div class="modal-actions">
+      <button class="ghost" type="button" id="editCancelBtn">キャンセル</button>
+      <button class="primary" type="button" id="editSaveBtn">保存する</button>
+    </div>
   </div>
 </div>
 
@@ -112,6 +145,7 @@ function esc(v) {
 function normEmail(v) { return String(v || "").trim().toLowerCase(); }
 function normText(v) { return String(v || "").trim(); }
 function badge(text, type) { return '<span class="badge ' + esc(type) + '">' + esc(text) + '</span>'; }
+function yesNo(v) { return v ? "はい" : "いいえ"; }
 function setInviteStatus(msg, type) { $("inviteStatus").textContent = msg || ""; $("inviteStatus").className = "status-line " + (type || ""); }
 function setMailStatus(msg, type) { $("mailStatus").textContent = msg || ""; $("mailStatus").className = "status-line " + (type || ""); }
 
@@ -164,7 +198,7 @@ function buildInviteMail(data) {
     "【手順】\n" +
     "1. 下記URLを開き、このメールアドレスで初回登録を行ってください。\n" + signupUrl + "\n\n" +
     "【登録時のメールアドレス】\n" + data.email + "\n\n" +
-    "パスワードは10文字以上で設定してください。\n\n" +
+    "パスワードは15文字以上で設定してください。単語をつなげた「パスフレーズ」を推奨しています。\n\n" +
     "2. 初回登録後は、以下のログイン画面からログインしてください。\n" + location.origin + location.pathname.replace(/[^\/]*$/, "operator-login.html") + "\n\n" +
     "ご不明点がございましたら、お気軽にお問い合わせください。";
   return { email: data.email, subject, body };
@@ -189,7 +223,15 @@ $("mailtoBtn").addEventListener("click", () => {
 });
 
 $("inviteBtn").addEventListener("click", async () => {
-  const data = { name: normText($("inviteName").value), email: normEmail($("inviteEmail").value), note: normText($("inviteNote").value) };
+  const data = {
+    name: normText($("inviteName").value),
+    email: normEmail($("inviteEmail").value),
+    employeeCode: normText($("inviteEmployeeCode").value),
+    department: normText($("inviteDepartment").value),
+    position: normText($("invitePosition").value),
+    isApplicant: $("inviteIsApplicant").checked === true,
+    note: normText($("inviteNote").value),
+  };
   if (!data.name) { setInviteStatus("氏名を入力してください。", "error"); return; }
   if (!data.email) { setInviteStatus("メールアドレスを入力してください。", "error"); return; }
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(data.email)) { setInviteStatus("メールアドレスの形式が正しくありません。", "error"); return; }
@@ -208,6 +250,10 @@ $("inviteBtn").addEventListener("click", async () => {
       name: data.name,
       companyId: companyId,
       companyName: companyName,
+      employeeCode: data.employeeCode,
+      department: data.department,
+      position: data.position,
+      isApplicant: data.isApplicant,
       note: data.note,
       status: "pending",
       createdAt: serverTimestamp(),
@@ -218,7 +264,8 @@ $("inviteBtn").addEventListener("click", async () => {
       registeredUid: null,
     });
     showInviteMail(data);
-    $("inviteName").value = ""; $("inviteEmail").value = ""; $("inviteNote").value = "";
+    $("inviteEmployeeCode").value = ""; $("inviteName").value = ""; $("inviteDepartment").value = ""; $("invitePosition").value = "";
+    $("inviteEmail").value = ""; $("inviteIsApplicant").checked = false; $("inviteNote").value = "";
     await loadPending();
     setInviteStatus("招待登録しました。下の「案内メール」より、案内メールを作成してください。", "ok");
   } catch (e) {
@@ -234,12 +281,19 @@ function statusLabel(status) { return { pending: "招待中", registered: "登�
 async function loadPending() {
   const snap = await getDocs(query(collection(db, "pendingCompanyAdmins"), where("companyId", "==", companyId)));
   const rows = [];
-  snap.forEach((d) => { const v = d.data(); rows.push({ email: v.email || d.id, name: v.name || "", note: v.note || "", status: v.status || "pending" }); });
+  snap.forEach((d) => {
+    const v = d.data();
+    rows.push({
+      email: v.email || d.id, name: v.name || "", note: v.note || "", status: v.status || "pending",
+      employeeCode: v.employeeCode || "", department: v.department || "", position: v.position || "",
+      isApplicant: v.isApplicant === true,
+    });
+  });
   rows.sort((a, b) => String(a.name).localeCompare(String(b.name), "ja"));
-  if (!rows.length) { $("pendingRows").innerHTML = '<tr><td colspan="5" class="empty">招待はありません。</td></tr>'; return; }
+  if (!rows.length) { $("pendingRows").innerHTML = '<tr><td colspan="9" class="empty">招待はありません。</td></tr>'; return; }
   $("pendingRows").innerHTML = rows.map((r) => {
     const action = r.status === "pending" ? '<button class="danger" type="button" data-action="cancel" data-email="' + esc(r.email) + '">対象外にする</button>' : "－";
-    return "<tr><td>" + action + "</td><td>" + badge(statusLabel(r.status), r.status === "registered" ? "ok" : "warn") + "</td><td>" + esc(r.name) + "</td><td>" + esc(r.email) + "</td><td>" + esc(r.note) + "</td></tr>";
+    return "<tr><td>" + action + "</td><td>" + badge(statusLabel(r.status), r.status === "registered" ? "ok" : "warn") + "</td><td>" + esc(r.employeeCode) + "</td><td>" + esc(r.name) + "</td><td>" + esc(r.department) + "</td><td>" + esc(r.position) + "</td><td>" + esc(r.email) + "</td><td>" + esc(r.note) + "</td><td>" + esc(yesNo(r.isApplicant)) + "</td></tr>";
   }).join("");
 }
 
@@ -256,34 +310,96 @@ $("pendingRows").addEventListener("click", async (e) => {
   }
 });
 
+let allAdmins = [];
+
 async function loadAdmins() {
   const snap = await getDocs(query(collection(db, "companyAdmins"), where("companyId", "==", companyId)));
   const rows = [];
-  snap.forEach((d) => { const v = d.data(); rows.push({ uid: d.id, name: v.name || "", email: v.email || "", status: v.status || "active" }); });
+  snap.forEach((d) => {
+    const v = d.data();
+    rows.push({
+      uid: d.id, name: v.name || "", email: v.email || "", status: v.status || "active",
+      employeeCode: v.employeeCode || "", department: v.department || "", position: v.position || "",
+      note: v.note || "", isApplicant: v.isApplicant === true, role: v.role || "companyAdmin",
+    });
+  });
   rows.sort((a, b) => String(a.name).localeCompare(String(b.name), "ja"));
-  if (!rows.length) { $("adminRows").innerHTML = '<tr><td colspan="4" class="empty">企業管理者はいません。</td></tr>'; return; }
+  allAdmins = rows;
+  if (!rows.length) { $("adminRows").innerHTML = '<tr><td colspan="11" class="empty">企業管理者はいません。</td></tr>'; return; }
   $("adminRows").innerHTML = rows.map((r) => {
     const isSelf = r.uid === currentUid;
     const nextStatus = r.status === "active" ? "inactive" : "active";
     const actionLabel = r.status === "active" ? "無効化" : "有効化";
-    const action = isSelf
+    const toggleBtn = isSelf
       ? "－（自分自身）"
       : '<button class="danger" type="button" data-action="toggle" data-uid="' + esc(r.uid) + '" data-next="' + nextStatus + '">' + actionLabel + '</button>';
-    return "<tr><td>" + action + "</td><td>" + esc(r.name) + (isSelf ? "（自分）" : "") + "</td><td>" + esc(r.email) + "</td><td>" + (r.status === "active" ? badge("有効", "ok") : badge("無効", "ng")) + "</td></tr>";
+    const editBtn = '<button class="ghost" type="button" data-action="edit" data-uid="' + esc(r.uid) + '">編集</button>';
+    return "<tr><td>" + editBtn + " " + toggleBtn + "</td><td>" + (r.status === "active" ? badge("有効", "ok") : badge("無効", "ng")) + "</td><td>" + badge("企業管理者", "ok") + "</td><td>" + esc(r.employeeCode) + "</td><td>" + esc(r.name) + (isSelf ? "（自分）" : "") + "</td><td>" + esc(r.department) + "</td><td>" + esc(r.position) + "</td><td>" + esc(r.email) + "</td><td>" + esc(r.note) + "</td><td>" + esc(r.uid) + "</td><td>" + esc(yesNo(r.isApplicant)) + "</td></tr>";
   }).join("");
 }
 
 $("adminRows").addEventListener("click", async (e) => {
-  const btn = e.target.closest('button[data-action="toggle"]');
-  if (!btn) return;
-  const next = btn.dataset.next;
-  if (!confirm(next === "inactive" ? "この企業管理者を無効化します。よろしいですか？" : "この企業管理者を有効化します。よろしいですか？")) return;
+  const toggleBtn = e.target.closest('button[data-action="toggle"]');
+  if (toggleBtn) {
+    const next = toggleBtn.dataset.next;
+    if (!confirm(next === "inactive" ? "この企業管理者を無効化します。よろしいですか？" : "この企業管理者を有効化します。よろしいですか？")) return;
+    try {
+      await updateDoc(doc(db, "companyAdmins", toggleBtn.dataset.uid), { status: next, updatedAt: serverTimestamp(), updatedBy: currentUid });
+      await loadAdmins();
+    } catch (err) {
+      console.error(err);
+      alert("状態の更新に失敗しました。\n" + (err.message || err));
+    }
+    return;
+  }
+  const editBtn = e.target.closest('button[data-action="edit"]');
+  if (editBtn) { openEditModal(editBtn.dataset.uid); return; }
+});
+
+function setEditStatus(msg, type) { $("editStatus").textContent = msg || ""; $("editStatus").className = "status-line " + (type || ""); }
+
+function openEditModal(uid) {
+  const a = allAdmins.find((x) => x.uid === uid);
+  if (!a) return;
+  $("editUid").value = a.uid;
+  $("editEmployeeCode").value = a.employeeCode || "";
+  $("editName").value = a.name || "";
+  $("editDepartment").value = a.department || "";
+  $("editPosition").value = a.position || "";
+  $("editIsApplicant").checked = a.isApplicant === true;
+  $("editNote").value = a.note || "";
+  setEditStatus("", "");
+  $("editModal").classList.remove("hidden");
+}
+function closeEditModal() { $("editModal").classList.add("hidden"); }
+$("editCancelBtn").addEventListener("click", closeEditModal);
+$("editModal").addEventListener("click", (e) => { if (e.target.id === "editModal") closeEditModal(); });
+
+$("editSaveBtn").addEventListener("click", async () => {
+  const uid = $("editUid").value;
+  const name = normText($("editName").value);
+  if (!name) { setEditStatus("氏名を入力してください。", "error"); return; }
+  const data = {
+    employeeCode: normText($("editEmployeeCode").value),
+    name: name,
+    department: normText($("editDepartment").value),
+    position: normText($("editPosition").value),
+    isApplicant: $("editIsApplicant").checked === true,
+    note: normText($("editNote").value),
+    updatedAt: serverTimestamp(),
+    updatedBy: currentUid,
+  };
   try {
-    await updateDoc(doc(db, "companyAdmins", btn.dataset.uid), { status: next, updatedAt: serverTimestamp(), updatedBy: currentUid });
+    $("editSaveBtn").disabled = true;
+    setEditStatus("保存中...", "");
+    await updateDoc(doc(db, "companyAdmins", uid), data);
     await loadAdmins();
+    closeEditModal();
   } catch (err) {
     console.error(err);
-    alert("状態の更新に失敗しました。\n" + (err.message || err));
+    setEditStatus("保存に失敗しました。\n" + (err.code || "") + " " + (err.message || err), "error");
+  } finally {
+    $("editSaveBtn").disabled = false;
   }
 });
 </script>
