@@ -12,7 +12,7 @@ body{margin:0;font-family:"Hiragino Maru Gothic ProN","BIZ UDPGothic","Yu Gothic
 .header h1{font-size:18px;margin:0;color:var(--blue-dark)}
 .header .userbox{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:12px}
 .header button{background:#111827;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:12px;cursor:pointer}
-.wrap{max-width:1000px;margin:28px auto;padding:0 20px}
+.wrap{max-width:1100px;margin:28px auto;padding:0 20px}
 .panel{background:#fff;border:1px solid var(--line);border-radius:18px;padding:24px;margin-bottom:22px;box-shadow:0 4px 14px rgba(15,23,42,.04)}
 .panel h2{font-size:16px;margin:0 0 14px;color:var(--navy)}
 table{width:100%;border-collapse:collapse;font-size:13px}
@@ -24,6 +24,7 @@ tr:hover td{background:#f8fafc}
 .badge.suspended{background:#f3f4f6;color:#6b7280}
 a.link-btn{color:var(--blue-dark);font-weight:800;text-decoration:none;font-size:13px}
 a.link-btn:hover{text-decoration:underline}
+.row-links{display:flex;flex-direction:column;gap:4px}
 .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
 .form-row label{display:block;font-size:12px;font-weight:800;color:var(--navy);margin-bottom:5px}
 .form-row input{width:100%;border:1px solid #d1d5db;border-radius:9px;padding:9px 11px;font-size:13px;font-family:inherit}
@@ -61,7 +62,7 @@ button.primary:hover{background:var(--blue-dark)}
   <div class="panel">
     <h2>企業一覧</h2>
     <table>
-      <thead><tr><th>企業名</th><th>状態</th><th>担当者</th><th>登録日</th><th>問題管理</th></tr></thead>
+      <thead><tr><th>企業名</th><th>状態</th><th>担当者</th><th>登録日</th><th>操作</th></tr></thead>
       <tbody id="companyRows"></tbody>
     </table>
     <div id="emptyState" class="empty" style="display:none">まだ企業が登録されていません。</div>
@@ -106,7 +107,13 @@ function watchCompanies() {
         <td><span class="badge ${c.status === "active" ? "active" : "suspended"}">${c.status === "active" ? "有効" : "停止中"}</span></td>
         <td>${escapeHtml(c.contactName || "-")}</td>
         <td>${created}</td>
-        <td><a class="link-btn" href="operator-question-editor.html?company=${d.id}">問題を編集 →</a></td>
+        <td>
+          <div class="row-links">
+            <a class="link-btn" href="operator-question-editor.html?company=${d.id}">問題を編集 →</a>
+            <a class="link-btn" href="operator-invites.html?company=${d.id}">受験招待・結果 →</a>
+            <a class="link-btn" href="company-admin-invite.html?company=${d.id}">企業管理者を招待・管理 →</a>
+          </div>
+        </td>
       `;
       rows.appendChild(tr);
     });

@@ -61,7 +61,7 @@ th{color:var(--muted);font-weight:800;font-size:11.5px}
   <div>
     <a class="back" href="operator-invites.html" id="toInvitesLink">受験招待を発行する →</a>
     &nbsp;|&nbsp;
-    <a class="back" href="operator-home.html">← 運営ホームへ戻る</a>
+    <a class="back" href="operator-home.html" id="backHomeLink">← 運営ホームへ戻る</a>
   </div>
 </div>
 
@@ -163,6 +163,7 @@ th{color:var(--muted);font-weight:800;font-size:11.5px}
   </div>
 </div>
 
+<script src="operator-mode.js"></script>
 <script type="module">
 import { auth, db, PART_IDS, PART_LABELS, PART_TYPES } from "./firebase-config.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
@@ -173,10 +174,11 @@ import {
 import { copyTemplateItemsToCompany, escapeHtml } from "./operator-shared.js";
 
 const params = new URLSearchParams(location.search);
-const companyId = params.get("company");
+let companyId = params.get("company");
 let currentPart = "typing";
 let editingItemId = null;
 let unsubscribeItems = null;
+let isOperatorUser = false;
 
 const TYPE_LABELS = {
   typing_passage: "お手本テキスト",
@@ -186,24 +188,40 @@ const TYPE_LABELS = {
   sentence_completion: "文章完成（自由記述）",
 };
 
-if (!companyId) {
-  document.body.innerHTML = "<p style='padding:40px;font-family:sans-serif'>URLに ?company=企業ID が指定されていません。運営ホームから遷移してください。</p>";
-  throw new Error("company param missing");
-}
-
 onAuthStateChanged(auth, async (user) => {
   if (!user) { location.href = "operator-login.html"; return; }
+
   const opSnap = await getDoc(doc(db, "operators", user.uid));
-  if (!opSnap.exists()) { await signOut(auth); location.href = "operator-login.html"; return; }
+  if (opSnap.exists()) {
+    isOperatorUser = true;
+    if (!companyId) {
+      document.body.innerHTML = "<p style='padding:40px;font-family:sans-serif'>URLに ?company=企業ID が指定されていません。運営ホームから遷移してください。</p>";
+      return;
+    }
+  } else {
+    const caSnap = await getDoc(doc(db, "companyAdmins", user.uid));
+    if (!caSnap.exists() || caSnap.data().status !== "active") {
+      await signOut(auth); location.href = "operator-login.html"; return;
+    }
+    // 企業管理者は、URLのパラメータに関わらず必ず自社のcompanyIdで動作する
+    companyId = caSnap.data().companyId;
+    document.getElementById("backHomeLink").href = "company-admin-home.html";
+    document.getElementById("backHomeLink").textContent = "← 企業管理者ホームへ戻る";
+  }
 
   const companySnap = await getDoc(doc(db, "companies", companyId));
   if (!companySnap.exists()) {
     document.getElementById("companySub").textContent = "指定された企業が見つかりません。";
     return;
   }
-  document.getElementById("companyTitle").textContent = companySnap.data().companyName + " の問題管理";
+  const companyName = companySnap.data().companyName;
+  document.getElementById("companyTitle").textContent = companyName + " の問題管理";
   document.getElementById("companySub").textContent = "企業ID: " + companyId;
   document.getElementById("toInvitesLink").href = "operator-invites.html?company=" + encodeURIComponent(companyId);
+
+  if (isOperatorUser) {
+    window.BizTestOperatorMode && window.BizTestOperatorMode.renderBanner({ companyId, companyName });
+  }
 
   renderTabs();
   await loadPart(currentPart);

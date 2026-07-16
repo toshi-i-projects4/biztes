@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>企業管理者の招待・管理｜ビズてす</title>
+<style>
+:root{--blue:#2563eb;--blue-dark:#1d4ed8;--navy:#0f172a;--line:#e5e7eb;--bg:#f5f7fb;--muted:#64748b}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Hiragino Maru Gothic ProN","BIZ UDPGothic","Yu Gothic UI","Meiryo",sans-serif;background:var(--bg);color:#111827;line-height:1.7}
+.header{background:#fff;border-bottom:1px solid var(--line);padding:16px 24px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+.header h1{font-size:17px;margin:0;color:var(--blue-dark)}
+.header a.back{font-size:12px;color:var(--muted);text-decoration:none}
+.wrap{max-width:960px;margin:24px auto;padding:0 20px}
+.panel{background:#fff;border:1px solid var(--line);border-radius:18px;padding:22px;margin-bottom:20px;box-shadow:0 4px 14px rgba(15,23,42,.04)}
+.panel h2{font-size:15px;margin:0 0 10px;color:var(--navy)}
+.description{font-size:13px;color:var(--muted);margin:0 0 14px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.form-row label{display:block;font-size:12px;font-weight:800;color:var(--navy);margin-bottom:5px}
+.form-row input,.form-row textarea{width:100%;border:1px solid #d1d5db;border-radius:9px;padding:9px 11px;font-size:13px;font-family:inherit}
+button.primary{background:var(--blue);color:#fff;border:none;border-radius:9px;padding:10px 18px;font-size:13px;font-weight:800;cursor:pointer}
+button.primary:hover{background:var(--blue-dark)}
+button.ghost{background:#fff;border:1px solid #cbd5e1;color:var(--navy);border-radius:8px;padding:8px 12px;font-size:12px;font-weight:800;cursor:pointer}
+button.danger{background:#dc2626;color:#fff;border:none;border-radius:8px;padding:6px 10px;font-size:11.5px;font-weight:800;cursor:pointer}
+button:disabled{opacity:.55;cursor:not-allowed}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line)}
+th{color:var(--muted);font-weight:800;font-size:11.5px}
+.badge{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:800}
+.badge.ok{background:#dcfce7;color:#166534}
+.badge.ng{background:#fee2e2;color:#991b1b}
+.badge.warn{background:#fef3c7;color:#92400e}
+.status-line{font-size:12px;color:var(--muted);margin-top:8px;white-space:pre-wrap}
+.status-line.error{color:#dc2626}
+.status-line.ok{color:#166534}
+.empty{color:var(--muted);font-size:13px;padding:12px 0}
+.hidden{display:none!important}
+.invite-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:14px;flex-wrap:wrap}
+.invite-textarea{min-height:180px;background:#f8fafc}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1 id="pageTitle">企業管理者の招待・管理</h1>
+  <a class="back" href="#" id="backLink">← 戻る</a>
+</div>
+
+<div class="wrap">
+  <div class="panel">
+    <h2>新しい企業管理者を招待する</h2>
+    <p class="description">招待した人は、案内メールのURLから自分でパスワードを設定してアカウントを作成します（Firestoreへ直接入力する必要はありません）。</p>
+    <div class="form-grid">
+      <div class="form-row"><label>氏名</label><input id="inviteName" placeholder="例：山田 太郎"></div>
+      <div class="form-row"><label>メールアドレス</label><input id="inviteEmail" type="email" placeholder="例：admin@example.co.jp"></div>
+    </div>
+    <div class="form-row" style="margin-bottom:14px"><label>備考（任意）</label><textarea id="inviteNote"></textarea></div>
+    <button class="primary" id="inviteBtn" type="button">招待する</button>
+    <div id="inviteStatus" class="status-line"></div>
+  </div>
+
+  <div class="panel hidden" id="inviteMailCard">
+    <h2>案内メール</h2>
+    <p class="description">招待した人に、初回登録の案内メールを作成できます。内容を確認のうえ送信してください。</p>
+    <div class="form-row"><label>送信先</label><input id="inviteTo" readonly></div>
+    <div class="form-row"><label>件名</label><input id="inviteSubject" readonly></div>
+    <div class="form-row"><label>本文</label><textarea id="inviteBody" class="invite-textarea" readonly></textarea></div>
+    <div id="mailStatus" class="status-line"></div>
+    <div class="invite-actions">
+      <button class="ghost" type="button" id="copyInviteBtn">本文をコピー</button>
+      <button class="ghost" type="button" id="mailtoBtn">メールを作成</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>招待状況</h2>
+    <table>
+      <thead><tr><th>操作</th><th>状態</th><th>氏名</th><th>メールアドレス</th><th>備考</th></tr></thead>
+      <tbody id="pendingRows"><tr><td colspan="5" class="empty">読み込み中です。</td></tr></tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <h2>企業管理者一覧</h2>
+    <table>
+      <thead><tr><th>操作</th><th>氏名</th><th>メールアドレス</th><th>状態</th></tr></thead>
+      <tbody id="adminRows"><tr><td colspan="4" class="empty">読み込み中です。</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<script src="operator-mode.js"></script>
+<script type="module">
+import { auth, db } from "./firebase-config.js";
+import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import {
+  doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, serverTimestamp,
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const params = new URLSearchParams(location.search);
+let companyId = params.get("company") || "";
+let companyName = "";
+let isOperatorUser = false;
+let currentUid = "";
+
+const $ = (id) => document.getElementById(id);
+
+function esc(v) {
+  return String(v == null ? "" : v).replace(/[&<>"']/g, (c) => (
+    { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]
+  ));
+}
+function normEmail(v) { return String(v || "").trim().toLowerCase(); }
+function normText(v) { return String(v || "").trim(); }
+function badge(text, type) { return '<span class="badge ' + esc(type) + '">' + esc(text) + '</span>'; }
+function setInviteStatus(msg, type) { $("inviteStatus").textContent = msg || ""; $("inviteStatus").className = "status-line " + (type || ""); }
+function setMailStatus(msg, type) { $("mailStatus").textContent = msg || ""; $("mailStatus").className = "status-line " + (type || ""); }
+
+onAuthStateChanged(auth, async (user) => {
+  if (!user) { location.href = "operator-login.html"; return; }
+  currentUid = user.uid;
+
+  const opSnap = await getDoc(doc(db, "operators", user.uid));
+  if (opSnap.exists()) {
+    isOperatorUser = true;
+    if (!companyId) {
+      document.body.innerHTML = "<p style='padding:40px;font-family:sans-serif'>URLに ?company=企業ID が指定されていません。運営ホームから遷移してください。</p>";
+      return;
+    }
+    $("backLink").href = "operator-home.html";
+    $("backLink").textContent = "← 運営ホームへ戻る";
+  } else {
+    const caSnap = await getDoc(doc(db, "companyAdmins", user.uid));
+    if (!caSnap.exists() || caSnap.data().status !== "active") {
+      await signOut(auth);
+      location.href = "operator-login.html";
+      return;
+    }
+    companyId = caSnap.data().companyId;
+    $("backLink").href = "company-admin-home.html";
+    $("backLink").textContent = "← 企業管理者ホームへ戻る";
+  }
+
+  const companySnap = await getDoc(doc(db, "companies", companyId));
+  companyName = companySnap.exists() ? (companySnap.data().companyName || companyId) : companyId;
+  $("pageTitle").textContent = companyName + " の企業管理者 招待・管理";
+
+  if (isOperatorUser) {
+    window.BizTestOperatorMode && window.BizTestOperatorMode.renderBanner({ companyId, companyName });
+  }
+
+  await Promise.all([loadPending(), loadAdmins()]);
+});
+
+function getSignupUrl() {
+  const base = location.origin + location.pathname.replace(/[^\/]*$/, "");
+  return base + "company-admin-signup.html";
+}
+function buildInviteMail(data) {
+  const signupUrl = getSignupUrl();
+  const subject = "【ビズてす】企業管理者としての初回登録のお願い";
+  const body = data.name + " 様\n\n" +
+    companyName + " の企業管理者として、ビズてすへご招待いたします。\n" +
+    "以下の手順で初回登録（パスワード設定）を行ってください。\n\n" +
+    "【手順】\n" +
+    "1. 下記URLを開き、このメールアドレスで初回登録を行ってください。\n" + signupUrl + "\n\n" +
+    "【登録時のメールアドレス】\n" + data.email + "\n\n" +
+    "パスワードは10文字以上で設定してください。\n\n" +
+    "2. 初回登録後は、以下のログイン画面からログインしてください。\n" + location.origin + location.pathname.replace(/[^\/]*$/, "operator-login.html") + "\n\n" +
+    "ご不明点がございましたら、お気軽にお問い合わせください。";
+  return { email: data.email, subject, body };
+}
+let lastInvite = { email: "", subject: "", body: "" };
+function showInviteMail(data) {
+  lastInvite = buildInviteMail(data);
+  $("inviteTo").value = lastInvite.email;
+  $("inviteSubject").value = lastInvite.subject;
+  $("inviteBody").value = lastInvite.body;
+  $("inviteMailCard").classList.remove("hidden");
+  setMailStatus("", "");
+}
+$("copyInviteBtn").addEventListener("click", async () => {
+  try { await navigator.clipboard.writeText(lastInvite.body); setMailStatus("メール本文をコピーしました。", "ok"); }
+  catch (e) { $("inviteBody").focus(); $("inviteBody").select(); setMailStatus("自動コピーできませんでした。本文欄を選択したので手動でコピーしてください。", "error"); }
+});
+$("mailtoBtn").addEventListener("click", () => {
+  if (!lastInvite.email) { setMailStatus("送信先メールアドレスがありません。", "error"); return; }
+  location.href = "mailto:" + encodeURIComponent(lastInvite.email) + "?subject=" + encodeURIComponent(lastInvite.subject) + "&body=" + encodeURIComponent(lastInvite.body);
+  setMailStatus("メールソフトを起動しました。送信前に内容を確認してください。", "ok");
+});
+
+$("inviteBtn").addEventListener("click", async () => {
+  const data = { name: normText($("inviteName").value), email: normEmail($("inviteEmail").value), note: normText($("inviteNote").value) };
+  if (!data.name) { setInviteStatus("氏名を入力してください。", "error"); return; }
+  if (!data.email) { setInviteStatus("メールアドレスを入力してください。", "error"); return; }
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(data.email)) { setInviteStatus("メールアドレスの形式が正しくありません。", "error"); return; }
+  try {
+    $("inviteBtn").disabled = true;
+    setInviteStatus("重複を確認しています...", "");
+    const [adminSnap, pendingSnap] = await Promise.all([
+      getDocs(query(collection(db, "companyAdmins"), where("email", "==", data.email))),
+      getDoc(doc(db, "pendingCompanyAdmins", data.email)),
+    ]);
+    if (!adminSnap.empty) { setInviteStatus("このメールアドレスは既に企業管理者として登録済みです。", "error"); return; }
+    if (pendingSnap.exists() && pendingSnap.data().status === "pending") { setInviteStatus("このメールアドレスは既に招待済みです。", "error"); return; }
+    setInviteStatus("登録中...", "");
+    await setDoc(doc(db, "pendingCompanyAdmins", data.email), {
+      email: data.email,
+      name: data.name,
+      companyId: companyId,
+      companyName: companyName,
+      note: data.note,
+      status: "pending",
+      createdAt: serverTimestamp(),
+      createdBy: currentUid,
+      updatedAt: serverTimestamp(),
+      updatedBy: currentUid,
+      registeredAt: null,
+      registeredUid: null,
+    });
+    showInviteMail(data);
+    $("inviteName").value = ""; $("inviteEmail").value = ""; $("inviteNote").value = "";
+    await loadPending();
+    setInviteStatus("招待登録しました。下の「案内メール」より、案内メールを作成してください。", "ok");
+  } catch (e) {
+    console.error(e);
+    setInviteStatus("登録に失敗しました。\n" + (e.code || "") + " " + (e.message || e), "error");
+  } finally {
+    $("inviteBtn").disabled = false;
+  }
+});
+
+function statusLabel(status) { return { pending: "招待中", registered: "登録済", cancelled: "対象外" }[status] || status || ""; }
+
+async function loadPending() {
+  const snap = await getDocs(query(collection(db, "pendingCompanyAdmins"), where("companyId", "==", companyId)));
+  const rows = [];
+  snap.forEach((d) => { const v = d.data(); rows.push({ email: v.email || d.id, name: v.name || "", note: v.note || "", status: v.status || "pending" }); });
+  rows.sort((a, b) => String(a.name).localeCompare(String(b.name), "ja"));
+  if (!rows.length) { $("pendingRows").innerHTML = '<tr><td colspan="5" class="empty">招待はありません。</td></tr>'; return; }
+  $("pendingRows").innerHTML = rows.map((r) => {
+    const action = r.status === "pending" ? '<button class="danger" type="button" data-action="cancel" data-email="' + esc(r.email) + '">対象外にする</button>' : "－";
+    return "<tr><td>" + action + "</td><td>" + badge(statusLabel(r.status), r.status === "registered" ? "ok" : "warn") + "</td><td>" + esc(r.name) + "</td><td>" + esc(r.email) + "</td><td>" + esc(r.note) + "</td></tr>";
+  }).join("");
+}
+
+$("pendingRows").addEventListener("click", async (e) => {
+  const btn = e.target.closest('button[data-action="cancel"]');
+  if (!btn) return;
+  if (!confirm("この招待を対象外にします。よろしいですか？")) return;
+  try {
+    await updateDoc(doc(db, "pendingCompanyAdmins", btn.dataset.email), { status: "cancelled", updatedAt: serverTimestamp(), updatedBy: currentUid });
+    await loadPending();
+  } catch (err) {
+    console.error(err);
+    alert("対象外への変更に失敗しました。\n" + (err.message || err));
+  }
+});
+
+async function loadAdmins() {
+  const snap = await getDocs(query(collection(db, "companyAdmins"), where("companyId", "==", companyId)));
+  const rows = [];
+  snap.forEach((d) => { const v = d.data(); rows.push({ uid: d.id, name: v.name || "", email: v.email || "", status: v.status || "active" }); });
+  rows.sort((a, b) => String(a.name).localeCompare(String(b.name), "ja"));
+  if (!rows.length) { $("adminRows").innerHTML = '<tr><td colspan="4" class="empty">企業管理者はいません。</td></tr>'; return; }
+  $("adminRows").innerHTML = rows.map((r) => {
+    const isSelf = r.uid === currentUid;
+    const nextStatus = r.status === "active" ? "inactive" : "active";
+    const actionLabel = r.status === "active" ? "無効化" : "有効化";
+    const action = isSelf
+      ? "－（自分自身）"
+      : '<button class="danger" type="button" data-action="toggle" data-uid="' + esc(r.uid) + '" data-next="' + nextStatus + '">' + actionLabel + '</button>';
+    return "<tr><td>" + action + "</td><td>" + esc(r.name) + (isSelf ? "（自分）" : "") + "</td><td>" + esc(r.email) + "</td><td>" + (r.status === "active" ? badge("有効", "ok") : badge("無効", "ng")) + "</td></tr>";
+  }).join("");
+}
+
+$("adminRows").addEventListener("click", async (e) => {
+  const btn = e.target.closest('button[data-action="toggle"]');
+  if (!btn) return;
+  const next = btn.dataset.next;
+  if (!confirm(next === "inactive" ? "この企業管理者を無効化します。よろしいですか？" : "この企業管理者を有効化します。よろしいですか？")) return;
+  try {
+    await updateDoc(doc(db, "companyAdmins", btn.dataset.uid), { status: next, updatedAt: serverTimestamp(), updatedBy: currentUid });
+    await loadAdmins();
+  } catch (err) {
+    console.error(err);
+    alert("状態の更新に失敗しました。\n" + (err.message || err));
+  }
+});
+</script>
+</body>
+</html>

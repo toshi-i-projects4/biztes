@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ビズてす 運営ログイン</title>
+<title>ビズてす ログイン</title>
 <style>
 :root{--blue:#2563eb;--blue-dark:#1d4ed8;--navy:#0f172a;--line:#e5e7eb;--bg:#f5f7fb}
 *{box-sizing:border-box}
@@ -20,12 +20,15 @@ button:hover{background:var(--blue-dark)}
 .msg.show{display:block}
 .msg.error{background:#fef2f2;color:#dc2626;border:1px solid #fecaca}
 .footer-note{margin-top:18px;font-size:12px;color:#94a3b8;text-align:center}
+.link-row{margin-top:14px;text-align:center}
+.link-row a{color:var(--blue);text-decoration:none;font-size:13px;font-weight:800}
+.link-row a:hover{text-decoration:underline}
 </style>
 </head>
 <body>
 <div class="card">
-  <h1>ビズてす 運営ログイン</h1>
-  <div class="sub">オペレーター（ビズてす運営者）専用のログイン画面です。</div>
+  <h1>ビズてす ログイン</h1>
+  <div class="sub">運営（オペレーター）と企業管理者、共通のログイン画面です。</div>
   <div id="msg" class="msg error"></div>
   <form id="loginForm">
     <label for="email">メールアドレス</label>
@@ -34,7 +37,8 @@ button:hover{background:var(--blue-dark)}
     <input id="password" type="password" required autocomplete="current-password">
     <button type="submit">ログイン</button>
   </form>
-  <div class="footer-note">このアカウントはFirebase Authenticationで事前に発行されたオペレーターアカウントのみ利用できます。</div>
+  <div class="link-row"><a href="company-admin-signup.html">企業管理者として招待された方はこちら（初回登録）</a></div>
+  <div class="footer-note">このアカウントは、事前に発行された運営者アカウントまたは企業管理者アカウントのみ利用できます。</div>
 </div>
 
 <script type="module">
@@ -57,13 +61,21 @@ form.addEventListener("submit", async (e) => {
   const password = document.getElementById("password").value;
   try {
     const cred = await signInWithEmailAndPassword(auth, email, password);
+
     const opSnap = await getDoc(doc(db, "operators", cred.user.uid));
-    if (!opSnap.exists()) {
-      showError("このアカウントはオペレーターとして登録されていません。管理者にお問い合わせください。");
-      await auth.signOut();
+    if (opSnap.exists()) {
+      location.href = "operator-home.html";
       return;
     }
-    location.href = "operator-home.html";
+
+    const caSnap = await getDoc(doc(db, "companyAdmins", cred.user.uid));
+    if (caSnap.exists() && caSnap.data().status === "active") {
+      location.href = "company-admin-home.html";
+      return;
+    }
+
+    showError("このアカウントは運営者・企業管理者いずれとしても登録されていません（または無効化されています）。管理者にお問い合わせください。");
+    await auth.signOut();
   } catch (err) {
     console.error(err);
     showError("ログインに失敗しました。メールアドレスとパスワードをご確認ください。");
