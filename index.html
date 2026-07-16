@@ -8,24 +8,55 @@
 :root{--blue:#2563eb;--blue-dark:#1d4ed8;--navy:#0f172a;--muted:#64748b}
 *{box-sizing:border-box}
 body{margin:0;font-family:"Hiragino Maru Gothic ProN","BIZ UDPGothic","Yu Gothic UI","Meiryo",sans-serif;background:linear-gradient(135deg,#1d4ed8 0%,#2563eb 48%,#38bdf8 100%);color:#fff;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
-.card{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.24);border-radius:24px;padding:44px;max-width:480px;width:100%;text-align:center;backdrop-filter:blur(6px)}
-h1{font-size:26px;margin:0 0 10px}
-p{font-size:14px;line-height:1.8;color:#e0ecff;margin-bottom:28px}
-.links{display:grid;gap:12px}
-a.btn{display:block;background:#fff;color:var(--blue-dark);border-radius:999px;padding:13px;font-weight:800;text-decoration:none;font-size:14px}
-a.btn:hover{background:#eff6ff}
-a.btn.ghost{background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(255,255,255,.4)}
-.note{margin-top:24px;font-size:11.5px;color:#c7dbff}
+.loading-box{display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center}
+.loading-spinner{width:42px;height:42px;border:5px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:spin .9s linear infinite}
+.loading-text{font-size:14px;color:#eaf2ff}
+@keyframes spin{to{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
-<div class="card">
-  <h1>ビズてす</h1>
-  <p>ビズもんの世界観を継承した採用試験サービスです。このページは準備中のため、まずは運営者ログインからご利用ください。</p>
-  <div class="links">
-    <a class="btn" href="operator-login.html">運営者ログイン →</a>
-  </div>
-  <div class="note">応募者の方は、採用ご担当者から届いた受験リンクからアクセスしてください。</div>
+<div class="loading-box">
+  <div class="loading-spinner"></div>
+  <div class="loading-text">ログイン状態を確認しています...</div>
 </div>
+<script type="module">
+import { auth, db } from "./firebase-config.js";
+import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+// ビズもんのトップページ（index.html）と同じ考え方：
+// ログイン状態を確認し、未ログインならログイン画面へ、
+// ログイン済みなら権限に応じたホーム画面へ自動的に遷移させる。
+// （「準備中」の静的な案内カードは廃止）
+onAuthStateChanged(auth, async (user) => {
+  if (!user) {
+    location.replace("operator-login.html");
+    return;
+  }
+  try {
+    // ログイン後の遷移優先順位は operator-login.html と揃える
+    // （企業管理者権限を優先し、なければ運営者権限を確認）
+    const caSnap = await getDoc(doc(db, "companyAdmins", user.uid));
+    if (caSnap.exists() && caSnap.data().status === "active") {
+      location.replace("company-admin-home.html");
+      return;
+    }
+
+    const opSnap = await getDoc(doc(db, "operators", user.uid));
+    if (opSnap.exists()) {
+      location.replace("operator-home.html");
+      return;
+    }
+
+    // ログイン済みだが、運営者・企業管理者いずれの権限も確認できない場合は
+    // 念のためサインアウトしてログイン画面へ戻す
+    await signOut(auth);
+    location.replace("operator-login.html");
+  } catch (e) {
+    console.error(e);
+    location.replace("operator-login.html");
+  }
+});
+</script>
 </body>
 </html>
