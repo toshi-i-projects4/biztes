@@ -67,7 +67,8 @@ button:disabled{opacity:.55;cursor:not-allowed}
 .survey-group-title{font-weight:800;color:var(--navy);font-size:13px;margin:14px 0 6px}
 .survey-group-title:first-child{margin-top:0}
 .survey-selected-row{background:rgba(249,115,22,.14)}
-.survey-selected-row td{color:#c2410c;font-weight:800}
+.survey-selected-row td:not(.survey-q-cell){color:#c2410c;font-weight:800}
+.survey-q-cell{background:#fff}
 .table-wrap{overflow:auto;border:1px solid #f3f4f6;border-radius:12px;max-height:340px;margin-top:14px}
 table{width:100%;border-collapse:collapse;font-size:12px;background:#fff}
 th,td{border-bottom:1px solid #f3f4f6;padding:7px 9px;text-align:left;vertical-align:top;white-space:nowrap}
@@ -544,7 +545,7 @@ function renderSurveyAggregateGroupHtml(label, group, selectedApplicant) {
         const isOwn = ownSelected.includes(c.key);
         tableRows.push(
           '<tr class="' + (isOwn ? "survey-selected-row" : "") + '">' +
-          (idx === 0 ? '<td rowspan="' + choices.length + '">' + esc(item.questionText) + "</td>" : "") +
+          (idx === 0 ? '<td class="survey-q-cell" rowspan="' + choices.length + '">' + esc(item.questionText) + "</td>" : "") +
           "<td>" + esc(c.key + "：" + c.text) + (isOwn ? "　←対象者の回答" : "") + "</td>" +
           "<td>" + cnt + "</td>" +
           "<td>" + (answeredCount ? pct + "%" : "-") + "</td>" +
