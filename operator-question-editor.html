@@ -123,16 +123,16 @@ button.ghost:disabled{opacity:.5;cursor:not-allowed}
         <label>問題形式</label>
         <select id="fType"></select>
       </div>
-      <div class="form-row">
+      <div class="form-row" id="fScoreRow">
         <label>配点</label>
         <input id="fScore" type="number" value="1">
       </div>
     </div>
 
     <div class="form-row" style="margin-bottom:14px">
-      <label>小分類（任意・例：注意力／協調性 など）</label>
+      <label>カテゴリー2（任意・例：注意力／協調性 など）</label>
       <input id="fSubcategory" placeholder="例：注意力">
-      <div class="hint">分析・ダッシュボードで小分類ごとに集計する際に使います。</div>
+      <div class="hint">分析・ダッシュボードでカテゴリー2ごとに集計する際に使います。</div>
     </div>
 
     <div class="form-row" style="margin-bottom:14px">
@@ -466,6 +466,7 @@ function updateFormVisibility() {
   document.getElementById("choicesBlock").style.display = (type === "choice" || type === "multi_select") ? "block" : "none";
   document.getElementById("surveyChoicesBlock").style.display = isSurveyType ? "block" : "none";
   document.getElementById("surveyHint").style.display = isSurveyType ? "block" : "none";
+  document.getElementById("fScoreRow").style.display = isSurveyType ? "none" : "block";
   document.getElementById("fAnswerRow").style.display = (type === "typing_passage" || type === "sentence_completion" || type === "likert" || isSurveyType) ? "none" : "block";
   document.getElementById("likertHint").style.display = type === "likert" ? "block" : "none";
   document.getElementById("fAnswerHint").textContent =
@@ -552,7 +553,8 @@ document.getElementById("saveItemBtn").addEventListener("click", async () => {
     questionText: document.getElementById("fQuestionText").value,
     choices,
     correctAnswer,
-    score: Number(document.getElementById("fScore").value) || 0,
+    // アンケート形式（survey_choice/survey_multi_select）は正解の概念が無いため配点も不要
+    score: isSurveyType ? null : (Number(document.getElementById("fScore").value) || 0),
     explanation: document.getElementById("fExplanation").value,
     imageUrl: document.getElementById("fImageUrl").value,
     measurementIntent: document.getElementById("fIntent").value,

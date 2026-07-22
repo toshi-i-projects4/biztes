@@ -101,7 +101,7 @@ th.sortable.active .sort-arrow{color:var(--blue-dark)}
         <tbody id="resultBody"><tr><td colspan="23" class="empty">データを読み込み中です。</td></tr></tbody>
       </table>
     </div>
-    <div class="note">①〜④の小計は、択一・複数選択・空欄補充（正解時にその問題の配点）・タイピング（誤り数に応じて0〜10点）の合計点です。「①～④：合計」は①認知能力・②言語理解能力・③論理思考能力・④実務遂行能力の4カテゴリー1の合計点です。⑤行動特性・性格の各小計は、5段階評価を小分類（主体性・行動傾向・協調性・外向性・勤勉性/計画性・ストレス耐性・モチベーション・開放性）ごとに合計した点数です。いずれも該当カテゴリー1・カテゴリー2に1問も回答していない場合は「-」と表示します。設問ごとの内訳はCSV出力および下の回答詳細に含まれます。未受験（招待未開始）のデータはこの一覧には表示されません（上部の件数カードには含まれます）。招待情報・受験結果の削除は「受験者管理」画面から行えます（削除すると、このレポートやダッシュボードからも同時に消えます）。</div>
+    <div class="note">①〜④の小計は、択一・複数選択・空欄補充（正解時にその問題の配点）・タイピング（誤り数に応じて0〜10点）の合計点です。「①～④：合計」は①認知能力・②言語理解能力・③論理思考能力・④実務遂行能力の4カテゴリー1の合計点です。⑤行動特性・性格の各小計は、5段階評価をカテゴリー2（主体性・行動傾向・協調性・外向性・勤勉性/計画性・ストレス耐性・モチベーション・開放性）ごとに合計した点数です。いずれも該当カテゴリー1・カテゴリー2に1問も回答していない場合は「-」と表示します。設問ごとの内訳はCSV出力および下の回答詳細に含まれます。未受験（招待未開始）のデータはこの一覧には表示されません（上部の件数カードには含まれます）。招待情報・受験結果の削除は「受験者管理」画面から行えます（削除すると、このレポートやダッシュボードからも同時に消えます）。</div>
   </div>
 
   <div class="panel">
@@ -165,7 +165,7 @@ const TYPE_LABELS = {
 // 正誤判定・得点の概念がある形式（choice/multi_select/fill_blank）
 function isScoreableType(type) { return type === "choice" || type === "multi_select" || type === "fill_blank"; }
 
-// サマリー表の「①～④：合計」に使う4カテゴリー1（⑤行動特性・性格は小分類ごとの小計のみ表示するため含めない）
+// サマリー表の「①～④：合計」に使う4カテゴリー1（⑤行動特性・性格はカテゴリー2ごとの小計のみ表示するため含めない）
 const FOUR_CATEGORY1_IDS = ["cognitive", "verbal", "logical_thinking", "business_exec"];
 const FOUR_CATEGORY1_LABELS = {
   cognitive: "①認知能力：小計",
@@ -173,7 +173,7 @@ const FOUR_CATEGORY1_LABELS = {
   logical_thinking: "③論理思考能力：小計",
   business_exec: "④実務遂行能力：小計",
 };
-// ⑤行動特性・性格の小分類（scripts/seed-new-categories.mjsのLIKERT_QUESTIONSで各設問に
+// ⑤行動特性・性格のカテゴリー2（scripts/seed-new-categories.mjsのLIKERT_QUESTIONSで各設問に
 // 付与しているsubcategoryと同じ表記）。サマリー表・CSVでこの順に小計列を並べる。
 const PERSONALITY_SUBCATS = ["主体性", "行動傾向", "協調性", "外向性", "勤勉性・計画性", "ストレス耐性", "モチベーション", "開放性"];
 
@@ -255,7 +255,7 @@ function scoreInfoForAnswer(type, entry, item) {
   return { earned: null, max: null, isCorrect: null };
 }
 
-// 1件の受験結果（examResults.parts）から、カテゴリー1ごとの得点・正答数、小分類（subcategory）
+// 1件の受験結果（examResults.parts）から、カテゴリー1ごとの得点・正答数、カテゴリー2（subcategory）
 // ごとの得点、および総合得点を集計する。
 // スコアはFirestoreに保存済みの値をそのまま使わず、ここで回答データから都度再計算する
 // （タイピング・5段階評価の得点化ルールを、過去の受験データにも一律で反映するため）。
@@ -313,7 +313,7 @@ function updatePeriodHelp(r) {
   else { $("periodHelp").textContent = "開始日・終了日を指定してください（開始日は終了日以前の日付にしてください）。"; }
 }
 
-// カテゴリー1別／小分類別の点数セル。1問も回答していない（未到達含む）場合は「-」で表示する。
+// カテゴリー1別／カテゴリー2別の点数セル。1問も回答していない（未到達含む）場合は「-」で表示する。
 function scoreText(agg) {
   if (!agg || !agg.answeredCount) return "-";
   return String(agg.score);
@@ -341,7 +341,7 @@ function rawSumFourCategory1s(row) {
   });
   return any ? sum : null;
 }
-// カテゴリー1別／小分類別の並べ替え用の生の数値（未回答は null。表示用のscoreTextと同じ判定）。
+// カテゴリー1別／カテゴリー2別の並べ替え用の生の数値（未回答は null。表示用のscoreTextと同じ判定）。
 function rawScore(agg) { return agg && agg.answeredCount ? agg.score : null; }
 // Firestore Timestampを並べ替え用のミリ秒値に変換する（未設定はnull）。
 function tsMillis(v) {
@@ -558,7 +558,7 @@ function buildCategory1OrderIndex() {
 //   1. 受験者単位でグループ化したうえで、完了日時（completedAt）の降順を最優先で並べる
 //      （未完了＝completedAt無しの受験者は末尾）
 //   2. 同一受験者内では、①認知能力→②言語理解能力→③論理思考能力→④実務遂行能力→
-//      ⑤行動特性・性格（小分類は協調性を先頭に、出題データの並び順どおり）の順にカテゴリー1を並べ、
+//      ⑤行動特性・性格（カテゴリー2は協調性を先頭に、出題データの並び順どおり）の順にカテゴリー1を並べ、
 //      各カテゴリー1内は出題順（問題マスタのorderに基づき保存されているanswers配列の順序）をそのまま使う。
 function buildDetailRows() {
   detailRows = [];

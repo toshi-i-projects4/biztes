@@ -200,8 +200,8 @@ let isOperatorUser = false;
 let category1List = [];
 let itemsByCategory1 = {}; // category1Id -> Map(itemId -> item)
 let category1Max = {};      // category1Id -> 満点（①〜④のみ計算）
-let skillSubcatByCategory1 = {}; // category1Id -> その企業の現在の問題構成から拾った小分類名の一覧（出題順）
-let skillSubcatMax = {};    // 小分類名 -> 満点（①〜④の問題のみが対象。企業ごとにカスタマイズされた問題構成から都度計算する）
+let skillSubcatByCategory1 = {}; // category1Id -> その企業の現在の問題構成から拾ったカテゴリー2名の一覧（出題順）
+let skillSubcatMax = {};    // カテゴリー2名 -> 満点（①〜④の問題のみが対象。企業ごとにカスタマイズされた問題構成から都度計算する）
 let applicants = [];    // 受験完了データの集計済み配列
 let selectedToken = "";
 
@@ -307,15 +307,15 @@ function classifyPersonalityType(subcatAvg) {
 }
 
 // ---------------------------------------------------------------------
-// ①レーダーチャート（4能力）：小分類（注意力・語彙力・MECE・処理力…）ごとに
-// 「得点 ÷ その小分類の配点満点」を計算し、60%以上を「高い」、60%未満を
+// ①レーダーチャート（4能力）：カテゴリー2（注意力・語彙力・MECE・処理力…）ごとに
+// 「得点 ÷ そのカテゴリー2の配点満点」を計算し、60%以上を「高い」、60%未満を
 // 「低い」として、①〜④のカテゴリー1ごとに「高い場合はその強みを、低い場合は
 // 懸念点を伝える」1〜2文にまとめる。②行動特性・性格の説明（8点満点の平均
 // 3.0以上＝60%を「高い」とする基準）と揃えて、5点満点中3点＝60%を踏襲。
-// 小分類の一覧・配点は固定リストではなく、その企業に現在登録されている
+// カテゴリー2の一覧・配点は固定リストではなく、その企業に現在登録されている
 // 問題構成（loadEffectiveQuestionSet）から都度計算する
-// （企業ごとに問題がカスタマイズされているため、小分類の有無や配点は
-// 企業によって異なりうる）。未知の小分類名が出てきた場合も汎用の文言で
+// （企業ごとに問題がカスタマイズされているため、カテゴリー2の有無や配点は
+// 企業によって異なりうる）。未知のカテゴリー2名が出てきた場合も汎用の文言で
 // フォールバックし、表示が崩れないようにしている。
 // ---------------------------------------------------------------------
 const SKILL_HIGH_THRESHOLD_PCT = 60; // 配点満点に対する得点率60%以上を「高い」とする
@@ -379,7 +379,7 @@ const SKILL_CONCERN_FALLBACK = "この点にはやや注意が必要なこと";
 function skillStrengthPhrase(name) { return SKILL_STRENGTH_PHRASE[name] || SKILL_STRENGTH_FALLBACK; }
 function skillConcernPhrase(name) { return SKILL_CONCERN_PHRASE[name] || SKILL_CONCERN_FALLBACK; }
 
-// カテゴリー1ごとの配点満点を、企業に現在登録されている問題マスタから小分類単位で計算する
+// カテゴリー1ごとの配点満点を、企業に現在登録されている問題マスタからカテゴリー2単位で計算する
 function maxBySubcatForCategory1s(category1Ids) {
   const out = {};
   (category1Ids || []).forEach((category1Id) => {
@@ -396,7 +396,7 @@ function maxBySubcatForCategory1s(category1Ids) {
   });
   return out;
 }
-// カテゴリー1ごとの小分類名一覧を、出題順を保ったまま抽出する
+// カテゴリー1ごとのカテゴリー2名一覧を、出題順を保ったまま抽出する
 function subcatNamesByCategory1(category1Ids) {
   const out = {};
   (category1Ids || []).forEach((category1Id) => {
@@ -775,7 +775,7 @@ function radarDataset(label, data, colorVar, order) {
 }
 // ①レーダーチャート（4能力）の個人プロフィールカード。②行動特性・性格の
 // タイプ説明（renderProfileCard）とは別の説明（注意力・語彙力・MECE・処理力…
-// 各小分類の得点÷配点満点をもとにした、①〜④カテゴリー1ごとの強み・懸念コメント）を表示する。
+// 各カテゴリー2の得点÷配点満点をもとにした、①〜④カテゴリー1ごとの強み・懸念コメント）を表示する。
 function renderRadarProfileCard(el, a) {
   el.style.display = "block";
   const skillProfile = classifySkillProfile(a);
