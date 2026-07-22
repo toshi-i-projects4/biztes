@@ -202,7 +202,7 @@ import {
 import {
   copyTemplateItemsToCompany, escapeHtml,
   loadEffectiveCategory1List, createCompanyCustomCategory1, deleteCompanyCustomCategory1,
-  loadTemplateCategory1Settings,
+  loadTemplateCategory1Settings, invalidateCompanyQuestionCache,
 } from "./operator-shared.js";
 
 function setBackHomeLink(href, text) {
@@ -450,6 +450,7 @@ function itemRow(item) {
 async function deleteItem(itemId) {
   if (!confirm("この問題を削除します。よろしいですか？")) return;
   await deleteDoc(doc(db, "companies", companyId, "questionSets", currentCategory1, "items", itemId));
+  invalidateCompanyQuestionCache(companyId);
 }
 
 // ---- モーダル制御 ----
@@ -569,6 +570,7 @@ document.getElementById("saveItemBtn").addEventListener("click", async () => {
     data.createdAt = serverTimestamp();
     await addDoc(itemsRef, data);
   }
+  invalidateCompanyQuestionCache(companyId);
   overlay.classList.remove("show");
 });
 
@@ -582,6 +584,7 @@ document.getElementById("saveSettingsBtn").addEventListener("click", async () =>
     realTimeLimitSec: Number(document.getElementById("setRealTime").value) || 0,
     updatedAt: serverTimestamp(),
   }, { merge: true });
+  invalidateCompanyQuestionCache(companyId);
   alert("カテゴリー1設定を保存しました。");
 });
 

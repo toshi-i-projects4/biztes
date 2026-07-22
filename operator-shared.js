@@ -65,6 +65,7 @@ export async function copyTemplateItemsToCompany(companyId, category1Id) {
     await setDoc(targetRef, { ...data, updatedAt: serverTimestamp() });
     count++;
   }
+  invalidateCompanyQuestionCache(companyId);
   return count;
 }
 
@@ -90,6 +91,72 @@ export function escapeHtml(v) {
   return String(v == null ? "" : v).replace(/[&<>"']/g, (c) => (
     { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]
   ));
+}
+
+// =====================================================================
+// 問題マスタのキャッシュ（sessionStorage）
+//
+// 全社共通テンプレート・企業カスタム問題は、受験のたびに毎回変わるものではないのに、
+// dashboard・report・report-individual・operator-report・exam・exam-entryなど、ほぼ
+// 全ての画面がページを開くたびに読み直していた（①〜⑤・自社追加カテゴリー分の設問を
+// 毎回まるごとFirestoreから取得＝1画面で100件以上の読み取りになっていた）。
+// ここでは同じタブ内であれば一定時間（CACHE_TTL_MS）は再読み込みしないようにし、
+// Firestoreの読み取り件数を大きく減らす。
+// 問題管理画面（operator-question-editor.html / operator-template-editor.html）で
+// 保存・削除・コピーなどの変更操作を行った直後は、invalidate系の関数で該当キャッシュを
+// 明示的に破棄するため、編集した本人はそのタブで即座に最新内容を見られる。他のタブ・
+// 他の閲覧者への反映は最大でもCACHE_TTL_MS後になる（二重の安全策として期限切れも設定）。
+// =====================================================================
+const CACHE_TTL_MS = 10 * 60 * 1000; // 10分
+const CACHE_PREFIX = "biztes_qcache_v1:";
+
+function cacheRead(key) {
+  try {
+    const raw = sessionStorage.getItem(CACHE_PREFIX + key);
+    if (!raw) return undefined;
+    const { t, v } = JSON.parse(raw);
+    if (Date.now() - t > CACHE_TTL_MS) {
+      sessionStorage.removeItem(CACHE_PREFIX + key);
+      return undefined;
+    }
+    return v;
+  } catch {
+    return undefined; // sessionStorageが使えない環境（プライベートモード等）では素通りする
+  }
+}
+function cacheWrite(key, value) {
+  try {
+    sessionStorage.setItem(CACHE_PREFIX + key, JSON.stringify({ t: Date.now(), v: value }));
+  } catch {
+    // 書き込み失敗（容量超過等）はキャッシュ無しとして扱う（動作に影響しない）
+  }
+}
+function cacheClearMatching(predicate) {
+  try {
+    const toRemove = [];
+    for (let i = 0; i < sessionStorage.length; i++) {
+      const k = sessionStorage.key(i);
+      if (k && k.startsWith(CACHE_PREFIX) && predicate(k.slice(CACHE_PREFIX.length))) toRemove.push(k);
+    }
+    toRemove.forEach((k) => sessionStorage.removeItem(k));
+  } catch {
+    // 何もしない
+  }
+}
+
+// 指定企業に関するキャッシュ（自社カスタムカテゴリー一覧・その企業の問題セット）を破棄する。
+// operator-question-editor.htmlで、自社の問題・カテゴリー1設定を保存/削除/コピーした直後に呼ぶ。
+export function invalidateCompanyQuestionCache(companyId) {
+  if (!companyId) return;
+  cacheClearMatching((key) => key === `customCategory1s:${companyId}` || key.startsWith(`questionSet:${companyId}:`));
+}
+
+// 全社共通のテンプレート・カテゴリー定義に関するキャッシュを全て破棄する。
+// operator-template-editor.htmlで、テンプレートの問題・カテゴリー1設定を保存/削除した直後に呼ぶ
+// （どの企業のタブがどのカテゴリーをキャッシュしているか特定できないため、この端末のタブ内の
+// 問題マスタキャッシュを丸ごと破棄する。テンプレート編集は頻繁な操作ではないため影響は小さい）。
+export function invalidateGlobalQuestionCache() {
+  cacheClearMatching(() => true);
 }
 
 // =====================================================================
@@ -135,18 +202,25 @@ export function ensureGlobalCategory1DefinitionsSeeded() {
 
 // 全社共通のカテゴリー1一覧（表示順）
 export async function loadGlobalCategory1Defs() {
+  const cached = cacheRead("globalCategory1Defs");
+  if (cached) return cached;
   await ensureGlobalCategory1DefinitionsSeeded();
   const snap = await getDocs(query(collection(db, "partDefinitions"), orderBy("order", "asc")));
   const list = [];
   snap.forEach((d) => list.push({ id: d.id, ...d.data() }));
+  cacheWrite("globalCategory1Defs", list);
   return list;
 }
 
 // 指定企業の自社限定カテゴリー1一覧（表示順）
 export async function loadCompanyCustomCategory1s(companyId) {
+  const cacheKey = `customCategory1s:${companyId}`;
+  const cached = cacheRead(cacheKey);
+  if (cached) return cached;
   const snap = await getDocs(query(collection(db, "companies", companyId, "customParts"), orderBy("order", "asc")));
   const list = [];
   snap.forEach((d) => list.push({ id: d.id, ...d.data() }));
+  cacheWrite(cacheKey, list);
   return list;
 }
 
@@ -188,6 +262,7 @@ export async function createGlobalCategory1Def(label) {
     realTimeLimitSec: 0,
     updatedAt: serverTimestamp(),
   }, { merge: true });
+  invalidateGlobalQuestionCache();
   return category1Id;
 }
 
@@ -207,6 +282,7 @@ export async function deleteGlobalCategory1Def(category1Id) {
   }
   await deleteDoc(doc(db, "templates", category1Id)).catch(() => {});
   await deleteDoc(doc(db, "partDefinitions", category1Id));
+  invalidateGlobalQuestionCache();
 }
 
 // 企業が自社限定の新しいカテゴリーを追加する
@@ -227,6 +303,7 @@ export async function createCompanyCustomCategory1(companyId, label) {
     realTimeLimitSec: 0,
     updatedAt: serverTimestamp(),
   }, { merge: true });
+  invalidateCompanyQuestionCache(companyId);
   return category1Id;
 }
 
@@ -242,12 +319,17 @@ export async function deleteCompanyCustomCategory1(companyId, category1Id) {
   }
   await deleteDoc(doc(db, "companies", companyId, "questionSets", category1Id)).catch(() => {});
   await deleteDoc(doc(db, "companies", companyId, "customParts", category1Id));
+  invalidateCompanyQuestionCache(companyId);
 }
 
 // 指定カテゴリー1について、実際に出題する設定・問題一覧を返す。
 // 企業が自社の問題を1問でも登録していればそちらを優先し、登録が無い全社共通カテゴリーは
 // 運営のデフォルト問題（templates）をそのまま使う。自社限定カテゴリーで未登録の場合は0問扱い。
 export async function loadEffectiveQuestionSet(companyId, category1) {
+  const cacheKey = `questionSet:${companyId}:${category1.id}:${category1.scope}`;
+  const cached = cacheRead(cacheKey);
+  if (cached) return cached;
+
   const companyItemsSnap = await getDocs(
     query(collection(db, "companies", companyId, "questionSets", category1.id, "items"), orderBy("order", "asc"))
   );
@@ -256,7 +338,9 @@ export async function loadEffectiveQuestionSet(companyId, category1) {
     const setSnap = await getDoc(doc(db, "companies", companyId, "questionSets", category1.id));
     const items = [];
     companyItemsSnap.forEach((d) => items.push({ id: d.id, ...d.data() }));
-    return { source: "company", settings: setSnap.exists() ? setSnap.data() : {}, items };
+    const result = { source: "company", settings: setSnap.exists() ? setSnap.data() : {}, items };
+    cacheWrite(cacheKey, result);
+    return result;
   }
 
   if (category1.scope === "global") {
@@ -264,8 +348,12 @@ export async function loadEffectiveQuestionSet(companyId, category1) {
     const itemsSnap = await getDocs(query(collection(db, "templates", category1.id, "items"), orderBy("order", "asc")));
     const items = [];
     itemsSnap.forEach((d) => items.push({ id: d.id, ...d.data() }));
-    return { source: "template", settings: setSnap.exists() ? setSnap.data() : {}, items };
+    const result = { source: "template", settings: setSnap.exists() ? setSnap.data() : {}, items };
+    cacheWrite(cacheKey, result);
+    return result;
   }
 
-  return { source: "none", settings: {}, items: [] };
+  const result = { source: "none", settings: {}, items: [] };
+  cacheWrite(cacheKey, result);
+  return result;
 }

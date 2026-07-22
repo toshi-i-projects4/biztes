@@ -197,7 +197,7 @@ import {
   doc, getDoc, setDoc, updateDoc, deleteDoc, collection, onSnapshot,
   query, orderBy, serverTimestamp, addDoc,
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { loadGlobalCategory1Defs, createGlobalCategory1Def, deleteGlobalCategory1Def, escapeHtml } from "./operator-shared.js";
+import { loadGlobalCategory1Defs, createGlobalCategory1Def, deleteGlobalCategory1Def, escapeHtml, invalidateGlobalQuestionCache } from "./operator-shared.js";
 
 let category1s = [];
 let currentCategory1 = null;
@@ -408,6 +408,7 @@ function itemRow(item) {
 async function deleteItem(itemId) {
   if (!confirm("このデフォルト問題を削除します。よろしいですか？")) return;
   await deleteDoc(doc(db, "templates", currentCategory1, "items", itemId));
+  invalidateGlobalQuestionCache();
 }
 
 // ---- モーダル制御 ----
@@ -522,6 +523,7 @@ document.getElementById("saveItemBtn").addEventListener("click", async () => {
     data.createdAt = serverTimestamp();
     await addDoc(itemsRef, data);
   }
+  invalidateGlobalQuestionCache();
   overlay.classList.remove("show");
 });
 
@@ -540,6 +542,7 @@ document.getElementById("saveSettingsBtn").addEventListener("click", async () =>
     label: label || currentCategory1,
     updatedAt: serverTimestamp(),
   }, { merge: true });
+  invalidateGlobalQuestionCache();
   await loadCategory1sAndRender();
   alert("カテゴリー1設定を保存しました。");
 });
