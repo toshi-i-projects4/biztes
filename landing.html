@@ -55,17 +55,24 @@ section[id]{scroll-margin-top:90px}
 .mock-top{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:14px}
 .mock-title{font-weight:900;color:var(--navy)}
 .mock-badge{font-size:12px;background:#dcfce7;color:#166534;border-radius:999px;padding:4px 9px;font-weight:800}
-.mock-tabs{display:flex;gap:6px;margin-bottom:14px}
-.mock-tab{flex:1;text-align:center;border:1px solid var(--line);background:#f8fafc;color:var(--slate);border-radius:10px;padding:8px 6px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit}
-.mock-tab.active{background:var(--blue);border-color:var(--blue);color:#fff}
+.mock-legend{display:flex;justify-content:center;gap:16px;flex-wrap:wrap;margin-bottom:10px}
+.legend-item{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:800;color:var(--slate)}
+.legend-swatch{width:16px;height:3px;border-radius:2px;display:inline-block}
+.legend-swatch.person{background:var(--blue)}
+.legend-swatch.dept{background:#eb6834}
+.legend-swatch.org{background:#1baf7a}
 .mock-radar{display:flex;justify-content:center;padding:6px 0 2px}
 .mock-radar svg{width:100%;max-width:280px;height:auto;display:block}
 .radar-grid{fill:none;stroke:var(--line);stroke-width:1}
 .radar-axis{stroke:var(--line);stroke-width:1}
-.radar-area{fill:var(--blue);fill-opacity:.12;stroke:var(--blue);stroke-width:2;stroke-linejoin:round}
-.radar-dot{fill:var(--blue);stroke:#fff;stroke-width:1.5}
+.radar-area{stroke-width:2;stroke-linejoin:round}
+.radar-area.person{fill:var(--blue);fill-opacity:.16;stroke:var(--blue)}
+.radar-area.dept{fill:#eb6834;fill-opacity:.05;stroke:#eb6834;stroke-dasharray:6,4}
+.radar-area.org{fill:#1baf7a;fill-opacity:.05;stroke:#1baf7a;stroke-dasharray:2,3}
+.radar-dot.person{fill:var(--blue);stroke:#fff;stroke-width:1.5}
+.radar-dot.dept{fill:#eb6834;stroke:#fff;stroke-width:1.2}
+.radar-dot.org{fill:#1baf7a;stroke:#fff;stroke-width:1.2}
 .radar-label{font-size:10.5px;font-weight:800;fill:var(--slate)}
-.radar-value{font-size:11px;font-weight:900;fill:var(--navy)}
 .mock-note{font-size:11px;color:#94a3b8;margin-top:12px;text-align:right}
 .button-row{display:flex;gap:12px;flex-wrap:wrap;margin-top:26px}
 .button{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:14px 22px;border-radius:999px;text-decoration:none;font-weight:900;border:1px solid transparent;transition:.2s;min-height:48px;cursor:pointer;font-size:15px}
@@ -222,14 +229,14 @@ footer.site{border-top:1px solid var(--line);padding:36px 0;background:#fff}
     </div>
     <div class="hero-card">
       <div class="mock-screen">
-        <div class="mock-top"><span class="mock-title" id="mockTitle">結果サンプル</span><span class="mock-badge" id="mockBadge">4能力</span></div>
-        <div class="mock-tabs">
-          <button type="button" class="mock-tab active" data-view="person">個人</button>
-          <button type="button" class="mock-tab" data-view="dept">部署</button>
-          <button type="button" class="mock-tab" data-view="org">組織全体</button>
+        <div class="mock-top"><span class="mock-title">結果サンプル</span><span class="mock-badge">4能力</span></div>
+        <div class="mock-legend">
+          <span class="legend-item"><i class="legend-swatch person"></i>個人</span>
+          <span class="legend-item"><i class="legend-swatch dept"></i>部署</span>
+          <span class="legend-item"><i class="legend-swatch org"></i>全社</span>
         </div>
         <div class="mock-radar">
-          <svg viewBox="0 0 340 240" role="img" aria-label="4能力レーダーチャート" id="radarSvg">
+          <svg viewBox="0 0 340 240" role="img" aria-label="個人・部署・全社の4能力を比較したレーダーチャート">
             <polygon class="radar-grid" points="170,48 240,118 170,188 100,118"></polygon>
             <polygon class="radar-grid" points="170,65.5 222.5,118 170,170.5 117.5,118"></polygon>
             <polygon class="radar-grid" points="170,83 205,118 170,153 135,118"></polygon>
@@ -238,22 +245,28 @@ footer.site{border-top:1px solid var(--line);padding:36px 0;background:#fff}
             <line class="radar-axis" x1="170" y1="118" x2="240" y2="118"></line>
             <line class="radar-axis" x1="170" y1="118" x2="170" y2="188"></line>
             <line class="radar-axis" x1="170" y1="118" x2="100" y2="118"></line>
-            <polygon class="radar-area" id="radarArea" points=""></polygon>
-            <circle class="radar-dot" id="radarDot0" r="4"></circle>
-            <circle class="radar-dot" id="radarDot1" r="4"></circle>
-            <circle class="radar-dot" id="radarDot2" r="4"></circle>
-            <circle class="radar-dot" id="radarDot3" r="4"></circle>
+            <polygon class="radar-area org" points="170,73.9 212,118 170,163.5 121,118"></polygon>
+            <polygon class="radar-area dept" points="170,69 215.5,118 170,168.4 117.5,118"></polygon>
+            <polygon class="radar-area person" points="170,58.5 217.6,118 170,181 128,118"></polygon>
+            <circle class="radar-dot org" cx="170" cy="73.9" r="3.5"></circle>
+            <circle class="radar-dot org" cx="212" cy="118" r="3.5"></circle>
+            <circle class="radar-dot org" cx="170" cy="163.5" r="3.5"></circle>
+            <circle class="radar-dot org" cx="121" cy="118" r="3.5"></circle>
+            <circle class="radar-dot dept" cx="170" cy="69" r="3.5"></circle>
+            <circle class="radar-dot dept" cx="215.5" cy="118" r="3.5"></circle>
+            <circle class="radar-dot dept" cx="170" cy="168.4" r="3.5"></circle>
+            <circle class="radar-dot dept" cx="117.5" cy="118" r="3.5"></circle>
+            <circle class="radar-dot person" cx="170" cy="58.5" r="4"></circle>
+            <circle class="radar-dot person" cx="217.6" cy="118" r="4"></circle>
+            <circle class="radar-dot person" cx="170" cy="181" r="4"></circle>
+            <circle class="radar-dot person" cx="128" cy="118" r="4"></circle>
             <text class="radar-label" x="170" y="34" text-anchor="middle">認知能力</text>
             <text class="radar-label" x="250" y="122" text-anchor="start">言語理解能力</text>
             <text class="radar-label" x="170" y="208" text-anchor="middle">論理思考能力</text>
             <text class="radar-label" x="90" y="122" text-anchor="end">実務遂行能力</text>
-            <text class="radar-value" id="radarVal0" text-anchor="middle"></text>
-            <text class="radar-value" id="radarVal1" text-anchor="start"></text>
-            <text class="radar-value" id="radarVal2" text-anchor="middle"></text>
-            <text class="radar-value" id="radarVal3" text-anchor="end"></text>
           </svg>
         </div>
-        <div class="mock-note" id="mockNote">※イメージサンプルです（実際の診断結果ではありません）</div>
+        <div class="mock-note">※イメージサンプルです（実際の診断結果ではありません）</div>
       </div>
     </div>
   </div>
@@ -745,57 +758,6 @@ document.getElementById("contactForm").addEventListener("submit", function(e){
   var mailto = "mailto:xxxxx@gmail.com?subject=" + encodeURIComponent(subject) + "&body=" + encodeURIComponent(bodyLines.join("\n"));
   window.location.href = mailto;
 });
-</script>
-
-<script>
-(function(){
-  var data = {
-    person: {title:"結果サンプル", badge:"4能力", note:"※イメージサンプルです（実際の診断結果ではありません）",
-      values:[78,65,82,70]},
-    dept: {title:"部署結果サンプル（営業部）", badge:"部署平均スコア", note:"※イメージサンプルです（実際の診断結果ではありません）",
-      values:[71,68,74,80]},
-    org: {title:"組織全体サンプル", badge:"全社平均スコア", note:"※イメージサンプルです（実際の診断結果ではありません）",
-      values:[69,66,72,73]}
-  };
-  var radarCx = 170, radarCy = 118, radarR = 70;
-  function radarPoint(axis, value){
-    var frac = Math.max(0, Math.min(100, value)) / 100;
-    if(axis === 0) return {x: radarCx, y: radarCy - frac * radarR};
-    if(axis === 1) return {x: radarCx + frac * radarR, y: radarCy};
-    if(axis === 2) return {x: radarCx, y: radarCy + frac * radarR};
-    return {x: radarCx - frac * radarR, y: radarCy};
-  }
-  function renderRadar(values){
-    var pts = [];
-    for(var i = 0; i < 4; i++){
-      var p = radarPoint(i, values[i]);
-      pts.push(p.x + "," + p.y);
-      document.getElementById("radarDot" + i).setAttribute("cx", p.x);
-      document.getElementById("radarDot" + i).setAttribute("cy", p.y);
-      var val = document.getElementById("radarVal" + i);
-      val.textContent = values[i];
-      if(i === 0){ val.setAttribute("x", p.x); val.setAttribute("y", p.y - 10); }
-      else if(i === 1){ val.setAttribute("x", p.x + 10); val.setAttribute("y", p.y + 4); }
-      else if(i === 2){ val.setAttribute("x", p.x); val.setAttribute("y", p.y + 16); }
-      else { val.setAttribute("x", p.x - 10); val.setAttribute("y", p.y + 4); }
-    }
-    document.getElementById("radarArea").setAttribute("points", pts.join(" "));
-  }
-  var tabs = document.querySelectorAll(".mock-tab");
-  tabs.forEach(function(tab){
-    tab.addEventListener("click", function(){
-      tabs.forEach(function(t){ t.classList.remove("active"); });
-      tab.classList.add("active");
-      var view = tab.getAttribute("data-view");
-      var d = data[view];
-      document.getElementById("mockTitle").textContent = d.title;
-      document.getElementById("mockBadge").textContent = d.badge;
-      document.getElementById("mockNote").textContent = d.note;
-      renderRadar(d.values);
-    });
-  });
-  renderRadar(data.person.values);
-})();
 </script>
 
 </body>
