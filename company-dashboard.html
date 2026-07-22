@@ -66,8 +66,8 @@ button:disabled{opacity:.55;cursor:not-allowed}
 .bar-row .val{font-size:11px;color:var(--ink-2);text-align:right}
 .survey-group-title{font-weight:800;color:var(--navy);font-size:13px;margin:14px 0 6px}
 .survey-group-title:first-child{margin-top:0}
-.survey-q{margin-bottom:8px}
-.survey-q:last-child{margin-bottom:0}
+.survey-selected-row{background:rgba(249,115,22,.14)}
+.survey-selected-row td{color:#c2410c;font-weight:800}
 .table-wrap{overflow:auto;border:1px solid #f3f4f6;border-radius:12px;max-height:340px;margin-top:14px}
 table{width:100%;border-collapse:collapse;font-size:12px;background:#fff}
 th,td{border-bottom:1px solid #f3f4f6;padding:7px 9px;text-align:left;vertical-align:top;white-space:nowrap}
@@ -162,9 +162,8 @@ th{background:#f8fafc;color:var(--navy);font-weight:800;font-size:11px;position:
   <div class="panel" id="surveyPanel" style="display:none">
     <h2>③ アンケート結果</h2>
     <div class="desc" id="surveyDesc"></div>
-    <div id="surveyIndividualBlock" style="display:none"></div>
     <div id="surveyAggregateBlock" style="display:none"></div>
-    <div class="note">「働き方アンケート」など、正解のないアンケート形式（択一選択・複数選択）の設問の結果をここに表示します。対象者を選択すると、その方の回答をそのまま表示します。「全社」「部署」「役職」の比較対象を選択すると、選択肢ごとの回答人数・割合を集計して表示します（複数選択している場合は、それぞれ別々に集計します）。自由記述の内容はここには表示しません。個人ごとの自由記述は、レポート（全社）の回答詳細でご確認いただけます。</div>
+    <div class="note">「働き方アンケート」など、正解のないアンケート形式（択一選択・複数選択）の設問の結果をここに表示します。「全社」「部署」「役職」の比較対象を選択すると、選択肢ごとの回答人数・割合を集計して表示します（複数選択している場合は、それぞれ別々に集計します）。対象者を選択している場合は、その方が選んだ選択肢をオレンジ色で強調表示します。自由記述の内容はここには表示しません。個人ごとの自由記述は、レポート（全社）の回答詳細でご確認いただけます。</div>
   </div>
 
   <a class="bottom-link" href="operator-home.html" id="backHomeLinkBottom">← 運営ホームへ戻る</a>
@@ -513,31 +512,15 @@ function computeSurveyStructure() {
     }
   });
 }
-function category1LabelOf(category1Id) {
-  const p = category1List.find((x) => x.id === category1Id);
-  return p ? (p.label || category1Id) : category1Id;
-}
 function surveySelectedArray(ans) {
   if (!ans) return [];
   return Array.isArray(ans.selected) ? ans.selected : (ans.selected ? [ans.selected] : []);
 }
-// 対象者本人の回答をそのまま表示する
-function renderSurveyIndividualHtml(a) {
-  return surveyCategory1Ids.map((category1Id) => {
-    const rows = surveyItemsByCategory1[category1Id].map((item) => {
-      const ans = a.surveyAnswers && a.surveyAnswers[item.id];
-      const choiceMap = {};
-      (item.choices || []).forEach((c) => { choiceMap[c.key] = c.text; });
-      const selectedArr = surveySelectedArray(ans);
-      const answerText = selectedArr.length ? selectedArr.map((k) => choiceMap[k] || k).join("、") : "未回答";
-      return '<div class="survey-q">' + esc(item.questionText) + "<br>回答：" + esc(answerText) +
-        (ans && ans.freeText ? "<br>自由記述：" + esc(ans.freeText) : "") + "</div>";
-    }).join("");
-    return '<div class="type-box"><div class="type-name">' + esc(category1LabelOf(category1Id)) + '</div><div class="type-desc">' + rows + "</div></div>";
-  }).join("");
-}
-// 指定した対象者グループにおける、選択肢ごとの回答人数・割合を集計する
-function renderSurveyAggregateGroupHtml(label, group) {
+// 指定した対象者グループにおける、選択肢ごとの回答人数・割合を集計する。
+// selectedApplicantが指定されている場合、その方が選んだ選択肢の行をオレンジ色で強調する
+// （raw回答をそのまま表示するのではなく、全社・部署・役職の集計の中で本人の回答がどこに
+// 位置するかを一目で分かるようにするため）。
+function renderSurveyAggregateGroupHtml(label, group, selectedApplicant) {
   const tableRows = [];
   surveyCategory1Ids.forEach((category1Id) => {
     surveyItemsByCategory1[category1Id].forEach((item) => {
@@ -552,13 +535,17 @@ function renderSurveyAggregateGroupHtml(label, group) {
         answeredCount++;
         selectedArr.forEach((k) => { counts[k] = (counts[k] || 0) + 1; });
       });
+      const ownSelected = selectedApplicant
+        ? surveySelectedArray(selectedApplicant.surveyAnswers && selectedApplicant.surveyAnswers[item.id])
+        : [];
       choices.forEach((c, idx) => {
         const cnt = counts[c.key] || 0;
         const pct = answeredCount ? Math.round((cnt / answeredCount) * 1000) / 10 : 0;
+        const isOwn = ownSelected.includes(c.key);
         tableRows.push(
-          "<tr>" +
+          '<tr class="' + (isOwn ? "survey-selected-row" : "") + '">' +
           (idx === 0 ? '<td rowspan="' + choices.length + '">' + esc(item.questionText) + "</td>" : "") +
-          "<td>" + esc(c.key + "：" + c.text) + "</td>" +
+          "<td>" + esc(c.key + "：" + c.text) + (isOwn ? "　←対象者の回答" : "") + "</td>" +
           "<td>" + cnt + "</td>" +
           "<td>" + (answeredCount ? pct + "%" : "-") + "</td>" +
           "</tr>"
@@ -577,20 +564,11 @@ function renderSurvey() {
   panel.style.display = "block";
 
   const selected = applicants.find((a) => a.token === selectedToken) || null;
-  const indivBlock = $("surveyIndividualBlock");
-  if (selected) {
-    indivBlock.style.display = "block";
-    indivBlock.innerHTML = '<div class="survey-group-title">' + esc(selected.applicantName) + "（本人の回答）</div>" + renderSurveyIndividualHtml(selected);
-  } else {
-    indivBlock.style.display = "none";
-    indivBlock.innerHTML = "";
-  }
-
   const d = currentDept(), p = currentPos();
   const groupBlocks = [];
-  if (isCompanyOn()) groupBlocks.push(renderSurveyAggregateGroupHtml("全社（n=" + applicants.length + "）", applicants));
-  if (d) { const g = deptGroup(); groupBlocks.push(renderSurveyAggregateGroupHtml(deptLabelText(d) + "（n=" + g.length + "）", g)); }
-  if (p) { const g = posGroup(); groupBlocks.push(renderSurveyAggregateGroupHtml(posLabelText(p) + "（n=" + g.length + "）", g)); }
+  if (isCompanyOn()) groupBlocks.push(renderSurveyAggregateGroupHtml("全社（n=" + applicants.length + "）", applicants, selected));
+  if (d) { const g = deptGroup(); groupBlocks.push(renderSurveyAggregateGroupHtml(deptLabelText(d) + "（n=" + g.length + "）", g, selected)); }
+  if (p) { const g = posGroup(); groupBlocks.push(renderSurveyAggregateGroupHtml(posLabelText(p) + "（n=" + g.length + "）", g, selected)); }
   const nonEmpty = groupBlocks.filter(Boolean);
   const aggBlock = $("surveyAggregateBlock");
   if (nonEmpty.length) {
@@ -601,9 +579,9 @@ function renderSurvey() {
     aggBlock.innerHTML = "";
   }
 
-  $("surveyDesc").textContent = (selected || nonEmpty.length)
-    ? ""
-    : "対象者を検索・選択するか、上の「全社」「部署」「役職」の比較対象を選択すると、アンケートの結果を表示できます。";
+  $("surveyDesc").textContent = nonEmpty.length
+    ? (selected ? "オレンジ色の行が、選択中の対象者（" + selected.applicantName + "）の回答です。" : "")
+    : "「全社」「部署」「役職」のいずれかを比較対象として選択すると、アンケートの結果を表示できます。";
 }
 
 // 指定カテゴリー1の配点満点を、現在登録されている問題マスタから計算する
