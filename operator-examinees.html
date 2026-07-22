@@ -10,7 +10,7 @@ body{margin:0;font-family:"Hiragino Maru Gothic ProN","BIZ UDPGothic","Yu Gothic
 .header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px}h1{margin:0;font-size:28px}.back-link,.bottom-back-link{color:#2563eb;text-decoration:none;font-weight:bold;font-size:14px}.bottom-back-link{display:inline-block;margin-top:22px}.section-title{font-size:18px;font-weight:bold;margin:0 0 14px}.description{font-size:14px;line-height:1.7;color:#6b7280;margin:0 0 18px}
 .card{background:transparent;border:none;border-radius:0;box-shadow:none;padding:0;box-sizing:border-box;margin:0 0 28px}.card+.card{border-top:1px solid #e5e7eb;padding-top:24px}
 .info-box,.warning-box{background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:14px 16px;margin-bottom:14px;line-height:1.7;white-space:pre-wrap;font-size:14px;color:#111827}.warning-box{background:#fffbeb;border-color:#fde68a;color:#92400e;margin-top:0}
-.form-grid{display:grid;grid-template-columns:180px 1fr;gap:14px 16px;align-items:center}.label{font-size:14px;font-weight:bold;color:#374151}select{width:100%;border:1px solid #d1d5db;border-radius:10px;padding:11px 12px;font-size:15px;box-sizing:border-box;background:#fff;color:#111827}
+.form-grid{display:grid;grid-template-columns:180px 1fr;gap:14px 16px;align-items:center}.label{font-size:14px;font-weight:bold;color:#374151}.required{color:#dc2626;font-size:12px;margin-left:4px}select{width:100%;border:1px solid #d1d5db;border-radius:10px;padding:11px 12px;font-size:15px;box-sizing:border-box;background:#fff;color:#111827}
 .secondary-btn{border:none;border-radius:10px;padding:12px 16px;font-size:15px;font-weight:bold;cursor:pointer;background:#64748b;color:#fff}.secondary-btn:hover{background:#475569}.secondary-btn:disabled{opacity:.6;cursor:not-allowed}
 .status{border-radius:10px;padding:14px 16px;margin-top:14px;margin-bottom:14px;line-height:1.7;white-space:pre-wrap;font-size:14px;font-weight:bold;display:none}.status.ok{display:block;background:#dcfce7;border:1px solid #86efac;color:#166534}.status.error{display:block;background:#fee2e2;border:1px solid #fca5a5;color:#991b1b}.status.warn{display:block;background:#fef3c7;border:1px solid #fbbf24;color:#92400e}
 .table-wrap{overflow-x:auto;overflow-y:scroll;max-height:520px;margin-top:18px;border:1px solid #e5e7eb;border-radius:10px;background:#fff}
@@ -35,12 +35,12 @@ table,.data-table{width:100%;border-collapse:collapse;background:#fff;font-size:
 
   <div class="card" id="companySelectPanel">
     <p class="section-title">企業を選択</p>
-    <div class="form-grid"><div class="label">対象企業</div><select id="companySelect"><option value="">選択してください</option></select></div>
+    <div class="form-grid"><div class="label">対象企業<span class="required">必須</span></div><select id="companySelect"><option value="">選択してください</option></select></div>
   </div>
 
   <div class="card">
     <p class="description">採用試験として受験した対象者が実際に入社した場合など、受験後に社員コード・氏名・メールアドレス・部署・役職・備考を変更できます。変更した内容は、レポートの受験結果サマリー・回答詳細やダッシュボードにもそのまま反映されます。また、「削除」から招待・受験結果を完全に削除できます。削除すると、レポートやダッシュボードなど他の画面からも同時に消えます（元に戻せません）。</p>
-    <div class="warning-box">注意：この画面での変更は受験招待そのものの登録内容を書き換えます。受験リンク自体は変更されません（同じリンクのまま、以後の集計・表示にのみ新しい内容が使われます）。</div>
+    <div class="warning-box">注意：この画面での変更は受験招待の登録内容を書き換えます。受験リンク自体は変更されません（同じリンクのまま、以後の集計・表示にのみ新しい内容が使われます）。</div>
     <div class="toolbar">
       <input id="search" placeholder="社員コード・氏名・メール・部署・備考で検索">
       <select id="filterStatus">

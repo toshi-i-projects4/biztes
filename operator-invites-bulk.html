@@ -11,7 +11,7 @@ body{margin:0;font-family:"Hiragino Maru Gothic ProN","BIZ UDPGothic","Yu Gothic
 .card{background:transparent;border:none;border-radius:0;box-shadow:none;padding:0;box-sizing:border-box;margin:0 0 28px}.card+.card{border-top:1px solid #e5e7eb;padding-top:24px}
 .warning-box,.confirm-box,.preview-box,.info-box{background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:14px 16px;margin-bottom:14px;line-height:1.7;white-space:pre-wrap;font-size:14px;color:#111827}.warning-box{background:#fffbeb;border-color:#fde68a;color:#92400e;margin-top:16px}.confirm-box{background:#fffbeb;border-color:#fde68a;color:#92400e;margin-top:16px}.preview-box{background:#f9fafb;border-color:#e5e7eb;color:#111827;margin-top:0}.preview-box.warn{background:#fef3c7;border-color:#fbbf24;color:#92400e;font-weight:bold}.preview-box.ok{background:#dcfce7;border-color:#86efac;color:#166534;font-weight:bold}.preview-box.error{background:#fee2e2;border-color:#fca5a5;color:#991b1b;font-weight:bold}
 .file-box{background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:16px;margin-bottom:14px}.file-box input[type="file"]{width:100%;border:1px solid #d1d5db;border-radius:10px;padding:11px 12px;font-size:15px;box-sizing:border-box;background:#fff;color:#111827}.file-name{font-size:13px;color:#6b7280;margin-top:10px;white-space:pre-wrap}
-.form-grid{display:grid;grid-template-columns:180px 1fr;gap:14px 16px;align-items:center}.label{font-size:14px;font-weight:bold;color:#374151}input,select,textarea{width:100%;border:1px solid #d1d5db;border-radius:10px;padding:11px 12px;font-size:15px;box-sizing:border-box;background:#fff;color:#111827}input[readonly],textarea[readonly]{background:#f9fafb;color:#6b7280}textarea{resize:vertical;line-height:1.6}
+.form-grid{display:grid;grid-template-columns:180px 1fr;gap:14px 16px;align-items:center}.label{font-size:14px;font-weight:bold;color:#374151}.required{color:#dc2626;font-size:12px;margin-left:4px}input,select,textarea{width:100%;border:1px solid #d1d5db;border-radius:10px;padding:11px 12px;font-size:15px;box-sizing:border-box;background:#fff;color:#111827}input[readonly],textarea[readonly]{background:#f9fafb;color:#6b7280}textarea{resize:vertical;line-height:1.6}
 textarea#bulkText{min-height:180px;font-family:ui-monospace,Consolas,monospace;font-size:13px}
 .invite-textarea{min-height:220px;font-family:"BIZ UDPGothic","Yu Gothic UI","Meiryo",sans-serif;background:#f9fafb}
 .button-row,.invite-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px;flex-wrap:wrap}.primary-btn,.secondary-btn,.danger-btn{border:none;border-radius:10px;padding:12px 16px;font-size:15px;font-weight:bold;cursor:pointer}.primary-btn{background:#2563eb;color:#fff}.primary-btn:hover{background:#1d4ed8}.secondary-btn{background:#64748b;color:#fff}.secondary-btn:hover{background:#475569}.danger-btn{background:#dc2626;color:#fff}.danger-btn:hover{background:#b91c1c}.primary-btn:disabled,.danger-btn:disabled,.secondary-btn:disabled{opacity:.6;cursor:not-allowed}
@@ -33,7 +33,7 @@ textarea#bulkText{min-height:180px;font-family:ui-monospace,Consolas,monospace;f
 
   <div class="card" id="companySelectPanel">
     <p class="section-title">企業を選択</p>
-    <div class="form-grid"><div class="label">対象企業</div><select id="companySelect"><option value="">選択してください</option></select></div>
+    <div class="form-grid"><div class="label">対象企業<span class="required">必須</span></div><select id="companySelect"><option value="">選択してください</option></select></div>
   </div>
 
   <div class="card">

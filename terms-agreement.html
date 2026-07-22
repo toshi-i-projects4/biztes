@@ -46,7 +46,7 @@ async function loadContext(user) {
   $("companyName").textContent = companyData.companyName || loginAdminData.companyName || loginAdminData.companyId;
   updateAcceptedDisplay();
   if (!hasPermission()) {
-    setAccess("このページは自社の「ビズてす申込者」のみ利用できます。\n申込者：" + String(loginAdminData.isApplicant) + "\n状態：" + (loginAdminData.status || "未設定"), "error");
+    setAccess("このページは自社の「利用規約同意代表者」のみ利用できます。\n申込者：" + String(loginAdminData.isApplicant) + "\n状態：" + (loginAdminData.status || "未設定"), "error");
   }
   return true;
 }

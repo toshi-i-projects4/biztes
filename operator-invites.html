@@ -10,7 +10,7 @@ body{margin:0;font-family:"Hiragino Maru Gothic ProN","BIZ UDPGothic","Yu Gothic
 .header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px}h1{margin:0;font-size:28px}.back-link,.bottom-back-link{color:#2563eb;text-decoration:none;font-weight:bold;font-size:14px}.bottom-back-link{display:inline-block;margin-top:22px}.section-title{font-size:18px;font-weight:bold;margin:0 0 14px}.description{font-size:14px;line-height:1.7;color:#6b7280;margin:0 0 18px}
 .card{background:transparent;border:none;border-radius:0;box-shadow:none;padding:0;box-sizing:border-box;margin:0 0 28px}.card+.card{border-top:1px solid #e5e7eb;padding-top:24px}
 .info-box,.warning-box{background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:14px 16px;margin-bottom:14px;line-height:1.7;white-space:pre-wrap;font-size:14px;color:#111827}.warning-box{background:#fffbeb;border-color:#fde68a;color:#92400e;margin-top:16px}
-.form-grid{display:grid;grid-template-columns:180px 1fr;gap:14px 16px;align-items:center}.label{font-size:14px;font-weight:bold;color:#374151}input,select,textarea{width:100%;border:1px solid #d1d5db;border-radius:10px;padding:11px 12px;font-size:15px;box-sizing:border-box;background:#fff;color:#111827}input[readonly],textarea[readonly]{background:#f9fafb;color:#6b7280}textarea{min-height:96px;resize:vertical;line-height:1.6}.invite-textarea{min-height:220px;font-family:"BIZ UDPGothic","Yu Gothic UI","Meiryo",sans-serif;background:#f9fafb}
+.form-grid{display:grid;grid-template-columns:180px 1fr;gap:14px 16px;align-items:center}.label{font-size:14px;font-weight:bold;color:#374151}.required{color:#dc2626;font-size:12px;margin-left:4px}input,select,textarea{width:100%;border:1px solid #d1d5db;border-radius:10px;padding:11px 12px;font-size:15px;box-sizing:border-box;background:#fff;color:#111827}input[readonly],textarea[readonly]{background:#f9fafb;color:#6b7280}textarea{min-height:96px;resize:vertical;line-height:1.6}.invite-textarea{min-height:220px;font-family:"BIZ UDPGothic","Yu Gothic UI","Meiryo",sans-serif;background:#f9fafb}
 .button-row,.invite-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px;flex-wrap:wrap}.primary-btn,.secondary-btn,.danger-btn{border:none;border-radius:10px;padding:12px 16px;font-size:15px;font-weight:bold;cursor:pointer}.primary-btn{background:#2563eb;color:#fff}.primary-btn:hover{background:#1d4ed8}.secondary-btn{background:#64748b;color:#fff;border:none}.secondary-btn:hover{background:#475569}.danger-btn{background:#dc2626;color:#fff}.danger-btn:hover{background:#b91c1c}.primary-btn:disabled,.secondary-btn:disabled,.danger-btn:disabled{opacity:.6;cursor:not-allowed}
 .status{border-radius:10px;padding:14px 16px;margin-top:14px;margin-bottom:14px;line-height:1.7;white-space:pre-wrap;font-size:14px;font-weight:bold;display:none}.status.ok{display:block;background:#dcfce7;border:1px solid #86efac;color:#166534}.status.error{display:block;background:#fee2e2;border:1px solid #fca5a5;color:#991b1b}.status.note{display:block;background:#dbeafe;border:1px solid #93c5fd;color:#1e40af}.status.warn{display:block;background:#fef3c7;border:1px solid #fbbf24;color:#92400e}
 .table-wrap{overflow-x:auto;overflow-y:scroll;max-height:420px;margin-top:18px;border:1px solid #e5e7eb;border-radius:10px;background:#fff}table,.data-table{width:100%;border-collapse:collapse;background:#fff;font-size:13px;min-width:1200px}.data-table th,.data-table td,th,td{border:1px solid #e5e7eb;padding:6px 10px;text-align:left;vertical-align:middle;white-space:nowrap}.data-table th,th{background:#f3f4f6;color:#374151;font-weight:bold;position:sticky;top:0;z-index:1}.data-table tr:hover td{background:#f9fafb}.badge{display:inline-block;border-radius:999px;padding:4px 9px;font-size:12px;font-weight:bold;white-space:nowrap}.badge.not_started{background:#f3f4f6;color:#6b7280}.badge.in_progress{background:#fef3c7;color:#92400e}.badge.completed{background:#dcfce7;color:#166534}.badge.cancelled{background:#f3f4f6;color:#94a3b8}.link-cell{font-size:11px;color:#6b7280;word-break:break-all;max-width:220px;white-space:normal}.table-action-btn{border:none;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:bold;cursor:pointer;background:#2563eb;color:#fff;white-space:nowrap;margin:0}.table-action-btn:hover{background:#1d4ed8}.table-action-btn:disabled{opacity:.55;cursor:not-allowed}.table-action-btn.secondary{background:#64748b}.table-action-btn.secondary:hover{background:#475569}
@@ -30,20 +30,20 @@ body{margin:0;font-family:"Hiragino Maru Gothic ProN","BIZ UDPGothic","Yu Gothic
 
   <div class="card" id="companySelectPanel">
     <p class="section-title">企業を選択</p>
-    <div class="form-grid"><div class="label">対象企業</div><select id="companySelect"><option value="">選択してください</option></select></div>
+    <div class="form-grid"><div class="label">対象企業<span class="required">必須</span></div><select id="companySelect"><option value="">選択してください</option></select></div>
   </div>
 
   <div class="card" id="createInviteCard">
     <p class="description">1. 運営者・企業管理者がこの画面で対象者を個別に招待します。<br>2. 発行された受験リンクを対象者に送付します（下の「招待メール案内」からメールを作成できます）。<br>3. 対象者が受験を完了すると、下の一覧の「状態」が「受験完了」になります。</p>
     <div class="form-grid">
-      <div class="label">社員コード（任意）</div><input id="applicantEmployeeCode" placeholder="例：B0002">
-      <div class="label">氏名</div><input id="applicantName" placeholder="例：山田 太郎">
-      <div class="label">メールアドレス</div><input id="applicantEmail" type="email" autocomplete="email" placeholder="例：yamada@example.com">
-      <div class="label">部署（任意）</div><input id="applicantDepartment" placeholder="例：営業部">
+      <div class="label">社員コード</div><input id="applicantEmployeeCode" placeholder="任意入力（例：B0002）">
+      <div class="label">氏名<span class="required">必須</span></div><input id="applicantName" placeholder="例：山田 太郎">
+      <div class="label">メールアドレス</div><input id="applicantEmail" type="email" autocomplete="email" placeholder="任意入力（例：yamada@example.com）">
+      <div class="label">部署</div><input id="applicantDepartment" placeholder="任意入力（例：営業部）">
       <div class="small" style="grid-column:2 / -1;">※採用試験として利用する場合、部署欄には配属予定部署を入れておくことをお勧めします。</div>
-      <div class="label">役職（任意）</div><input id="applicantPosition" placeholder="例：一般、主任、課長、部長">
+      <div class="label">役職</div><input id="applicantPosition" placeholder="任意入力（例：一般、主任、課長、部長）">
       <div class="small" style="grid-column:2 / -1;">※採用試験として利用する場合、役職欄には「○○年 新卒採用」、「○○年○月 経験者採用」などを入れておくことをお勧めします。</div>
-      <div class="label">備考（任意）</div><input id="applicantNote">
+      <div class="label">備考</div><input id="applicantNote" placeholder="任意入力">
     </div>
     <div id="inviteStatus" class="status"></div>
     <div class="button-row"><button class="secondary-btn" id="clearBtn" type="button">入力をクリア</button><button class="primary-btn" id="createInviteBtn" type="button">招待登録する</button></div>
@@ -78,7 +78,7 @@ body{margin:0;font-family:"Hiragino Maru Gothic ProN","BIZ UDPGothic","Yu Gothic
     </div>
     <div class="table-wrap">
       <table class="data-table">
-        <thead><tr><th>操作</th><th>コピー</th><th>メール作成</th><th>状態</th><th>発行日</th><th>受験開始日時</th><th>受験完了日時</th><th>社員コード</th><th>氏名</th><th>部署</th><th>役職</th><th>メールアドレス</th><th>備考</th><th>受験リンク</th></tr></thead>
+        <thead><tr><th>操作</th><th>コピー</th><th>メール作成</th><th>状態</th><th>発行日</th><th>社員コード</th><th>氏名</th><th>部署</th><th>役職</th><th>メールアドレス</th><th>備考</th><th>受験開始日時</th><th>受験完了日時</th><th>受験リンク</th></tr></thead>
         <tbody id="inviteRows"></tbody>
       </table>
     </div>
@@ -359,14 +359,14 @@ function renderInvites() {
       <td><button class="table-action-btn" type="button" data-action="mail" data-name="${escapeHtml(invite.applicantName || "")}" data-email="${escapeHtml(invite.applicantEmail || "")}" data-link="${escapeHtml(link)}">メール作成</button></td>
       <td><span class="badge ${invite.status}">${statusLabel(invite.status)}</span></td>
       <td>${created}</td>
-      <td>${fmtDateTime(invite.startedAt)}</td>
-      <td>${fmtDateTime(invite.completedAt)}</td>
       <td>${escapeHtml(invite.employeeCode || "")}</td>
       <td>${escapeHtml(invite.applicantName || "")}</td>
       <td>${escapeHtml(invite.department || "")}</td>
       <td>${escapeHtml(invite.position || "")}</td>
       <td>${escapeHtml(invite.applicantEmail || "")}</td>
       <td>${escapeHtml(invite.note || "")}</td>
+      <td>${fmtDateTime(invite.startedAt)}</td>
+      <td>${fmtDateTime(invite.completedAt)}</td>
       <td class="link-cell">${escapeHtml(link)}</td>
     `;
     const excludeBtn = tr.querySelector('button[data-action="exclude"]');
