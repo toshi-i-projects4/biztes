@@ -9,7 +9,7 @@
 *{box-sizing:border-box}
 body{margin:0;font-family:"Hiragino Maru Gothic ProN","BIZ UDPGothic","Yu Gothic UI","Meiryo",sans-serif;background:var(--bg);color:#111827}
 .topbar{position:sticky;top:0;background:#fff;border-bottom:1px solid var(--line);padding:12px 20px;display:flex;justify-content:space-between;align-items:center;z-index:10}
-.topbar .part-name{font-weight:800;color:var(--blue-dark);font-size:14px}
+.topbar .category1-name{font-weight:800;color:var(--blue-dark);font-size:14px}
 .topbar .timer{font-weight:900;font-size:18px;color:var(--navy);font-variant-numeric:tabular-nums}
 .topbar .timer.warn{color:#dc2626}
 .wrap{max-width:760px;margin:0 auto;padding:26px 20px 80px}
@@ -28,9 +28,8 @@ h1{font-size:20px;color:var(--navy);margin:0 0 10px}
 .choice-opt input{margin-top:3px}
 .fill-input{width:100%;border:1px solid #d1d5db;border-radius:9px;padding:10px 12px;font-size:14px;font-family:inherit}
 textarea.free-text{width:100%;border:1px solid #d1d5db;border-radius:9px;padding:10px 12px;font-size:14px;font-family:inherit;min-height:70px;resize:vertical}
-.typing-sample{background:#f8fafc;border:1px solid var(--line);border-radius:12px;padding:16px;font-size:14px;line-height:2;color:var(--navy);margin-bottom:14px;white-space:pre-wrap}
+.typing-sample{background:#f8fafc;border:1px solid var(--line);border-radius:12px;padding:16px;font-size:14px;line-height:2;color:var(--navy);margin-bottom:14px;white-space:pre-wrap;user-select:none;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none}
 textarea.typing-input{width:100%;min-height:140px;border:1.5px solid var(--blue);border-radius:12px;padding:14px;font-size:14px;line-height:2;font-family:inherit}
-.typing-stats{display:flex;gap:16px;font-size:12px;color:var(--muted);margin-top:8px}
 .footer-actions{position:sticky;bottom:0;background:linear-gradient(0deg,#fff 60%,rgba(255,255,255,0));padding:20px 0 6px;text-align:center}
 button.primary{background:var(--blue);color:#fff;border:none;border-radius:999px;padding:13px 28px;font-size:14px;font-weight:800;cursor:pointer}
 button.primary:hover{background:var(--blue-dark)}
@@ -39,11 +38,29 @@ button.primary:disabled{background:#cbd5e1;cursor:not-allowed}
 .feedback.correct{background:#dcfce7;color:#166534}
 .feedback.wrong{background:#fee2e2;color:#b91c1c}
 .center-loading{text-align:center;color:var(--muted);padding:80px 20px}
+.q-nav-hint{font-size:11.5px;color:var(--muted);margin:-6px 0 8px}
+.q-nav{position:sticky;background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px;display:flex;gap:6px;overflow-x:auto;margin-bottom:16px;z-index:9}
+.q-nav::-webkit-scrollbar{height:4px}
+.q-chip{flex:0 0 auto;width:32px;height:32px;border-radius:8px;border:1.5px solid #cbd5e1;background:#fff;color:#475569;font-size:12.5px;font-weight:800;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative}
+.q-chip:hover{background:#f8fafc}
+.q-chip.answered{background:#eff6ff;border-color:var(--blue);color:var(--blue-dark)}
+.q-chip.flagged::after{content:"";position:absolute;top:-3px;right:-3px;width:9px;height:9px;border-radius:50%;background:var(--orange);border:1.5px solid #fff}
+.card-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:6px}
+.card-head .q-index{margin-bottom:0}
+.flag-btn{flex:0 0 auto;background:#fff;border:1px solid var(--line);border-radius:999px;padding:4px 10px;font-size:11.5px;color:var(--muted);cursor:pointer;white-space:nowrap}
+.flag-btn.active{background:#fff7ed;border-color:var(--orange);color:#c2410c;font-weight:700}
+.card.highlight{animation:cardHighlight 1.2s ease}
+@keyframes cardHighlight{0%{box-shadow:0 0 0 3px rgba(37,99,235,.55)}100%{box-shadow:0 4px 14px rgba(15,23,42,.04)}}
+.nav-tip{background:#f0fdf4;border-left:4px solid var(--green);border-radius:12px;padding:14px 16px;font-size:13px;color:#166534;line-height:1.8;margin-bottom:20px}
+.nav-tip-legend{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px;font-size:12px;color:#166534}
+.legend-chip{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:6px;border:1.5px solid #cbd5e1;background:#fff;color:#475569;font-size:11px;font-weight:800;position:relative;margin-right:4px;flex:0 0 auto}
+.legend-chip.answered{background:#eff6ff;border-color:var(--blue);color:var(--blue-dark)}
+.legend-chip.flagged::after{content:"";position:absolute;top:-3px;right:-3px;width:7px;height:7px;border-radius:50%;background:var(--orange);border:1.5px solid #fff}
 </style>
 </head>
 <body>
 <div class="topbar">
-  <div class="part-name" id="partName">読み込み中…</div>
+  <div class="category1-name" id="category1Name">読み込み中…</div>
   <div class="timer" id="timerDisplay"></div>
 </div>
 <div class="wrap" id="examRoot">
@@ -51,34 +68,31 @@ button.primary:disabled{background:#cbd5e1;cursor:not-allowed}
 </div>
 
 <script type="module">
-import { auth, db, PART_IDS, PART_LABELS } from "./firebase-config.js";
+import { auth, db, LIKERT_LABELS } from "./firebase-config.js";
 import { signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import {
-  doc, getDoc, setDoc, updateDoc, collection, getDocs, query, orderBy, serverTimestamp,
+  doc, getDoc, setDoc, updateDoc, serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { escapeHtml } from "./operator-shared.js";
+import { escapeHtml, loadEffectiveCategory1List, loadEffectiveQuestionSet } from "./operator-shared.js";
 
 const params = new URLSearchParams(location.search);
 const companyId = params.get("company") || sessionStorage.getItem("biztest_company");
 const token = params.get("token") || sessionStorage.getItem("biztest_token");
 
 const root = document.getElementById("examRoot");
-const partNameEl = document.getElementById("partName");
+const category1NameEl = document.getElementById("category1Name");
 const timerEl = document.getElementById("timerDisplay");
 
-let examData = null;     // { typing:{settings,practice,real}, ... }
-let partIndex = 0;
-let stage = "instructions"; // instructions -> practice -> real -> (next part)
+let examData = null;     // { [category1Id]: {settings,practice,real}, ... }
+let category1Order = [];      // 有効なカテゴリー1一覧（グローバル＋自社限定、表示順）
+let category1Index = 0;
+let stage = "instructions"; // instructions -> practice -> real -> (next category1)
 let timerHandle = null;
 let timeLeft = 0;
 let started = false;
 
-const results = {
-  typing: null,
-  reading: null,
-  logical: null,
-  worklife: null,
-};
+// カテゴリー1IDごとの採点結果。カテゴリー1構成は企業ごとに動的なため、固定キーではなく空オブジェクトから始める。
+let results = {};
 
 window.addEventListener("beforeunload", (e) => {
   if (started) { e.preventDefault(); e.returnValue = ""; }
@@ -106,26 +120,26 @@ onAuthStateChanged(auth, async (user) => {
   }
   started = true;
   await loadAllExamData();
-  renderPart();
+  renderCategory1();
 });
 
-async function loadPartData(partId) {
-  const setSnap = await getDoc(doc(db, "companies", companyId, "questionSets", partId));
-  const settings = setSnap.exists() ? setSnap.data() : {};
-  const itemsSnap = await getDocs(query(collection(db, "companies", companyId, "questionSets", partId, "items"), orderBy("order", "asc")));
-  const all = [];
-  itemsSnap.forEach((d) => { const data = d.data(); if (data.active !== false) all.push({ id: d.id, ...data }); });
+// 指定カテゴリー1の、実際に出題する設定・問題一覧を読み込む。
+// 自社が1問でも登録していれば自社の問題を、そうでなければ運営のデフォルト問題（テンプレート）を使う。
+async function loadCategory1Data(category1) {
+  const eff = await loadEffectiveQuestionSet(companyId, category1);
+  const all = (eff.items || []).filter((i) => i.active !== false);
   return {
-    settings,
+    settings: eff.settings || {},
     practice: all.filter((i) => i.stage === "practice"),
     real: all.filter((i) => i.stage === "real"),
   };
 }
 
 async function loadAllExamData() {
+  category1Order = await loadEffectiveCategory1List(companyId);
   examData = {};
-  for (const partId of PART_IDS) {
-    examData[partId] = await loadPartData(partId);
+  for (const category1 of category1Order) {
+    examData[category1.id] = await loadCategory1Data(category1);
   }
 }
 
@@ -152,80 +166,122 @@ function updateTimerDisplay() {
   timerEl.classList.toggle("warn", timeLeft <= 10);
 }
 
-function renderPart() {
-  const partId = PART_IDS[partIndex];
-  if (!partId) { submitExam(); return; }
-  partNameEl.textContent = PART_LABELS[partId];
-  stage = "instructions";
-  renderInstructions(partId);
+function category1LabelOf(category1Id) {
+  const category1 = category1Order.find((p) => p.id === category1Id);
+  return category1 ? (category1.label || category1Id) : category1Id;
 }
 
-function renderInstructions(partId) {
+function renderCategory1() {
+  const category1 = category1Order[category1Index];
+  if (!category1) { submitExam(); return; }
+  const category1Id = category1.id;
+  category1NameEl.textContent = category1LabelOf(category1Id);
+  stage = "instructions";
+  renderInstructions(category1Id);
+}
+
+function renderInstructions(category1Id) {
   clearTimer();
   timerEl.textContent = "";
-  const data = examData[partId];
+  const data = examData[category1Id];
+  const hasPractice = (data.practice || []).length > 0;
+  const leadText = hasPractice
+    ? "まずは練習問題があります。準備ができたら開始してください。"
+    : "準備ができたら開始してください。";
   root.innerHTML = `
     <div class="card">
-      <h1>${PART_LABELS[partId]}</h1>
+      <h1>${escapeHtml(category1LabelOf(category1Id))}</h1>
       <div class="instructions">${escapeHtml(data.settings.instructions || "")}</div>
-      <p style="font-size:13px;color:#64748b">まずは練習問題があります。準備ができたら開始してください。</p>
-      <div class="footer-actions"><button class="primary" id="toPractice">練習を始める</button></div>
+      <div class="nav-tip">
+        <strong>💡 わからない問題は、あとから戻って解答できます</strong><br>
+        時間がかかりそうな問題は、無理に今解かなくても大丈夫です。各問題の右上にある「🚩 あとで確認」ボタンを押すと印がつき、画面上部に常に表示されている問題番号一覧にオレンジの丸印で表示されます。番号をタップすると、その問題まで自動でスクロールして戻れます。
+        <div class="nav-tip-legend">
+          <span class="legend-chip">1</span>未回答
+          <span class="legend-chip answered">2</span>回答済み
+          <span class="legend-chip flagged">3</span>あとで確認
+        </div>
+      </div>
+      <p style="font-size:13px;color:#64748b">${leadText}</p>
+      <div class="footer-actions"><button class="primary" id="toPractice">${hasPractice ? "練習を始める" : "開始する"}</button></div>
     </div>
   `;
-  document.getElementById("toPractice").addEventListener("click", () => runStage(partId, "practice"));
+  document.getElementById("toPractice").addEventListener("click", () => runStage(category1Id, "practice"));
 }
 
-function runStage(partId, targetStage) {
+// カテゴリー1内の問題は、択一・複数選択・空欄補充・自由記述・タイピング・5段階評価（likert）が
+// 混在しうる（例：「認知能力」カテゴリー1には、注意力＝タイピング、記憶力・語彙力等＝択一／空欄補充が
+// 混在する）ため、全形式をrenderItemSetの1つのカード一覧として順番に表示する。
+function runStage(category1Id, targetStage) {
   stage = targetStage;
-  const data = examData[partId];
+  const data = examData[category1Id];
   const items = targetStage === "practice" ? data.practice : data.real;
   const timeLimit = targetStage === "practice" ? data.settings.practiceTimeLimitSec : data.settings.realTimeLimitSec;
 
   if (!items.length) {
-    afterStage(partId, targetStage);
+    afterStage(category1Id, targetStage);
     return;
   }
 
-  if (partId === "typing") {
-    renderTyping(partId, targetStage, items[0], timeLimit);
-  } else if (partId === "worklife") {
-    renderFreeTextSet(partId, targetStage, items, timeLimit);
-  } else {
-    renderChoiceSet(partId, targetStage, items, timeLimit);
-  }
+  renderItemSet(category1Id, targetStage, items, timeLimit);
 }
 
-function afterStage(partId, fromStage) {
+function afterStage(category1Id, fromStage) {
   if (fromStage === "practice") {
-    runStage(partId, "real");
+    runStage(category1Id, "real");
   } else {
-    partIndex++;
-    renderPart();
+    category1Index++;
+    renderCategory1();
   }
 }
 
-// ---------- 選択式（reading / logical） ----------
-function renderChoiceSet(partId, targetStage, items, timeLimit) {
+// ---------- 択一・複数選択・空欄補充・自由記述（形式が混在してもよい） ----------
+// 元は選択式（renderChoiceSet）と自由記述（renderFreeTextSet）に分かれていたが、
+// 新しく追加するカテゴリーでは1カテゴリー1内に複数の形式が混在しうるため、1つの関数にまとめている。
+function isScoreableType(type) {
+  return type === "choice" || type === "multi_select" || type === "fill_blank";
+}
+
+function renderItemSet(category1Id, targetStage, items, timeLimit) {
   const isPractice = targetStage === "practice";
   const answers = {}; // itemId -> value
+  const stageStartedAt = Date.now(); // タイピング問題のCPM計算に使う（ステージ開始〜提出までの経過時間）
 
   const itemsHtml = items.map((item, idx) => {
     const img = item.imageUrl ? `<img class="q-image" src="${escapeHtml(item.imageUrl)}" alt="図版">` : "";
     let body = "";
-    if (item.type === "fill_blank") {
+    if (item.type === "typing_passage") {
+      body = `
+        <div class="typing-sample">${escapeHtml(item.questionText)}</div>
+        <textarea class="typing-input" data-item="${item.id}" placeholder="ここに入力してください"></textarea>
+      `;
+    } else if (item.type === "fill_blank") {
       body = `<input class="fill-input" data-item="${item.id}" placeholder="解答を入力">`;
+    } else if (item.type === "sentence_completion") {
+      body = `<textarea class="free-text" data-item="${item.id}" placeholder="自由にご記入ください"></textarea>`;
+    } else if (item.type === "likert") {
+      body = `<div class="choices" data-item="${item.id}">` + LIKERT_LABELS.map((label, i) => `
+        <label class="choice-opt">
+          <input type="radio" name="q_${item.id}" value="${i + 1}">
+          <span>${escapeHtml(label)}</span>
+        </label>`).join("") + `</div>`;
     } else {
       const inputType = item.type === "multi_select" ? "checkbox" : "radio";
-      body = `<div class="choices" data-item="${item.id}">` + item.choices.map((c) => `
+      body = `<div class="choices" data-item="${item.id}">` + (item.choices || []).map((c) => `
         <label class="choice-opt">
           <input type="${inputType}" name="q_${item.id}" value="${escapeHtml(c.key)}">
           <span><strong>${escapeHtml(c.key)}</strong>：${escapeHtml(c.text)}</span>
         </label>`).join("") + `</div>`;
     }
+    const questionText = item.type === "typing_passage"
+      ? "下のお手本と同じ文章を、正確に入力してください。"
+      : item.questionText;
     return `
-      <div class="card" data-card="${item.id}">
-        <div class="q-index">問${idx + 1}</div>
-        <div class="q-text">${escapeHtml(item.questionText)}</div>
+      <div class="card" data-card="${item.id}" id="card-${item.id}">
+        <div class="card-head">
+          <div class="q-index">問${idx + 1}</div>
+          <button type="button" class="flag-btn" data-flag="${item.id}">🚩 あとで確認</button>
+        </div>
+        <div class="q-text">${escapeHtml(questionText)}</div>
         ${img}
         ${body}
         <div class="feedback" data-feedback="${item.id}" style="display:none"></div>
@@ -233,30 +289,136 @@ function renderChoiceSet(partId, targetStage, items, timeLimit) {
     `;
   }).join("");
 
+  const navChipsHtml = items.map((item, idx) => `<button type="button" class="q-chip" data-chip="${item.id}">${idx + 1}</button>`).join("");
+
   root.innerHTML = `
     <div class="stage-badge ${isPractice ? "" : "real"}">${isPractice ? "練習問題" : "本番"}</div>
+    <div class="q-nav-hint">番号をタップでその問題へ移動します。🚩は「あとで確認」マークです。</div>
+    <div class="q-nav" id="qNav">${navChipsHtml}</div>
     ${itemsHtml}
     <div class="footer-actions">
       ${isPractice ? '<button class="primary" id="stageNext">解答を確認して本番へ進む</button>' : '<button class="primary" id="stageNext">提出する</button>'}
     </div>
   `;
 
+  // ---------- 問題番号ナビ（常時表示・タップでスクロール・未回答/あとで確認の可視化） ----------
+  const qNavEl = document.getElementById("qNav");
+  const flaggedIds = new Set();
+
+  function isAnswered(item) {
+    if (item.type === "typing_passage") {
+      const ta = root.querySelector(`textarea[data-item="${item.id}"]`);
+      return !!(ta && ta.value.trim().length > 0);
+    }
+    if (item.type === "fill_blank") {
+      const input = root.querySelector(`input[data-item="${item.id}"]`);
+      return !!(input && input.value.trim().length > 0);
+    }
+    if (item.type === "sentence_completion") {
+      const ta = root.querySelector(`[data-item="${item.id}"]`);
+      return !!(ta && ta.value.trim().length > 0);
+    }
+    if (item.type === "multi_select") {
+      return root.querySelectorAll(`input[name="q_${item.id}"]:checked`).length > 0;
+    }
+    return !!root.querySelector(`input[name="q_${item.id}"]:checked`);
+  }
+
+  function updateChip(itemId) {
+    const chip = qNavEl && qNavEl.querySelector(`[data-chip="${itemId}"]`);
+    if (!chip) return;
+    const item = items.find((i) => i.id === itemId);
+    if (!item) return;
+    chip.classList.toggle("answered", isAnswered(item));
+    chip.classList.toggle("flagged", flaggedIds.has(itemId));
+  }
+
+  if (qNavEl) {
+    // topbar（＋qNav自身）の高さぶん、sticky表示の下に隠れないよう調整する
+    const topbarEl = document.querySelector(".topbar");
+    const stickyOffset = (topbarEl ? topbarEl.offsetHeight : 0);
+    qNavEl.style.top = stickyOffset + "px";
+    const scrollOffset = stickyOffset + qNavEl.offsetHeight + 12;
+    root.querySelectorAll(".card[data-card]").forEach((c) => { c.style.scrollMarginTop = scrollOffset + "px"; });
+
+    qNavEl.querySelectorAll("[data-chip]").forEach((chip) => {
+      chip.addEventListener("click", () => {
+        const target = document.getElementById(`card-${chip.dataset.chip}`);
+        if (!target) return;
+        target.scrollIntoView({ behavior: "smooth", block: "start" });
+        target.classList.remove("highlight");
+        void target.offsetWidth; // reflowさせてアニメーションを再トリガーする
+        target.classList.add("highlight");
+      });
+    });
+  }
+
+  root.querySelectorAll("[data-flag]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const id = btn.dataset.flag;
+      if (flaggedIds.has(id)) flaggedIds.delete(id); else flaggedIds.add(id);
+      btn.classList.toggle("active", flaggedIds.has(id));
+      updateChip(id);
+    });
+  });
+
+  items.forEach((item) => {
+    let el = null;
+    if (item.type === "fill_blank") el = root.querySelector(`input[data-item="${item.id}"]`);
+    else if (item.type === "sentence_completion") el = root.querySelector(`[data-item="${item.id}"]`);
+    if (el) el.addEventListener("input", () => updateChip(item.id));
+    updateChip(item.id); // 初期状態（未回答）を反映
+  });
+
   root.querySelectorAll('input[type="radio"], input[type="checkbox"]').forEach((el) => {
     el.addEventListener("change", () => {
       const card = el.closest(".card");
       card.querySelectorAll(".choice-opt").forEach((o) => o.classList.remove("selected"));
       card.querySelectorAll(`input[name="${el.name}"]:checked`).forEach((c) => c.closest(".choice-opt").classList.add("selected"));
+      updateChip(card.dataset.card);
+    });
+  });
+
+  items.filter((item) => item.type === "typing_passage").forEach((item) => {
+    const input = root.querySelector(`textarea[data-item="${item.id}"]`);
+    const sample = root.querySelector(`[data-card="${item.id}"] .typing-sample`);
+    if (!input) return;
+    // 受験者本人には、入力文字数・一致文字数・誤り数などの採点に関わる情報を
+    // 受験中に見せない（見えると入力を調整して得点を稼げてしまうため）。
+    // 採点自体はsubmitExam()内でdiffTyping()を使って別途行っている。
+    input.addEventListener("input", () => {
+      updateChip(item.id);
+    });
+    // タイピング問題のお手本本文をコピー＆ペーストで解答欄に流し込めないようにする。
+    // ・お手本表示側：右クリックコピー／選択コピー／ドラッグでのコピー開始を禁止
+    // ・解答欄（textarea）側：貼り付け／切り取り／ドラッグ＆ドロップでの流し込みを禁止
+    if (sample) {
+      ["copy", "cut", "contextmenu", "dragstart"].forEach((evt) => {
+        sample.addEventListener(evt, (e) => e.preventDefault());
+      });
+    }
+    ["paste", "drop", "contextmenu"].forEach((evt) => {
+      input.addEventListener(evt, (e) => e.preventDefault());
     });
   });
 
   const finish = () => {
     items.forEach((item) => {
-      if (item.type === "fill_blank") {
+      if (item.type === "typing_passage") {
+        const ta = root.querySelector(`textarea[data-item="${item.id}"]`);
+        answers[item.id] = ta ? ta.value : "";
+      } else if (item.type === "fill_blank") {
         const input = root.querySelector(`input[data-item="${item.id}"]`);
         answers[item.id] = input ? input.value.trim() : "";
       } else if (item.type === "multi_select") {
         const checked = Array.from(root.querySelectorAll(`input[name="q_${item.id}"]:checked`)).map((c) => c.value);
         answers[item.id] = checked;
+      } else if (item.type === "sentence_completion") {
+        const ta = root.querySelector(`[data-item="${item.id}"]`);
+        answers[item.id] = ta ? ta.value.trim() : "";
+      } else if (item.type === "likert") {
+        const checked = root.querySelector(`input[name="q_${item.id}"]:checked`);
+        answers[item.id] = checked ? checked.value : "";
       } else {
         const checked = root.querySelector(`input[name="q_${item.id}"]:checked`);
         answers[item.id] = checked ? checked.value : "";
@@ -264,10 +426,9 @@ function renderChoiceSet(partId, targetStage, items, timeLimit) {
     });
 
     if (isPractice) {
-      let correctCount = 0;
       items.forEach((item) => {
+        if (!isScoreableType(item.type)) return; // タイピング・自由記述・5段階評価には正誤フィードバックを出さない
         const isCorrect = judgeAnswer(item, answers[item.id]);
-        if (isCorrect) correctCount++;
         const fb = root.querySelector(`[data-feedback="${item.id}"]`);
         fb.style.display = "block";
         fb.className = "feedback " + (isCorrect ? "correct" : "wrong");
@@ -276,26 +437,71 @@ function renderChoiceSet(partId, targetStage, items, timeLimit) {
           "　正解：" + (Array.isArray(item.correctAnswer) ? item.correctAnswer.join(",") : item.correctAnswer);
       });
       document.getElementById("stageNext").textContent = "本番へ進む";
-      document.getElementById("stageNext").onclick = () => afterStage(partId, "practice");
+      document.getElementById("stageNext").onclick = () => afterStage(category1Id, "practice");
       clearTimer();
       timerEl.textContent = "";
     } else {
       clearTimer();
       let correctCount = 0;
       let totalScore = 0;
+      let scoreableCount = 0;
+      const elapsedMin = Math.max((Date.now() - stageStartedAt) / 60000, 1 / 60);
       const detail = items.map((item) => {
+        if (item.type === "typing_passage") {
+          const typed = String(answers[item.id] || "");
+          const stat = diffTyping(item.questionText || "", typed);
+          const score = typingErrorScore(stat.errors);
+          totalScore += score;
+          return {
+            itemId: item.id, type: item.type, subcategory: item.subcategory || "",
+            typedText: typed,
+            matched: stat.matched, errorCount: stat.errors,
+            charsPerMinute: Math.round(typed.length / elapsedMin),
+            rawInputLength: typed.length,
+            score,
+          };
+        }
+        if (item.type === "likert") {
+          const value = Number(answers[item.id]) || null;
+          const score = value || 0;
+          totalScore += score;
+          return { itemId: item.id, type: item.type, subcategory: item.subcategory || "", value, score };
+        }
+        if (!isScoreableType(item.type)) {
+          return { itemId: item.id, type: item.type, subcategory: item.subcategory || "", questionText: item.questionText, freeText: answers[item.id] };
+        }
+        scoreableCount++;
         const isCorrect = judgeAnswer(item, answers[item.id]);
         if (isCorrect) { correctCount++; totalScore += (item.score || 0); }
-        return { itemId: item.id, selected: answers[item.id], correct: item.correctAnswer, isCorrect };
+        return { itemId: item.id, type: item.type, subcategory: item.subcategory || "", selected: answers[item.id], correct: item.correctAnswer, isCorrect };
       });
-      results[partId] = { score: totalScore, correctCount, totalCount: items.length, answers: detail };
-      afterStage(partId, "real");
+      results[category1Id] = { score: totalScore, correctCount, totalCount: scoreableCount, answers: detail };
+      afterStage(category1Id, "real");
     }
   };
 
-  document.getElementById("stageNext").addEventListener("click", finish);
+  document.getElementById("stageNext").addEventListener("click", () => {
+    if (!isPractice) {
+      const unansweredCount = items.filter((item) => !isAnswered(item)).length;
+      const flaggedCount = flaggedIds.size;
+      if (unansweredCount > 0 || flaggedCount > 0) {
+        const parts = [];
+        if (unansweredCount > 0) parts.push(`未回答が${unansweredCount}問`);
+        if (flaggedCount > 0) parts.push(`「あとで確認」チェックが${flaggedCount}問`);
+        const ok = confirm(`${parts.join("、")}あります。このまま提出しますか？`);
+        if (!ok) return;
+      }
+    }
+    finish();
+  });
   if (!isPractice && timeLimit > 0) startTimer(timeLimit, finish);
   else timerEl.textContent = "";
+}
+
+// タイピングの得点化：配点10点。誤り数0個で10点、以後誤り1個ごとに1点減点し、10個以上は0点。
+function typingErrorScore(errors) {
+  const e = Math.max(0, Math.floor(Number(errors) || 0));
+  return Math.max(0, 10 - e);
 }
 
 function judgeAnswer(item, given) {
@@ -314,91 +520,53 @@ function judgeAnswer(item, given) {
   return String(given || "").trim().toUpperCase() === String(item.correctAnswer || "").trim().toUpperCase();
 }
 
-// ---------- 自由記述（worklife） ----------
-function renderFreeTextSet(partId, targetStage, items, timeLimit) {
-  const isPractice = targetStage === "practice";
-  const itemsHtml = items.map((item, idx) => `
-    <div class="card">
-      <div class="q-index">問${idx + 1}</div>
-      <div class="q-text">${escapeHtml(item.questionText)}</div>
-      <textarea class="free-text" data-item="${item.id}" placeholder="自由にご記入ください"></textarea>
-    </div>
-  `).join("");
-
-  root.innerHTML = `
-    <div class="stage-badge ${isPractice ? "" : "real"}">${isPractice ? "練習問題" : "本番"}</div>
-    ${itemsHtml}
-    <div class="footer-actions"><button class="primary" id="stageNext">${isPractice ? "本番へ進む" : "提出する"}</button></div>
-  `;
-
-  const finish = () => {
-    clearTimer();
-    const answers = items.map((item) => ({
-      itemId: item.id,
-      questionText: item.questionText,
-      freeText: root.querySelector(`[data-item="${item.id}"]`).value.trim(),
-    }));
-    if (!isPractice) {
-      results.worklife = { answers };
-    }
-    afterStage(partId, targetStage);
-  };
-  document.getElementById("stageNext").addEventListener("click", finish);
-  if (!isPractice && timeLimit > 0) startTimer(timeLimit, finish);
-  else timerEl.textContent = "";
-}
-
-// ---------- タイピング ----------
-function renderTyping(partId, targetStage, item, timeLimit) {
-  const isPractice = targetStage === "practice";
-  const sample = item.questionText || "";
-  root.innerHTML = `
-    <div class="stage-badge ${isPractice ? "" : "real"}">${isPractice ? "練習問題" : "本番"}</div>
-    <div class="card">
-      <div class="q-text" style="margin-bottom:14px">下のお手本と同じ文章を、正確に入力してください。</div>
-      <div class="typing-sample">${escapeHtml(sample)}</div>
-      <textarea class="typing-input" id="typingInput" placeholder="ここに入力してください" ${isPractice ? "" : "autofocus"}></textarea>
-      <div class="typing-stats" id="typingStats"></div>
-    </div>
-    <div class="footer-actions"><button class="primary" id="stageNext">${isPractice ? "本番へ進む" : "提出する"}</button></div>
-  `;
-
-  const input = document.getElementById("typingInput");
-  const statsEl = document.getElementById("typingStats");
-  const startedAt = Date.now();
-
-  input.addEventListener("input", () => {
-    const stat = diffTyping(sample, input.value);
-    statsEl.textContent = `入力文字数: ${input.value.length} ／ 一致文字数: ${stat.matched} ／ 誤り: ${stat.errors}`;
-  });
-
-  const finish = () => {
-    clearTimer();
-    const elapsedMin = Math.max((Date.now() - startedAt) / 60000, 1 / 60);
-    const stat = diffTyping(sample, input.value);
-    const cpm = Math.round(input.value.length / elapsedMin);
-    if (!isPractice) {
-      results.typing = {
-        score: stat.matched,
-        charsPerMinute: cpm,
-        errorCount: stat.errors,
-        missCount: Math.max(sample.length - stat.matched, 0),
-        rawInputLength: input.value.length,
-      };
-    }
-    afterStage(partId, targetStage);
-  };
-  document.getElementById("stageNext").addEventListener("click", finish);
-  if (!isPractice && timeLimit > 0) startTimer(timeLimit, finish);
-  else timerEl.textContent = "";
-}
-
+// お手本文字列(sample)と入力文字列(typed)を、文字の挿入・削除・置換を考慮した
+// 編集距離（レーベンシュタイン距離）ベースで比較する。
+// 単純に同じ位置同士の文字を比較すると、1文字の入力ミス（打ち忘れ・余分な1文字）で
+// それ以降すべての文字が本来の位置からズレてしまい、誤りが実際より大きく膨らんでしまう。
+// これを避けるため、最小編集距離となるように文字列同士を整列（アライメント）させたうえで、
+// 一致した文字数（matched）と、置換・挿入・削除の合計数（errors）を数える。
 function diffTyping(sample, typed) {
-  const len = Math.max(sample.length, typed.length);
-  let matched = 0, errors = 0;
-  for (let i = 0; i < len; i++) {
-    if (sample[i] === undefined || typed[i] === undefined) { errors++; continue; }
-    if (sample[i] === typed[i]) matched++; else errors++;
+  const a = sample || "";
+  const b = typed || "";
+  const n = a.length, m = b.length;
+
+  if (n === 0 && m === 0) return { matched: 0, errors: 0 };
+
+  // dp[i][j] = a の先頭i文字とbの先頭j文字を一致させるのに必要な最小編集回数
+  const dp = new Array(n + 1);
+  for (let i = 0; i <= n; i++) {
+    dp[i] = new Array(m + 1).fill(0);
+    dp[i][0] = i;
+  }
+  for (let j = 0; j <= m; j++) dp[0][j] = j;
+
+  for (let i = 1; i <= n; i++) {
+    for (let j = 1; j <= m; j++) {
+      if (a[i - 1] === b[j - 1]) {
+        dp[i][j] = dp[i - 1][j - 1];
+      } else {
+        dp[i][j] = 1 + Math.min(dp[i - 1][j - 1], dp[i - 1][j], dp[i][j - 1]);
+      }
+    }
+  }
+
+  // 経路を逆算しながら、一致（matched）と誤り（置換・削除・挿入の合計＝errors）を数える
+  let i = n, j = m, matched = 0, errors = 0;
+  while (i > 0 || j > 0) {
+    if (i > 0 && j > 0 && a[i - 1] === b[j - 1] && dp[i][j] === dp[i - 1][j - 1]) {
+      matched++; i--; j--;
+    } else if (i > 0 && j > 0 && dp[i][j] === dp[i - 1][j - 1] + 1) {
+      errors++; i--; j--; // 置換
+    } else if (i > 0 && dp[i][j] === dp[i - 1][j] + 1) {
+      errors++; i--; // 削除（お手本にあるが入力されなかった文字）
+    } else if (j > 0 && dp[i][j] === dp[i][j - 1] + 1) {
+      errors++; j--; // 挿入（お手本にない余分な入力）
+    } else if (i > 0) {
+      errors++; i--;
+    } else {
+      errors++; j--;
+    }
   }
   return { matched, errors };
 }
@@ -408,29 +576,50 @@ async function submitExam() {
   clearTimer();
   started = false;
   root.innerHTML = '<div class="center-loading">結果を送信しています…</div>';
-  partNameEl.textContent = "送信中";
+  category1NameEl.textContent = "送信中";
   timerEl.textContent = "";
 
-  const totalScore = (results.reading?.score || 0) + (results.logical?.score || 0);
-  const resultRef = doc(db, "companies", companyId, "examResults", token);
-  const inviteSnap = await getDoc(doc(db, "companies", companyId, "examInvites", token));
-  const invite = inviteSnap.data() || {};
+  try {
+    // 各カテゴリー1のscoreは、正誤判定のある問題（choice/multi_select/fill_blank。正解時にitem.score点）
+    // に加えて、タイピング（誤り数に応じた0〜10点）・5段階評価（選択値1〜5がそのまま点数）も
+    // 合算済み（自由記述のみスコアに加算されない）ため、全カテゴリー1のscoreを単純に合算すればよい。
+    const totalScore = Object.values(results).reduce((sum, r) => {
+      if (r && typeof r.score === "number") return sum + r.score;
+      return sum;
+    }, 0);
+    const resultRef = doc(db, "companies", companyId, "examResults", token);
+    const inviteSnap = await getDoc(doc(db, "companies", companyId, "examInvites", token));
+    const invite = inviteSnap.data() || {};
 
-  await setDoc(resultRef, {
-    applicantName: invite.applicantName || "",
-    applicantEmail: invite.applicantEmail || "",
-    startedAt: invite.startedAt || serverTimestamp(),
-    completedAt: serverTimestamp(),
-    parts: results,
-    totalScore,
-    status: "completed",
-  });
-  await updateDoc(doc(db, "companies", companyId, "examInvites", token), {
-    status: "completed",
-    completedAt: serverTimestamp(),
-  });
+    await setDoc(resultRef, {
+      applicantName: invite.applicantName || "",
+      applicantEmail: invite.applicantEmail || "",
+      startedAt: invite.startedAt || serverTimestamp(),
+      completedAt: serverTimestamp(),
+      parts: results,
+      totalScore,
+      status: "completed",
+    });
+    await updateDoc(doc(db, "companies", companyId, "examInvites", token), {
+      status: "completed",
+      completedAt: serverTimestamp(),
+    });
 
-  location.href = "exam-complete.html";
+    location.href = "exam-complete.html";
+  } catch (err) {
+    // 送信に失敗した場合、無言のまま「送信しています…」画面で止まってしまわないよう、
+    // エラーを表示し再試行できるようにする（例：examInvitesの更新権限不足、通信断など）。
+    console.error("submitExam failed", err);
+    started = true; // 再試行前にページを離脱してしまわないよう保護を戻す
+    root.innerHTML = `
+      <div class="center-loading">
+        結果の送信に失敗しました。通信環境をご確認のうえ、もう一度お試しください。<br>
+        繰り返し失敗する場合は、採用ご担当者にご連絡ください。
+        <div class="footer-actions"><button class="primary" id="retrySubmit">再試行する</button></div>
+      </div>
+    `;
+    document.getElementById("retrySubmit").addEventListener("click", submitExam);
+  }
 }
 </script>
 </body>

@@ -3,71 +3,87 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ビズてす 受験招待・結果</title>
+<title>受験招待（個別）｜ビズてす</title>
 <style>
-:root{--blue:#2563eb;--blue-dark:#1d4ed8;--navy:#0f172a;--line:#e5e7eb;--bg:#f5f7fb;--muted:#64748b}
-*{box-sizing:border-box}
-body{margin:0;font-family:"Hiragino Maru Gothic ProN","BIZ UDPGothic","Yu Gothic UI","Meiryo",sans-serif;background:var(--bg);color:#111827}
-.header{background:#fff;border-bottom:1px solid var(--line);padding:16px 24px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
-.header h1{font-size:17px;margin:0;color:var(--blue-dark)}
-.header a.back{font-size:12px;color:var(--muted);text-decoration:none}
-.wrap{max-width:980px;margin:24px auto;padding:0 20px}
-.panel{background:#fff;border:1px solid var(--line);border-radius:18px;padding:22px;margin-bottom:20px;box-shadow:0 4px 14px rgba(15,23,42,.04)}
-.panel h2{font-size:15px;margin:0 0 14px;color:var(--navy)}
-.form-row label{display:block;font-size:12px;font-weight:800;color:var(--navy);margin-bottom:5px}
-.form-row select,.form-row input{width:100%;border:1px solid #d1d5db;border-radius:9px;padding:9px 11px;font-size:13px;font-family:inherit}
-.form-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;align-items:end;margin-bottom:14px}
-button.primary{background:var(--blue);color:#fff;border:none;border-radius:9px;padding:10px 18px;font-size:13px;font-weight:800;cursor:pointer}
-button.primary:hover{background:var(--blue-dark)}
-button.ghost{background:#fff;border:1px solid #cbd5e1;color:var(--navy);border-radius:8px;padding:6px 10px;font-size:11.5px;font-weight:800;cursor:pointer}
-table{width:100%;border-collapse:collapse;font-size:12.5px}
-th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line)}
-th{color:var(--muted);font-weight:800;font-size:11.5px}
-.badge{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:800}
-.badge.not_started{background:#f3f4f6;color:#6b7280}
-.badge.in_progress{background:#fef3c7;color:#92400e}
-.badge.completed{background:#dcfce7;color:#166534}
-.link-cell{font-size:11px;color:var(--muted);word-break:break-all;max-width:260px}
-.empty{color:var(--muted);font-size:13px;padding:12px 0}
-.status-line{font-size:12px;color:var(--muted);margin-top:8px}
-.scoped-label{font-size:13px;color:var(--navy);font-weight:800}
+body{margin:0;font-family:"Hiragino Maru Gothic ProN","BIZ UDPGothic","Yu Gothic UI","Meiryo",sans-serif;background:#eef2f7;color:#111827;padding:24px;box-sizing:border-box;line-height:1.7}
+.page{max-width:980px;margin:30px auto;background:#fff;border-radius:16px;box-shadow:0 4px 12px rgba(0,0,0,.08);padding:32px;box-sizing:border-box}
+.header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px}h1{margin:0;font-size:28px}.back-link,.bottom-back-link{color:#2563eb;text-decoration:none;font-weight:bold;font-size:14px}.bottom-back-link{display:inline-block;margin-top:22px}.section-title{font-size:18px;font-weight:bold;margin:0 0 14px}.description{font-size:14px;line-height:1.7;color:#6b7280;margin:0 0 18px}
+.card{background:transparent;border:none;border-radius:0;box-shadow:none;padding:0;box-sizing:border-box;margin:0 0 28px}.card+.card{border-top:1px solid #e5e7eb;padding-top:24px}
+.info-box,.warning-box{background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:14px 16px;margin-bottom:14px;line-height:1.7;white-space:pre-wrap;font-size:14px;color:#111827}.warning-box{background:#fffbeb;border-color:#fde68a;color:#92400e;margin-top:16px}
+.form-grid{display:grid;grid-template-columns:180px 1fr;gap:14px 16px;align-items:center}.label{font-size:14px;font-weight:bold;color:#374151}input,select,textarea{width:100%;border:1px solid #d1d5db;border-radius:10px;padding:11px 12px;font-size:15px;box-sizing:border-box;background:#fff;color:#111827}input[readonly],textarea[readonly]{background:#f9fafb;color:#6b7280}textarea{min-height:96px;resize:vertical;line-height:1.6}.invite-textarea{min-height:220px;font-family:"BIZ UDPGothic","Yu Gothic UI","Meiryo",sans-serif;background:#f9fafb}
+.button-row,.invite-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px;flex-wrap:wrap}.primary-btn,.secondary-btn,.danger-btn{border:none;border-radius:10px;padding:12px 16px;font-size:15px;font-weight:bold;cursor:pointer}.primary-btn{background:#2563eb;color:#fff}.primary-btn:hover{background:#1d4ed8}.secondary-btn{background:#64748b;color:#fff;border:none}.secondary-btn:hover{background:#475569}.danger-btn{background:#dc2626;color:#fff}.danger-btn:hover{background:#b91c1c}.primary-btn:disabled,.secondary-btn:disabled,.danger-btn:disabled{opacity:.6;cursor:not-allowed}
+.status{border-radius:10px;padding:14px 16px;margin-top:14px;margin-bottom:14px;line-height:1.7;white-space:pre-wrap;font-size:14px;font-weight:bold;display:none}.status.ok{display:block;background:#dcfce7;border:1px solid #86efac;color:#166534}.status.error{display:block;background:#fee2e2;border:1px solid #fca5a5;color:#991b1b}.status.note{display:block;background:#dbeafe;border:1px solid #93c5fd;color:#1e40af}.status.warn{display:block;background:#fef3c7;border:1px solid #fbbf24;color:#92400e}
+.table-wrap{overflow-x:auto;overflow-y:scroll;max-height:420px;margin-top:18px;border:1px solid #e5e7eb;border-radius:10px;background:#fff}table,.data-table{width:100%;border-collapse:collapse;background:#fff;font-size:13px;min-width:1200px}.data-table th,.data-table td,th,td{border:1px solid #e5e7eb;padding:6px 10px;text-align:left;vertical-align:middle;white-space:nowrap}.data-table th,th{background:#f3f4f6;color:#374151;font-weight:bold;position:sticky;top:0;z-index:1}.data-table tr:hover td{background:#f9fafb}.badge{display:inline-block;border-radius:999px;padding:4px 9px;font-size:12px;font-weight:bold;white-space:nowrap}.badge.not_started{background:#f3f4f6;color:#6b7280}.badge.in_progress{background:#fef3c7;color:#92400e}.badge.completed{background:#dcfce7;color:#166534}.badge.cancelled{background:#f3f4f6;color:#94a3b8}.link-cell{font-size:11px;color:#6b7280;word-break:break-all;max-width:220px;white-space:normal}.table-action-btn{border:none;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:bold;cursor:pointer;background:#2563eb;color:#fff;white-space:nowrap;margin:0}.table-action-btn:hover{background:#1d4ed8}.table-action-btn:disabled{opacity:.55;cursor:not-allowed}.table-action-btn.secondary{background:#64748b}.table-action-btn.secondary:hover{background:#475569}
+.hidden{display:none!important}.small{font-size:13px;color:#6b7280;line-height:1.7}.muted{color:#6b7280}.scoped-label{font-size:15px;color:#111827;font-weight:bold}
+.toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px}.toolbar input,.toolbar select{max-width:280px}
+.page-loading{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:#eef2f7;color:#1f2937;font-weight:bold}.page-loading.hidden{display:none!important}.loading-box{display:flex;flex-direction:column;align-items:center;gap:12px;background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:24px 28px;box-shadow:0 4px 12px rgba(0,0,0,.08)}.loading-spinner{width:42px;height:42px;border:5px solid #dbeafe;border-top-color:#2563eb;border-radius:50%;animation:spin .9s linear infinite}.loading-text{font-size:14px;color:#374151}@keyframes spin{to{transform:rotate(360deg)}}
+@media(max-width:640px){body{padding:16px}.header{flex-direction:column;align-items:flex-start}.page{padding:24px}.form-grid{grid-template-columns:1fr;gap:8px 0}.button-row,.invite-actions{flex-direction:column}.primary-btn,.secondary-btn,.danger-btn{width:100%}.toolbar input,.toolbar select{max-width:none;width:100%}}
 </style>
 </head>
 <body>
-<div class="header">
-  <h1>受験招待・結果一覧</h1>
-  <a class="back" href="operator-home.html" id="backHomeLink">← 運営ホームへ戻る</a>
-</div>
+<div id="pageLoading" class="page-loading"><div class="loading-box"><div class="loading-spinner"></div><div id="loadingText" class="loading-text">受験招待（個別）を読み込み中...</div></div></div>
+<script>
+(function(){function h(){var l=document.getElementById('pageLoading');if(l){l.classList.add('hidden');l.style.display='none'}}function s(t){var l=document.getElementById('pageLoading'),x=document.getElementById('loadingText');if(x&&t)x.textContent=t;if(l){l.classList.remove('hidden');l.style.display='flex'}}window.bizTestHideInviteLoading=h;window.bizTestShowInviteLoading=s;setTimeout(function(){var l=document.getElementById('pageLoading');if(l&&!l.classList.contains('hidden'))h()},8000);window.addEventListener('error',h);window.addEventListener('unhandledrejection',h)})();
+</script>
+<div class="page">
+  <div class="header"><h1>受験招待（個別）</h1><a class="back-link" href="operator-home.html" id="backHomeLink">← 運営ホームへ戻る</a></div>
 
-<div class="wrap">
-  <div class="panel" id="companySelectPanel">
-    <h2>企業を選択</h2>
-    <div class="form-row"><select id="companySelect"><option value="">選択してください</option></select></div>
+  <div class="card" id="companySelectPanel">
+    <p class="section-title">企業を選択</p>
+    <div class="form-grid"><div class="label">対象企業</div><select id="companySelect"><option value="">選択してください</option></select></div>
   </div>
 
-  <div class="panel" id="scopedCompanyPanel" style="display:none">
-    <h2>対象企業</h2>
-    <div class="scoped-label" id="scopedCompanyLabel"></div>
-  </div>
-
-  <div class="panel">
-    <h2>受験招待を発行</h2>
+  <div class="card" id="createInviteCard">
+    <p class="description">1. 運営者・企業管理者がこの画面で対象者を個別に招待します。<br>2. 発行された受験リンクを対象者に送付します（下の「招待メール案内」からメールを作成できます）。<br>3. 対象者が受験を完了すると、下の一覧の「状態」が「受験完了」になります。</p>
     <div class="form-grid">
-      <div class="form-row"><label>応募者氏名</label><input id="applicantName"></div>
-      <div class="form-row"><label>応募者メールアドレス</label><input id="applicantEmail" type="email"></div>
-      <div class="form-row"><button class="primary" id="createInviteBtn" type="button">招待リンクを発行</button></div>
+      <div class="label">社員コード（任意）</div><input id="applicantEmployeeCode" placeholder="例：B0002">
+      <div class="label">氏名</div><input id="applicantName" placeholder="例：山田 太郎">
+      <div class="label">メールアドレス</div><input id="applicantEmail" type="email" autocomplete="email" placeholder="例：yamada@example.com">
+      <div class="label">部署（任意）</div><input id="applicantDepartment" placeholder="例：営業部　※採用試験として利用する場合、「○○年 新卒採用」、「○○年 経験者採用（経理部）」などを入れておくことをお勧めします。">
+      <div class="label">役職（任意）</div><input id="applicantPosition" placeholder="例：一般、主任、課長、部長">
+      <div class="label">備考（任意）</div><input id="applicantNote">
     </div>
-    <div class="status-line" id="inviteStatus"></div>
+    <div id="inviteStatus" class="status"></div>
+    <div class="button-row"><button class="secondary-btn" id="clearBtn" type="button">入力をクリア</button><button class="primary-btn" id="createInviteBtn" type="button">招待登録する</button></div>
   </div>
 
-  <div class="panel">
-    <h2>招待・受験状況一覧</h2>
-    <table>
-      <thead><tr><th>応募者</th><th>状態</th><th>発行日</th><th>受験リンク</th><th>合計スコア</th><th></th></tr></thead>
-      <tbody id="inviteRows"></tbody>
-    </table>
-    <div id="emptyInvites" class="empty" style="display:none">まだ招待がありません。</div>
+  <div class="card hidden" id="inviteMailCard">
+    <p class="section-title">招待メール案内</p>
+    <p class="description">発行した受験招待について、対象者への案内メールを作成できます。宛先・件名・本文はこの画面で直接編集できます。内容をご確認のうえ、必要であれば編集してから送信してください。</p>
+    <div class="warning-box">注意：メールソフトが起動したら、宛先・件名・本文をあらためて確認してから送信してください。</div>
+    <div class="form-grid">
+      <div class="label">送信先</div><input id="inviteTo">
+      <div class="label">件名</div><input id="inviteSubject">
+      <div class="label">本文</div><textarea id="inviteBody" class="invite-textarea"></textarea>
+    </div>
+    <div id="inviteMailStatus" class="status"></div>
+    <div class="invite-actions"><button class="secondary-btn" type="button" id="copyInviteBtn">本文をコピー</button><button class="secondary-btn" type="button" id="mailtoBtn">メールを作成</button></div>
   </div>
+
+  <div class="card">
+    <p class="section-title">招待・受験状況一覧</p>
+    <p class="description">発行済みの受験招待の一覧です。招待対象から外した人は「対象外」として管理できます。リンクのコピー、メールの再作成もできます。</p>
+    <div class="toolbar">
+      <input id="search" placeholder="社員コード・氏名・メール・部署・備考で検索">
+      <select id="filterStatus">
+        <option value="all">すべて</option>
+        <option value="not_started">未受験</option>
+        <option value="in_progress">受験中</option>
+        <option value="completed">受験完了</option>
+        <option value="cancelled">対象外</option>
+      </select>
+      <button class="secondary-btn" id="reloadBtn" type="button">再読み込み</button>
+    </div>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead><tr><th>操作</th><th>コピー</th><th>メール作成</th><th>状態</th><th>発行日</th><th>受験開始日時</th><th>受験完了日時</th><th>社員コード</th><th>氏名</th><th>部署</th><th>役職</th><th>メールアドレス</th><th>備考</th><th>受験リンク</th></tr></thead>
+        <tbody id="inviteRows"></tbody>
+      </table>
+    </div>
+    <div id="emptyInvites" class="description hidden">まだ招待がありません。</div>
+  </div>
+
+  <a class="bottom-back-link" href="operator-home.html" id="backHomeLinkBottom">← 運営ホームへ戻る</a>
 </div>
 
 <script src="operator-mode.js"></script>
@@ -75,41 +91,183 @@ th{color:var(--muted);font-weight:800;font-size:11.5px}
 import { auth, db } from "./firebase-config.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import {
-  doc, getDoc, setDoc, collection, getDocs, onSnapshot, query, orderBy, serverTimestamp,
+  doc, getDoc, setDoc, updateDoc, collection, getDocs, onSnapshot, query, orderBy, serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { escapeHtml } from "./operator-shared.js";
+import { escapeHtml, loadEffectiveCategory1List, loadEffectiveQuestionSet } from "./operator-shared.js";
 
 let companyId = "";
 let isOperatorUser = false;
+let currentUser = null;
 let unsubInvites = null;
-let resultsCache = {};
+let lastInvite = { email: "", subject: "", body: "" };
+
+function showPage() {
+  if (window.bizTestHideInviteLoading) window.bizTestHideInviteLoading();
+}
+
+function setBackHomeLink(href, text) {
+  ["backHomeLink", "backHomeLinkBottom"].forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) { el.href = href; el.textContent = text; }
+  });
+}
+
+function getInviteLink(token) {
+  return `${location.origin}${location.pathname.replace("operator-invites.html", "")}exam-entry.html?company=${companyId}&token=${token}`;
+}
+
+// 実際に受験フローへ組み込まれる各カテゴリーの制限時間・出題形式から、
+// 案内メールに載せる「所要時間の目安」と「タイピング問題の有無」を求める。
+// exam-entry.html が受験者に表示する内容と同じ実効設定（企業が自社で問題を
+// 差し替えている場合はそちらを優先）を参照するため、表示される時間と齟齬が出ない。
+async function loadExamSummary(companyId) {
+  const category1Order = await loadEffectiveCategory1List(companyId);
+  let totalSec = 0;
+  let hasTyping = false;
+  for (const category1 of category1Order) {
+    const eff = await loadEffectiveQuestionSet(companyId, category1);
+    totalSec += eff.settings ? (eff.settings.realTimeLimitSec || 0) : 0;
+    if (eff.items && eff.items.some((it) => it.type === "typing_passage")) hasTyping = true;
+  }
+  return { totalSec, hasTyping };
+}
+
+async function buildInviteMail(data, link) {
+  const subject = "【ビズてす】受験のご案内";
+  const { hasTyping } = await loadExamSummary(companyId);
+
+  const zenkakuNum = ["０", "１", "２", "３", "４", "５", "６", "７", "８", "９"];
+  const toZenkakuNumber = (n) => String(n).split("").map((d) => zenkakuNum[Number(d)]).join("");
+
+  const noteBlocks = [
+    [
+      "受験を開始すると、途中で中断・やり直しはできません。",
+      "通信環境の良い場所で、時間に余裕をもってご受験ください。",
+    ],
+    ["静かで集中できる環境でのご受験をお願いいたします。"],
+  ];
+  if (hasTyping) {
+    noteBlocks.push([
+      "タイピング形式の問題が含まれます。",
+      "パソコン（PC）でのご受験を推奨します。",
+    ]);
+  }
+  noteBlocks.push(["Google Chrome または Microsoft Edge の最新版を推奨します。"]);
+
+  const lines = [
+    `${data.applicantName || "対象者"} 様`,
+    "",
+    "ビズてすの受験のご案内です。",
+    "",
+    "以下のURLを開き、内容をご確認のうえ受験を開始してください。",
+    "",
+    link,
+    "",
+    "所要時間の目安：【　　】",
+    "実施期限：【　　】",
+    "",
+  ];
+  noteBlocks.forEach((block, i) => {
+    lines.push(`※${toZenkakuNumber(i + 1)}`, ...block, "");
+  });
+  lines.push(
+    "ご不明な点がございましたら、下記の担当者までご連絡ください。",
+    "担当者：【　　】",
+    "連絡先：【　　】",
+    "",
+    "ビズてす"
+  );
+
+  return { email: data.applicantEmail || "", subject, body: lines.join("\n") };
+}
+
+function setInviteMailStatus(msg, type) {
+  const el = document.getElementById("inviteMailStatus");
+  el.textContent = msg || "";
+  el.className = "status " + (msg ? (type || "") : "");
+}
+
+async function showInviteMail(data, link) {
+  document.getElementById("inviteMailCard").classList.remove("hidden");
+  document.getElementById("inviteTo").value = data.applicantEmail || "";
+  document.getElementById("inviteSubject").value = "";
+  document.getElementById("inviteBody").value = "";
+  setInviteMailStatus("メール文面を作成しています…", "warn");
+  document.getElementById("inviteMailCard").scrollIntoView({ behavior: "smooth", block: "start" });
+
+  lastInvite = await buildInviteMail(data, link);
+  document.getElementById("inviteTo").value = lastInvite.email;
+  document.getElementById("inviteSubject").value = lastInvite.subject;
+  document.getElementById("inviteBody").value = lastInvite.body;
+  setInviteMailStatus("内容をご確認のうえ、必要であれば編集してから送信してください。", "note");
+}
+
+async function copyInviteBody() {
+  try {
+    await navigator.clipboard.writeText(document.getElementById("inviteBody").value);
+    setInviteMailStatus("招待メール本文をコピーしました。", "ok");
+  } catch (e) {
+    document.getElementById("inviteBody").focus();
+    document.getElementById("inviteBody").select();
+    setInviteMailStatus("自動コピーできませんでした。本文欄を選択しましたので、手動でコピーしてください。", "error");
+  }
+}
+
+function openMailto() {
+  const to = document.getElementById("inviteTo").value.trim();
+  const subject = document.getElementById("inviteSubject").value;
+  const body = document.getElementById("inviteBody").value;
+  if (!to) { setInviteMailStatus("送信先メールアドレスがありません。メールアドレスを確認してください。", "error"); return; }
+  const url = "mailto:" + encodeURIComponent(to) + "?subject=" + encodeURIComponent(subject) + "&body=" + encodeURIComponent(body);
+  location.href = url;
+  setInviteMailStatus("メールソフトを起動しました。送信前に内容を確認してください。", "ok");
+}
+
+async function openMailtoForRow(applicantName, applicantEmail, link) {
+  if (!applicantEmail) { alert("この対象者にはメールアドレスが登録されていません。"); return; }
+  await showInviteMail({ applicantName, applicantEmail }, link);
+  const to = document.getElementById("inviteTo").value.trim();
+  const subject = document.getElementById("inviteSubject").value;
+  const body = document.getElementById("inviteBody").value;
+  const url = "mailto:" + encodeURIComponent(to) + "?subject=" + encodeURIComponent(subject) + "&body=" + encodeURIComponent(body);
+  location.href = url;
+  setInviteMailStatus("メールソフトを起動しました。送信前に内容を確認してください。", "ok");
+}
 
 onAuthStateChanged(auth, async (user) => {
   if (!user) { location.href = "login.html"; return; }
+  currentUser = user;
+
+  const urlCompanyParam = new URLSearchParams(location.search).get("company");
+  const caSnap = await getDoc(doc(db, "companyAdmins", user.uid));
+  const isActiveCompanyAdmin = caSnap.exists() && caSnap.data().status === "active";
+  const ownCompanyId = isActiveCompanyAdmin ? caSnap.data().companyId : "";
+
+  // 企業管理者ホームから自社の招待ページとして開いた場合（URLの企業指定が無い、または自社を指定している場合）は、
+  // 運営者権限も併せ持つアカウントであっても、ここでは企業管理者として画面にとどまる。
+  // 運営者が他社を操作する目的でこのページを開いた場合のみ、下の運営者判定に進む。
+  // ただし運用管理の企業管理ページ「管理画面へ入る」から明示的に入室した場合（?opEnter=1）は、
+  // 自社を兼務していても必ず運営モードとして扱う。
+  const forceOperatorEntry = !!(window.BizTestOperatorMode && window.BizTestOperatorMode.isExplicitEntry());
+  if (isActiveCompanyAdmin && !forceOperatorEntry && (!urlCompanyParam || urlCompanyParam === ownCompanyId)) {
+    companyId = ownCompanyId;
+    document.getElementById("companySelectPanel").classList.add("hidden");
+    setBackHomeLink("company-admin-home.html", "← 企業管理者ホームへ戻る");
+
+    watchInvites();
+    showPage();
+    return;
+  }
 
   const opSnap = await getDoc(doc(db, "operators", user.uid));
   if (opSnap.exists()) {
     isOperatorUser = true;
     await loadCompaniesForOperator();
+    showPage();
     return;
   }
 
-  const caSnap = await getDoc(doc(db, "companyAdmins", user.uid));
-  if (!caSnap.exists() || caSnap.data().status !== "active") {
-    await signOut(auth); location.href = "login.html"; return;
-  }
-
-  companyId = caSnap.data().companyId;
-  document.getElementById("companySelectPanel").style.display = "none";
-  document.getElementById("scopedCompanyPanel").style.display = "block";
-  document.getElementById("backHomeLink").href = "company-admin-home.html";
-  document.getElementById("backHomeLink").textContent = "← 企業管理者ホームへ戻る";
-
-  const companySnap = await getDoc(doc(db, "companies", companyId));
-  const companyName = companySnap.exists() ? companySnap.data().companyName : companyId;
-  document.getElementById("scopedCompanyLabel").textContent = companyName + "（" + companyId + "）";
-
-  watchInvites();
+  await signOut(auth); location.href = "login.html";
 });
 
 async function loadCompaniesForOperator() {
@@ -145,49 +303,122 @@ document.getElementById("logoutBtn") && document.getElementById("logoutBtn").add
   location.href = "login.html";
 });
 
+let allInvites = [];
+
 function watchInvites() {
   if (unsubInvites) unsubInvites();
-  const rows = document.getElementById("inviteRows");
-  const empty = document.getElementById("emptyInvites");
-  rows.innerHTML = "";
-  if (!companyId) return;
+  allInvites = [];
+  if (!companyId) { renderInvites(); return; }
 
   const q = query(collection(db, "companies", companyId, "examInvites"), orderBy("createdAt", "desc"));
-  unsubInvites = onSnapshot(q, async (snap) => {
-    rows.innerHTML = "";
-    if (snap.empty) { empty.style.display = "block"; return; }
-    empty.style.display = "none";
-    for (const d of snap.docs) {
-      const invite = d.data();
-      const token = d.id;
-      const link = `${location.origin}${location.pathname.replace("operator-invites.html", "")}exam-entry.html?company=${companyId}&token=${token}`;
-      const created = invite.createdAt && invite.createdAt.toDate ? invite.createdAt.toDate().toLocaleString("ja-JP") : "-";
-      let scoreText = "-";
-      if (invite.status === "completed") {
-        const resultSnap = await getDoc(doc(db, "companies", companyId, "examResults", token));
-        if (resultSnap.exists()) scoreText = String(resultSnap.data().totalScore ?? "-");
-      }
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${escapeHtml(invite.applicantName)}<br><span style="color:#94a3b8">${escapeHtml(invite.applicantEmail || "")}</span></td>
-        <td><span class="badge ${invite.status}">${statusLabel(invite.status)}</span></td>
-        <td>${created}</td>
-        <td class="link-cell">${escapeHtml(link)}</td>
-        <td>${scoreText}</td>
-        <td><button class="ghost" data-link="${escapeHtml(link)}">コピー</button></td>
-      `;
-      tr.querySelector("button").addEventListener("click", (e) => {
-        navigator.clipboard.writeText(e.target.dataset.link);
-        e.target.textContent = "コピー済み";
-        setTimeout(() => { e.target.textContent = "コピー"; }, 1500);
-      });
-      rows.appendChild(tr);
-    }
+  unsubInvites = onSnapshot(q, (snap) => {
+    allInvites = snap.docs.map((d) => ({ token: d.id, ...d.data() }));
+    renderInvites();
   });
 }
 
+function normalizeSearchText(v) {
+  return String(v || "").trim().toLowerCase();
+}
+
+function filteredInvites() {
+  const q = normalizeSearchText(document.getElementById("search").value);
+  const st = document.getElementById("filterStatus").value;
+  return allInvites.filter((invite) => {
+    if (st !== "all" && invite.status !== st) return false;
+    if (!q) return true;
+    return [invite.employeeCode, invite.applicantName, invite.applicantEmail, invite.department, invite.position, invite.note]
+      .some((v) => String(v || "").toLowerCase().includes(q));
+  });
+}
+
+function renderInvites() {
+  const rows = document.getElementById("inviteRows");
+  const empty = document.getElementById("emptyInvites");
+  const list = filteredInvites();
+  rows.innerHTML = "";
+  if (!list.length) {
+    empty.textContent = allInvites.length ? "条件に一致する招待がありません。" : "まだ招待がありません。";
+    empty.classList.remove("hidden");
+    return;
+  }
+  empty.classList.add("hidden");
+  for (const invite of list) {
+    const token = invite.token;
+    const link = getInviteLink(token);
+    const created = invite.createdAt && invite.createdAt.toDate ? invite.createdAt.toDate().toLocaleString("ja-JP") : "-";
+    const actionCell = invite.status === "not_started"
+      ? `<button class="table-action-btn secondary" type="button" data-action="exclude" data-token="${escapeHtml(token)}">招待対象から外す</button>`
+      : "－";
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${actionCell}</td>
+      <td><button class="table-action-btn secondary" type="button" data-action="copy" data-link="${escapeHtml(link)}">コピー</button></td>
+      <td><button class="table-action-btn" type="button" data-action="mail" data-name="${escapeHtml(invite.applicantName || "")}" data-email="${escapeHtml(invite.applicantEmail || "")}" data-link="${escapeHtml(link)}">メール作成</button></td>
+      <td><span class="badge ${invite.status}">${statusLabel(invite.status)}</span></td>
+      <td>${created}</td>
+      <td>${fmtDateTime(invite.startedAt)}</td>
+      <td>${fmtDateTime(invite.completedAt)}</td>
+      <td>${escapeHtml(invite.employeeCode || "")}</td>
+      <td>${escapeHtml(invite.applicantName || "")}</td>
+      <td>${escapeHtml(invite.department || "")}</td>
+      <td>${escapeHtml(invite.position || "")}</td>
+      <td>${escapeHtml(invite.applicantEmail || "")}</td>
+      <td>${escapeHtml(invite.note || "")}</td>
+      <td class="link-cell">${escapeHtml(link)}</td>
+    `;
+    const excludeBtn = tr.querySelector('button[data-action="exclude"]');
+    if (excludeBtn) excludeBtn.addEventListener("click", (e) => { excludeInvite(e.target.dataset.token); });
+    tr.querySelector('button[data-action="copy"]').addEventListener("click", (e) => {
+      navigator.clipboard.writeText(e.target.dataset.link);
+      e.target.textContent = "コピー済み";
+      setTimeout(() => { e.target.textContent = "コピー"; }, 1500);
+    });
+    tr.querySelector('button[data-action="mail"]').addEventListener("click", (e) => {
+      openMailtoForRow(e.target.dataset.name, e.target.dataset.email, e.target.dataset.link);
+    });
+    rows.appendChild(tr);
+  }
+}
+
+document.getElementById("search").addEventListener("input", renderInvites);
+document.getElementById("filterStatus").addEventListener("change", renderInvites);
+document.getElementById("reloadBtn").addEventListener("click", (e) => {
+  const btn = e.currentTarget;
+  btn.disabled = true;
+  const original = btn.textContent;
+  btn.textContent = "再読み込み中...";
+  watchInvites();
+  setTimeout(() => {
+    btn.disabled = false;
+    btn.textContent = original;
+  }, 600);
+});
+
+async function excludeInvite(token) {
+  const ok = confirm("この受験招待を対象外にします。\n\n対象外にすると、一覧の「未受験」から外れ、このリンクからは受験できなくなります。\nよろしいですか？");
+  if (!ok) return;
+  try {
+    await updateDoc(doc(db, "companies", companyId, "examInvites", token), {
+      status: "cancelled",
+      cancelledAt: serverTimestamp(),
+      cancelledBy: currentUser ? currentUser.uid : "",
+      updatedAt: serverTimestamp(),
+      updatedBy: currentUser ? currentUser.uid : "",
+    });
+  } catch (e) {
+    console.error(e);
+    alert("対象外への変更に失敗しました。\n" + (e.code || "") + "\n" + (e.message || e));
+  }
+}
+
 function statusLabel(status) {
-  return { not_started: "未受験", in_progress: "受験中", completed: "受験完了" }[status] || status;
+  return { not_started: "未受験", in_progress: "受験中", completed: "受験完了", cancelled: "対象外" }[status] || status;
+}
+
+function fmtDateTime(v) {
+  if (v && v.toDate) return v.toDate().toLocaleString("ja-JP");
+  return "-";
 }
 
 function generateToken() {
@@ -195,28 +426,63 @@ function generateToken() {
   return Array.from({ length: 32 }, () => Math.floor(Math.random() * 16).toString(16)).join("");
 }
 
+function clearForm() {
+  ["applicantEmployeeCode", "applicantName", "applicantEmail", "applicantDepartment", "applicantPosition", "applicantNote"].forEach((id) => {
+    document.getElementById(id).value = "";
+  });
+}
+
+document.getElementById("clearBtn").addEventListener("click", () => {
+  clearForm();
+  const status = document.getElementById("inviteStatus");
+  status.textContent = "";
+  status.className = "status";
+});
+
 document.getElementById("createInviteBtn").addEventListener("click", async () => {
   const status = document.getElementById("inviteStatus");
-  if (!companyId) { status.textContent = "先に企業を選択してください。"; return; }
+  if (!companyId) { status.textContent = "先に企業を選択してください。"; status.className = "status error"; return; }
   const applicantName = document.getElementById("applicantName").value.trim();
   const applicantEmail = document.getElementById("applicantEmail").value.trim();
-  if (!applicantName) { status.textContent = "応募者氏名を入力してください。"; return; }
+  const employeeCode = document.getElementById("applicantEmployeeCode").value.trim();
+  const department = document.getElementById("applicantDepartment").value.trim();
+  const position = document.getElementById("applicantPosition").value.trim();
+  const note = document.getElementById("applicantNote").value.trim();
+  if (!applicantName) { status.textContent = "氏名を入力してください。"; status.className = "status error"; return; }
 
   const token = generateToken();
-  await setDoc(doc(db, "companies", companyId, "examInvites", token), {
+  const data = {
     applicantName,
     applicantEmail,
+    employeeCode,
+    department,
+    position,
+    note,
     status: "not_started",
     createdAt: serverTimestamp(),
     expiresAt: null,
     startedAt: null,
     completedAt: null,
     anonUid: null,
-  });
-  status.textContent = "招待リンクを発行しました。下の一覧からコピーできます。";
-  document.getElementById("applicantName").value = "";
-  document.getElementById("applicantEmail").value = "";
+  };
+  try {
+    status.className = "status warn";
+    status.textContent = "招待登録しています...";
+    await setDoc(doc(db, "companies", companyId, "examInvites", token), data);
+    status.textContent = "招待登録しました。下の「招待メール案内」より、メールを作成してください。";
+    status.className = "status ok";
+    const link = getInviteLink(token);
+    await showInviteMail(data, link);
+    clearForm();
+  } catch (e) {
+    console.error(e);
+    status.textContent = "招待の登録に失敗しました。\n" + (e.code || "") + "\n" + (e.message || e);
+    status.className = "status error";
+  }
 });
+
+document.getElementById("copyInviteBtn").addEventListener("click", copyInviteBody);
+document.getElementById("mailtoBtn").addEventListener("click", openMailto);
 </script>
 </body>
 </html>

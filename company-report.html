@@ -3,16 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>レポート｜運営管理ページ｜ビズてす</title>
+<title>レポート（全社）｜ビズてす</title>
 <style>
-:root{--blue:#f97316;--blue-dark:#ea580c;--navy:#7c2d12;--line:#fed7aa;--bg:#fff7ed;--muted:#9a5b3a;--orange:#f97316}
+:root{--blue:#2563eb;--blue-dark:#1d4ed8;--navy:#0f172a;--line:#e5e7eb;--bg:#f5f7fb;--muted:#64748b;--orange:#f97316}
 *{box-sizing:border-box}
 body{margin:0;font-family:"Hiragino Maru Gothic ProN","BIZ UDPGothic","Yu Gothic UI","Meiryo",sans-serif;background:var(--bg);color:#111827;padding:24px;box-sizing:border-box}
 .header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;margin-bottom:18px}
 .header h1{font-size:28px;margin:0;color:#111827}
-.top-link,.bottom-link{color:var(--blue-dark);text-decoration:none;font-weight:bold;font-size:14px}
+.top-link,.bottom-link{color:#2563eb;text-decoration:none;font-weight:bold;font-size:14px}
 .bottom-link{display:inline-block;margin-top:22px}
-.wrap{max-width:1300px;margin:24px auto;background:#fff;border-radius:18px;box-shadow:0 4px 12px rgba(0,0,0,.08);padding:28px;box-sizing:border-box;border:1px solid var(--line)}
+.wrap{max-width:1300px;margin:24px auto;background:#fff;border-radius:18px;box-shadow:0 4px 12px rgba(0,0,0,.08);padding:28px;box-sizing:border-box}
 .status{display:none;background:#fee2e2;border:1px solid #fca5a5;color:#991b1b;border-radius:10px;padding:14px 16px;margin-bottom:16px;line-height:1.7;white-space:pre-wrap}
 .status.error{display:block}
 .status.success{display:block;background:#dcfce7;border-color:#86efac;color:#166534}
@@ -20,7 +20,7 @@ body{margin:0;font-family:"Hiragino Maru Gothic ProN","BIZ UDPGothic","Yu Gothic
 .filter-title{font-weight:800;margin-bottom:12px;color:var(--navy);font-size:15px}
 .controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;align-items:end}
 .control-item label{display:block;font-size:12px;font-weight:800;color:var(--navy);margin-bottom:5px}
-.control-item input,.control-item select{width:100%;box-sizing:border-box;border:1px solid #d1d5db;border-radius:9px;padding:9px 11px;font-size:13px;font-family:inherit;background:#fff}
+.control-item input{width:100%;box-sizing:border-box;border:1px solid #d1d5db;border-radius:9px;padding:9px 11px;font-size:13px;font-family:inherit;background:#fff}
 .btn-row{display:flex;gap:10px;flex-wrap:wrap}
 button{cursor:pointer;font-family:inherit}
 button.primary{background:var(--blue);color:#fff;border:none;border-radius:9px;padding:10px 16px;font-size:13px;font-weight:800;min-height:38px}
@@ -35,17 +35,17 @@ button:disabled{opacity:.55;cursor:not-allowed}
 .panel{background:#fff;border:1px solid var(--line);border-radius:18px;padding:22px;box-shadow:0 4px 14px rgba(15,23,42,.04)}
 .panel + .panel{margin-top:20px}
 .panel h2{font-size:15px;margin:0 0 6px;color:var(--navy)}
-.table-wrap{overflow:auto;border:1px solid #fef3e8;border-radius:12px;max-height:600px}
+.table-wrap{overflow:auto;border:1px solid #f3f4f6;border-radius:12px;max-height:600px}
 #summaryTableWrap{max-height:440px}
 table{width:100%;border-collapse:collapse;min-width:1500px;background:#fff;font-size:12.5px}
-#resultTable{min-width:2700px}
-#detailTable{min-width:2700px}
-th,td{border-bottom:1px solid #fef3e8;padding:9px 10px;text-align:left;vertical-align:top;white-space:nowrap}
+#resultTable{min-width:2600px}
+#detailTable{min-width:2600px}
+th,td{border-bottom:1px solid #f3f4f6;padding:9px 10px;text-align:left;vertical-align:top;white-space:nowrap}
 .wrap-cell{white-space:pre-wrap;min-width:180px;max-width:320px;line-height:1.6}
-th{background:var(--bg);color:var(--navy);font-weight:800;font-size:11.5px;position:sticky;top:0;z-index:1}
+th{background:#f8fafc;color:var(--navy);font-weight:800;font-size:11.5px;position:sticky;top:0;z-index:1}
 th.sortable{cursor:pointer;user-select:none}
-th.sortable:hover{background:#ffedd5}
-th.sortable .sort-arrow{margin-left:4px;font-size:10px;color:#c2825a}
+th.sortable:hover{background:#eef2ff}
+th.sortable .sort-arrow{margin-left:4px;font-size:10px;color:#94a3b8}
 th.sortable.active .sort-arrow{color:var(--blue-dark)}
 .badge{display:inline-block;border-radius:999px;padding:3px 9px;font-weight:800;font-size:11px}
 .badge.not_started{background:#f3f4f6;color:#6b7280}
@@ -58,7 +58,7 @@ th.sortable.active .sort-arrow{color:var(--blue-dark)}
 .page-loading{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:var(--bg);color:var(--blue-dark);font-weight:bold}
 .page-loading.hidden{display:none!important}
 .loading-box{display:flex;flex-direction:column;align-items:center;gap:12px;background:#fff;border:1px solid var(--line);border-radius:16px;padding:24px 28px;box-shadow:0 4px 12px rgba(0,0,0,.08)}
-.loading-spinner{width:42px;height:42px;border:5px solid #fed7aa;border-top-color:var(--blue);border-radius:50%;animation:spin .9s linear infinite}
+.loading-spinner{width:42px;height:42px;border:5px solid #dbeafe;border-top-color:var(--blue);border-radius:50%;animation:spin .9s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 @media(max-width:640px){body{padding:14px}.wrap{padding:20px}.btn-row{display:grid}}
 </style>
@@ -67,8 +67,8 @@ th.sortable.active .sort-arrow{color:var(--blue-dark)}
 <div id="pageLoading" class="page-loading"><div class="loading-box"><div class="loading-spinner"></div><div>レポートを読み込み中...</div></div></div>
 <div class="wrap">
   <div class="header">
-    <h1>レポート</h1>
-    <a class="top-link" href="operator-home.html">← 運営管理ページへ戻る</a>
+    <h1 id="companyTitle">レポート（全社）</h1>
+    <a class="top-link" href="operator-home.html" id="backHomeLink">← 運営ホームへ戻る</a>
   </div>
   <div id="status" class="status"></div>
 
@@ -77,7 +77,6 @@ th.sortable.active .sort-arrow{color:var(--blue-dark)}
     <div class="controls">
       <div class="control-item"><label for="startDate">開始日</label><input type="date" id="startDate"></div>
       <div class="control-item"><label for="endDate">終了日</label><input type="date" id="endDate"></div>
-      <div class="control-item"><label for="companyFilter">企業</label><select id="companyFilter"><option value="all">すべての企業</option></select></div>
       <div class="control-item"><div class="btn-row"><button class="primary" id="loadBtn" type="button">表示更新</button></div></div>
     </div>
     <div class="note" id="periodHelp"></div>
@@ -99,10 +98,10 @@ th.sortable.active .sort-arrow{color:var(--blue-dark)}
     <div class="table-wrap" id="summaryTableWrap">
       <table id="resultTable">
         <thead><tr id="headRow"></tr></thead>
-        <tbody id="resultBody"><tr><td colspan="24" class="empty">データを読み込み中です。</td></tr></tbody>
+        <tbody id="resultBody"><tr><td colspan="23" class="empty">データを読み込み中です。</td></tr></tbody>
       </table>
     </div>
-    <div class="note">①〜④の小計は、択一・複数選択・空欄補充（正解時にその問題の配点）・タイピング（誤り数に応じて0〜10点）の合計点です。「①～④：合計」は①認知能力・②言語理解能力・③論理思考能力・④実務遂行能力の4カテゴリー1の合計点です。⑤行動特性・性格の各小計は、5段階評価を小分類（主体性・行動傾向・協調性・外向性・勤勉性/計画性・ストレス耐性・モチベーション・開放性）ごとに合計した点数です。いずれも該当カテゴリー1・カテゴリー2に1問も回答していない場合は「-」と表示します。設問ごとの内訳はCSV出力および下の回答詳細に含まれます。未受験（招待未開始）のデータはこの一覧には表示されません（上部の件数カードには含まれます）。企業を「すべての企業」にしたまま表示すると、対象期間内に招待が発行された全企業分のデータを横断して集計します（企業数・データ量によっては表示に時間がかかることがあります）。招待情報・受験結果の削除は各企業の「受験者管理」画面から行えます（削除すると、このレポートやダッシュボードからも同時に消えます）。</div>
+    <div class="note">①〜④の小計は、択一・複数選択・空欄補充（正解時にその問題の配点）・タイピング（誤り数に応じて0〜10点）の合計点です。「①～④：合計」は①認知能力・②言語理解能力・③論理思考能力・④実務遂行能力の4カテゴリー1の合計点です。⑤行動特性・性格の各小計は、5段階評価を小分類（主体性・行動傾向・協調性・外向性・勤勉性/計画性・ストレス耐性・モチベーション・開放性）ごとに合計した点数です。いずれも該当カテゴリー1・カテゴリー2に1問も回答していない場合は「-」と表示します。設問ごとの内訳はCSV出力および下の回答詳細に含まれます。未受験（招待未開始）のデータはこの一覧には表示されません（上部の件数カードには含まれます）。招待情報・受験結果の削除は「受験者管理」画面から行えます（削除すると、このレポートやダッシュボードからも同時に消えます）。</div>
   </div>
 
   <div class="panel">
@@ -114,43 +113,41 @@ th.sortable.active .sort-arrow{color:var(--blue-dark)}
     <div class="table-wrap">
       <table id="detailTable">
         <thead><tr>
-          <th>会社名</th><th>招待発行日時</th><th>状態</th><th>開始日時</th><th>完了日時</th>
+          <th>招待発行日時</th><th>状態</th><th>開始日時</th><th>完了日時</th>
           <th>社員コード</th><th>氏名</th><th>メールアドレス</th><th>部署</th><th>役職</th><th>備考</th>
           <th>カテゴリー1</th><th>カテゴリー2</th><th>形式</th><th>問題</th><th>選択肢</th><th>正解</th><th>回答</th><th>正誤</th><th>得点</th><th>配点</th>
         </tr></thead>
-        <tbody id="detailBody"><tr><td colspan="21" class="empty">データを読み込み中です。</td></tr></tbody>
+        <tbody id="detailBody"><tr><td colspan="20" class="empty">データを読み込み中です。</td></tr></tbody>
       </table>
     </div>
   </div>
 
-  <a class="bottom-link" href="operator-home.html">← 運営管理ページへ戻る</a>
+  <a class="bottom-link" href="operator-home.html" id="backHomeLinkBottom">← 運営ホームへ戻る</a>
 </div>
 
+<script src="operator-mode.js"></script>
 <script type="module">
 import { auth, db, LIKERT_LABELS } from "./firebase-config.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import {
-  collection, collectionGroup, query, where, getDocs, doc, getDoc,
+  collection, query, where, getDocs, doc, getDoc,
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { escapeHtml as esc, loadEffectiveCategory1List, loadEffectiveQuestionSet } from "./operator-shared.js";
 
-// このページは company-report.html（企業管理のレポート・全社版）と同じ集計・表示ロジックを、
-// 全企業を横断する運営向けレポートとして再利用したもの。company-report.htmlとの主な違いは、
-//   - 企業を1社に固定せず、企業フィルター（companyFilter）で「すべての企業」または特定の1社を選べる
-//   - 受験結果サマリー・回答詳細のどちらにも先頭列として「会社名」を追加している
-//   - カテゴリー1一覧・問題マスタ（category1List / itemsByCategory1）は企業ごとに異なりうるため、
-//     company-report.htmlのようにモジュール直下の変数1つではなく、companyId をキーにしたキャッシュ
-//     （category1ListByCompany / itemsByCompanyCategory1）として保持する
-// という点のみで、スコア計算式・並べ替え・CSV出力の考え方はcompany-report.htmlと同一にしている。
-
 const $ = (id) => document.getElementById(id);
-
-let allCompanies = []; // [{companyId, companyName}]
-let companyNameMap = {}; // companyId -> companyName
-let category1ListByCompany = {}; // companyId -> [{id,label,scope}]
-let itemsByCompanyCategory1 = {}; // companyId -> { category1Id -> Map(itemId -> item) }
-let invites = []; // 各要素にcompanyIdを含む
-let resultMap = {}; // "companyId/token" -> examResult
+function setBackHomeLink(href, text) {
+  ["backHomeLink", "backHomeLinkBottom"].forEach((id) => {
+    const el = $(id);
+    if (el) { el.href = href; el.textContent = text; }
+  });
+}
+const params = new URLSearchParams(location.search);
+let companyId = params.get("company");
+let isOperatorUser = false;
+let category1List = []; // [{id,label}]
+let itemsByCategory1 = {}; // category1Id -> Map(itemId -> item)
+let invites = [];
+let resultMap = {}; // token -> examResult
 let rows = [];
 let detailRows = [];
 let summarySort = { key: "", dir: 1 }; // 受験結果サマリー表の並べ替え状態（key:列キー / dir:1=昇順,-1=降順）
@@ -188,6 +185,10 @@ function typingErrorScore(errors) {
 
 // お手本文字列(sample)と入力文字列(typed)を、文字の挿入・削除・置換を考慮した
 // 編集距離（レーベンシュタイン距離）ベースで比較する（exam.htmlの受験画面と同じロジック）。
+// 単純に同じ位置同士の文字を比較すると、1文字の入力ミス（打ち忘れ・余分な1文字）で
+// それ以降すべての文字が本来の位置からズレてしまい、誤りが実際より大きく膨らんでしまうため、
+// 最小編集距離となるように文字列同士を整列（アライメント）させたうえで、
+// 一致した文字数（matched）と、置換・挿入・削除の合計数（errors）を数える。
 function diffTyping(sample, typed) {
   const a = sample || "";
   const b = typed || "";
@@ -214,8 +215,11 @@ function diffTyping(sample, typed) {
   return { matched, errors };
 }
 
-// タイピング回答の一致数・誤り数を求める（受験時点の旧ロジックで保存された過去データも、
-// 回答本文と問題文が両方そろっていればここで修正済みロジックにより再計算する）。
+// タイピング回答の一致数・誤り数を求める。回答本文（typedText）と問題マスタの問題文
+// （item.questionText）が両方そろっている場合は、修正済みのdiffTypingでその場で再計算する
+// （受験時点で使われていた旧ロジック＝1文字ズレると誤りが膨らむ不具合を、過去データにも遡って補正するため）。
+// 回答本文が保存されていない古い受験データ、または問題マスタが削除済みの場合は、
+// 受験時に保存された値（旧ロジックによる誤り数の可能性あり）をそのまま使う。
 function typingStatsFor(entry, item) {
   if (entry.typedText != null && item && item.questionText) {
     return diffTyping(item.questionText, entry.typedText);
@@ -224,6 +228,12 @@ function typingStatsFor(entry, item) {
 }
 
 // 1件の回答（answers[i]）の得点情報を返す。
+//   - choice/multi_select/fill_blank：正解ならitem.score点、不正解なら0点（問題マスタが見つからない場合は不明＝null）
+//   - typing_passage：誤り数から算出した0〜10点（配点は固定10点、誤り数0個で10点、以後誤り1個
+//     ごとに1点減点し10個以上は0点）。誤り数は上記typingStatsForで可能な限り修正済みロジックに
+//     より再計算した値を使う。
+//   - likert（5段階評価）：選択した値（1〜5）がそのまま点数（配点は固定5点）
+//   - それ以外（自由記述など）：得点の概念なし
 function scoreInfoForAnswer(type, entry, item) {
   if (type === "typing_passage") {
     const stats = typingStatsFor(entry, item);
@@ -244,17 +254,17 @@ function scoreInfoForAnswer(type, entry, item) {
 }
 
 // 1件の受験結果（examResults.parts）から、カテゴリー1ごとの得点・正答数、小分類（subcategory）
-// ごとの得点、および総合得点を集計する。itemsByCategory1は「その受験結果が属する企業」の
-// 問題マスタ（company-report.htmlではモジュール直下の変数だったが、このページは複数企業を
-// 横断するため引数として渡す）。
-function computeResultAggregate(result, itemsByCategory1) {
+// ごとの得点、および総合得点を集計する。
+// スコアはFirestoreに保存済みの値をそのまま使わず、ここで回答データから都度再計算する
+// （タイピング・5段階評価の得点化ルールを、過去の受験データにも一律で反映するため）。
+function computeResultAggregate(result) {
   const byCategory1 = {};
   const bySubcat = {};
   let totalScore = 0;
   if (result && result.parts) {
     Object.keys(result.parts).forEach((category1Id) => {
       const category1Result = result.parts[category1Id];
-      const items = itemsByCategory1 ? itemsByCategory1[category1Id] : null;
+      const items = itemsByCategory1[category1Id];
       const answers = category1Result && category1Result.answers ? category1Result.answers : [];
       let score = 0;
       let correctCount = 0;
@@ -337,11 +347,9 @@ function tsMillis(v) {
   catch (e) { return null; }
 }
 
-// 受験結果サマリー表の列定義。company-report.htmlと同じ列に加え、横断レポートのため
-// 先頭に「会社名」列を追加している。並べ替え可能な列にはget(row)で並べ替え用の値を返す
-// 関数を持たせる（文字列列はlocaleCompare、数値・日時列は大小比較で並べ替える）。
+// 受験結果サマリー表の列定義。並べ替え可能な列にはget(row)で並べ替え用の値を返す関数を持たせる
+// （文字列列はlocaleCompare、数値・日時列は大小比較で並べ替える）。
 const SUMMARY_COLUMNS = [
-  { key: "companyName", label: "会社名", type: "string", get: (r) => r.companyName || "" },
   { key: "createdAt", label: "招待発行日時", type: "number", get: (r) => tsMillis(r.createdAt) },
   { key: "status", label: "状態", type: "string", get: (r) => statusLabel(r.status) },
   { key: "startedAt", label: "開始日時", type: "number", get: (r) => tsMillis(r.startedAt) },
@@ -401,14 +409,10 @@ function visibleSummaryRows() {
 
 function buildRows() {
   rows = invites.map((inv) => {
-    const key = inv.companyId + "/" + inv.id;
-    const result = resultMap[key] || null;
-    const itemsByCategory1 = itemsByCompanyCategory1[inv.companyId] || {};
-    const agg = computeResultAggregate(result, itemsByCategory1);
+    const result = resultMap[inv.id] || null;
+    const agg = computeResultAggregate(result);
     return {
       token: inv.id,
-      companyId: inv.companyId,
-      companyName: companyNameMap[inv.companyId] || inv.companyId,
       applicantName: inv.applicantName || "",
       applicantEmail: inv.applicantEmail || "",
       employeeCode: inv.employeeCode || "",
@@ -441,16 +445,14 @@ function renderCards() {
   $("cardRate").textContent = (total ? rate : 0) + "%";
 }
 
-// 会社名列（1）+ company-report.htmlと同じ10列 + ①～④合計（1）+ 4カテゴリー1 + 8小分類 = 24
-const SUMMARY_COL_COUNT = 1 + 10 + 1 + FOUR_CATEGORY1_IDS.length + PERSONALITY_SUBCATS.length;
+const SUMMARY_COL_COUNT = 10 + 1 + FOUR_CATEGORY1_IDS.length + PERSONALITY_SUBCATS.length; // 23
 
 function renderTable() {
   const body = $("resultBody");
   const visible = sortedSummaryRows();
-  if (!visible.length) { body.innerHTML = '<tr><td colspan="' + SUMMARY_COL_COUNT + '" class="empty">指定条件の受験データはありません。</td></tr>'; return; }
+  if (!visible.length) { body.innerHTML = '<tr><td colspan="' + SUMMARY_COL_COUNT + '" class="empty">指定期間の受験データはありません。</td></tr>'; return; }
   body.innerHTML = visible.map((r) => (
-    "<tr><td>" + esc(r.companyName) + "</td>"
-    + "<td>" + fmtDateTime(r.createdAt) + "</td>"
+    "<tr><td>" + fmtDateTime(r.createdAt) + "</td>"
     + "<td>" + badge(statusLabel(r.status), r.status) + "</td>"
     + "<td>" + fmtDateTime(r.startedAt) + "</td>"
     + "<td>" + fmtDateTime(r.completedAt) + "</td>"
@@ -467,10 +469,9 @@ function renderTable() {
   )).join("");
 }
 
-// カテゴリー1ラベル取得（そのcompanyIdの有効カテゴリー1一覧に無い＝削除済みカテゴリー等の場合はIDをそのまま表示）
-function category1LabelOf(companyId, category1Id) {
-  const list = category1ListByCompany[companyId] || [];
-  const p = list.find((x) => x.id === category1Id);
+// カテゴリー1ラベル取得（category1Listに無い＝削除済みカテゴリー等の場合はIDをそのまま表示）
+function category1LabelOf(category1Id) {
+  const p = category1List.find((x) => x.id === category1Id);
   return p ? (p.label || category1Id) : category1Id;
 }
 
@@ -486,9 +487,11 @@ function choicesText(type, item) {
 function joinIfArray(v) { return Array.isArray(v) ? v.join(",") : (v == null ? "" : String(v)); }
 
 // 1件の回答（examResults.parts[category1Id].answers[i]）を、レポート表示用の1行データに変換する。
-function buildDetailRow(baseInfo, companyId, category1Id, entry) {
-  const itemsMap = itemsByCompanyCategory1[companyId] ? itemsByCompanyCategory1[companyId][category1Id] : null;
-  const item = itemsMap ? itemsMap.get(entry.itemId) : null;
+// choice/multi_select/fill_blank は正解・選択済み値が回答データ自体に保存済みのため問題マスタ参照は不要。
+// 問題文・選択肢・配点は問題マスタ（itemsByCategory1）を参照する（typing/likert/選択式のいずれも問題文は
+// 回答データ自体には保存されていないため。sentence_completion のみ回答データにquestionTextを持つ）。
+function buildDetailRow(baseInfo, category1Id, entry) {
+  const item = itemsByCategory1[category1Id] ? itemsByCategory1[category1Id].get(entry.itemId) : null;
   const type = entry.type;
   const questionText = entry.questionText || (item ? item.questionText : "") || "";
   const choices = choicesText(type, item);
@@ -498,6 +501,10 @@ function buildDetailRow(baseInfo, companyId, category1Id, entry) {
   let correctFlag = null; // true / false / null(該当なし)
 
   if (type === "typing_passage") {
+    // 実際に入力した回答本文に加えて、従来通りの入力統計も残す。
+    // 一致・誤りの数はtypingStatsForで可能な限り修正済みロジックにより再計算した値を表示する
+    // （得点（info.earned）と表示される誤り数の整合性をとるため）。
+    // 古い受験データ（typedText未保存）は本文が無い旨を注記したうえで統計のみ表示する。
     const stats = typingStatsFor(entry, item);
     const statsLine = "入力文字数:" + (entry.rawInputLength ?? "-")
       + " / 一致:" + (stats.matched ?? "-")
@@ -513,12 +520,13 @@ function buildDetailRow(baseInfo, companyId, category1Id, entry) {
     answerText = joinIfArray(entry.selected);
     correctFlag = info.isCorrect;
   } else {
+    // sentence_completion 等の自由記述
     answerText = entry.freeText || "";
   }
 
   return {
     ...baseInfo,
-    category1: category1LabelOf(companyId, category1Id),
+    category1: category1LabelOf(category1Id),
     subcategory: entry.subcategory || "",
     typeLabel: TYPE_LABELS[type] || type || "",
     questionText,
@@ -532,10 +540,11 @@ function buildDetailRow(baseInfo, companyId, category1Id, entry) {
 }
 
 // カテゴリー1の表示順（①認知能力→②言語理解能力→③論理思考能力→④実務遂行能力→⑤行動特性・性格→
-// 企業が追加した自社限定カテゴリー）。企業ごとにcategory1ListByCompany[companyId]を参照する。
-function buildCategory1OrderIndex(companyId) {
+// 企業が追加した自社限定カテゴリー）。category1Listは運営共通カテゴリーが先、自社限定カテゴリーが
+// その後ろに続く並びで読み込まれているため、そのままcategory1Id→表示順のインデックスとして使う。
+function buildCategory1OrderIndex() {
   const idx = {};
-  (category1ListByCompany[companyId] || []).forEach((p, i) => { idx[p.id] = i; });
+  category1List.forEach((p, i) => { idx[p.id] = i; });
   return idx;
 }
 
@@ -543,9 +552,11 @@ function buildCategory1OrderIndex(companyId) {
 //   1. 受験者単位でグループ化したうえで、完了日時（completedAt）の降順を最優先で並べる
 //      （未完了＝completedAt無しの受験者は末尾）
 //   2. 同一受験者内では、①認知能力→②言語理解能力→③論理思考能力→④実務遂行能力→
-//      ⑤行動特性・性格の順にカテゴリー1を並べ、各カテゴリー1内は出題順をそのまま使う。
+//      ⑤行動特性・性格（小分類は協調性を先頭に、出題データの並び順どおり）の順にカテゴリー1を並べ、
+//      各カテゴリー1内は出題順（問題マスタのorderに基づき保存されているanswers配列の順序）をそのまま使う。
 function buildDetailRows() {
   detailRows = [];
+  const category1OrderIndex = buildCategory1OrderIndex();
   const sortedRows = rows.slice().sort((a, b) => {
     const ta = a.completedAt && typeof a.completedAt.toDate === "function" ? a.completedAt.toDate().getTime() : -Infinity;
     const tb = b.completedAt && typeof b.completedAt.toDate === "function" ? b.completedAt.toDate().getTime() : -Infinity;
@@ -554,12 +565,10 @@ function buildDetailRows() {
   sortedRows.forEach((r) => {
     if (!r.result || !r.result.parts) return;
     const baseInfo = {
-      companyName: r.companyName,
       createdAt: r.createdAt, status: r.status, startedAt: r.startedAt, completedAt: r.completedAt,
       applicantName: r.applicantName, applicantEmail: r.applicantEmail,
       employeeCode: r.employeeCode, department: r.department, position: r.position, note: r.note,
     };
-    const category1OrderIndex = buildCategory1OrderIndex(r.companyId);
     const category1Ids = Object.keys(r.result.parts).sort((a, b) => {
       const ia = Object.prototype.hasOwnProperty.call(category1OrderIndex, a) ? category1OrderIndex[a] : Number.MAX_SAFE_INTEGER;
       const ib = Object.prototype.hasOwnProperty.call(category1OrderIndex, b) ? category1OrderIndex[b] : Number.MAX_SAFE_INTEGER;
@@ -569,7 +578,7 @@ function buildDetailRows() {
     category1Ids.forEach((category1Id) => {
       const category1Result = r.result.parts[category1Id];
       (category1Result && category1Result.answers ? category1Result.answers : []).forEach((entry) => {
-        detailRows.push(buildDetailRow(baseInfo, r.companyId, category1Id, entry));
+        detailRows.push(buildDetailRow(baseInfo, category1Id, entry));
       });
     });
   });
@@ -580,14 +589,13 @@ function correctFlagCell(flag) {
   return badge(flag ? "○ 正解" : "× 不正解", flag ? "ok" : "ng");
 }
 
-const DETAIL_COL_COUNT = 21; // 会社名（1）+ company-report.htmlと同じ20列
+const DETAIL_COL_COUNT = 20;
 
 function renderDetailTable() {
   const body = $("detailBody");
-  if (!detailRows.length) { body.innerHTML = '<tr><td colspan="' + DETAIL_COL_COUNT + '" class="empty">指定条件の回答詳細はありません。</td></tr>'; return; }
+  if (!detailRows.length) { body.innerHTML = '<tr><td colspan="' + DETAIL_COL_COUNT + '" class="empty">指定期間の回答詳細はありません。</td></tr>'; return; }
   body.innerHTML = detailRows.map((d) => (
-    "<tr><td>" + esc(d.companyName) + "</td>"
-    + "<td>" + fmtDateTime(d.createdAt) + "</td>"
+    "<tr><td>" + fmtDateTime(d.createdAt) + "</td>"
     + "<td>" + badge(statusLabel(d.status), d.status) + "</td>"
     + "<td>" + fmtDateTime(d.startedAt) + "</td>"
     + "<td>" + fmtDateTime(d.completedAt) + "</td>"
@@ -618,36 +626,6 @@ function render() {
   renderDetailTable();
 }
 
-// 企業フィルターの選択肢（すべての企業 + 全企業一覧）を読み込む。会社名の表示・CSV出力にも使う
-// companyNameMapもここで組み立てる。
-async function loadCompanyOptions() {
-  const snap = await getDocs(collection(db, "companies"));
-  allCompanies = []; companyNameMap = {};
-  snap.forEach((ds) => { const d = ds.data() || {}; allCompanies.push({ companyId: ds.id, companyName: d.companyName || "" }); companyNameMap[ds.id] = d.companyName || ""; });
-  allCompanies.sort((a, b) => String(a.companyName).localeCompare(String(b.companyName), "ja"));
-  const sel = $("companyFilter");
-  const cur = sel.value || "all";
-  sel.innerHTML = '<option value="all">すべての企業</option>' + allCompanies.map((c) => '<option value="' + esc(c.companyId) + '">' + esc(c.companyName || c.companyId) + "</option>").join("");
-  sel.value = allCompanies.some((c) => c.companyId === cur) ? cur : "all";
-}
-
-// 指定企業のカテゴリー1一覧・問題マスタを読み込み、companyIdをキーにしたキャッシュへ格納する。
-// 一度読み込んだ企業は再読み込みしない（表示条件を変えて再表示するたびに同じ企業の問題マスタを
-// 何度も読み込まないようにするため）。
-async function ensureCompanyQuestionData(companyId) {
-  if (itemsByCompanyCategory1[companyId]) return;
-  const category1List = await loadEffectiveCategory1List(companyId);
-  category1ListByCompany[companyId] = category1List;
-  const itemsByCategory1 = {};
-  await Promise.all(category1List.map(async (p) => {
-    const eff = await loadEffectiveQuestionSet(companyId, p);
-    const map = new Map();
-    (eff.items || []).forEach((item) => map.set(item.id, item));
-    itemsByCategory1[p.id] = map;
-  }));
-  itemsByCompanyCategory1[companyId] = itemsByCategory1;
-}
-
 async function loadReport() {
   const range = getDateRange();
   updatePeriodHelp(range);
@@ -656,50 +634,30 @@ async function loadReport() {
     invites = []; resultMap = {};
     render();
     $("csvBtn").disabled = true;
-    $("detailCsvBtn").disabled = true;
     return;
   }
   setStatus("", "");
   $("loadBtn").disabled = true; $("csvBtn").disabled = true; $("detailCsvBtn").disabled = true;
   $("resultBody").innerHTML = '<tr><td colspan="' + SUMMARY_COL_COUNT + '" class="empty">データを読み込み中です。</td></tr>';
   $("detailBody").innerHTML = '<tr><td colspan="' + DETAIL_COL_COUNT + '" class="empty">データを読み込み中です。</td></tr>';
-  const companyFilter = $("companyFilter").value || "all";
   try {
     const startDate = new Date(range.start + "T00:00:00");
     const endDate = new Date(range.end + "T23:59:59.999");
-
-    let invitesQ, resultsQ;
-    if (companyFilter === "all") {
-      invitesQ = query(collectionGroup(db, "examInvites"), where("createdAt", ">=", startDate), where("createdAt", "<=", endDate));
-      resultsQ = collectionGroup(db, "examResults");
-    } else {
-      invitesQ = query(
-        collection(db, "companies", companyFilter, "examInvites"),
-        where("createdAt", ">=", startDate),
-        where("createdAt", "<=", endDate)
-      );
-      resultsQ = collection(db, "companies", companyFilter, "examResults");
-    }
-
-    const [invitesSnap, resultsSnap] = await Promise.all([getDocs(invitesQ), getDocs(resultsQ)]);
+    const invitesQ = query(
+      collection(db, "companies", companyId, "examInvites"),
+      where("createdAt", ">=", startDate),
+      where("createdAt", "<=", endDate)
+    );
+    const [invitesSnap, resultsSnap] = await Promise.all([
+      getDocs(invitesQ),
+      getDocs(collection(db, "companies", companyId, "examResults")),
+    ]);
 
     resultMap = {};
-    resultsSnap.forEach((ds) => {
-      const companyId = companyFilter === "all" ? (ds.ref.parent.parent ? ds.ref.parent.parent.id : "") : companyFilter;
-      resultMap[companyId + "/" + ds.id] = ds.data() || {};
-    });
+    resultsSnap.forEach((ds) => { resultMap[ds.id] = ds.data() || {}; });
 
     invites = [];
-    const companyIdSet = new Set();
-    invitesSnap.forEach((ds) => {
-      const companyId = companyFilter === "all" ? (ds.ref.parent.parent ? ds.ref.parent.parent.id : "") : companyFilter;
-      companyIdSet.add(companyId);
-      invites.push({ id: ds.id, companyId, ...ds.data() });
-    });
-
-    // 対象期間内に招待がある企業分のカテゴリー1一覧・問題マスタだけを読み込む
-    // （「すべての企業」表示時に全企業分を無条件で読み込むと負荷が大きいため）。
-    await Promise.all([...companyIdSet].map((companyId) => ensureCompanyQuestionData(companyId)));
+    invitesSnap.forEach((ds) => invites.push({ id: ds.id, ...ds.data() }));
 
     render();
     $("csvBtn").disabled = visibleSummaryRows().length === 0;
@@ -708,7 +666,7 @@ async function loadReport() {
   } catch (e) {
     console.error(e);
     let msg = "取得に失敗しました：" + (e.code || e.message || e);
-    if (e.code === "failed-precondition") msg += "\n\nFirestoreのインデックス（企業を横断する場合はコレクショングループ用インデックス）が未作成の可能性があります。エラー詳細のリンクから作成してください。";
+    if (e.code === "failed-precondition") msg += "\n\nFirestoreのインデックスが未作成の可能性があります。エラー詳細のリンクから作成してください。";
     setStatus(msg, "error");
     $("resultBody").innerHTML = '<tr><td colspan="' + SUMMARY_COL_COUNT + '" class="empty">取得に失敗しました。</td></tr>';
     $("detailBody").innerHTML = '<tr><td colspan="' + DETAIL_COL_COUNT + '" class="empty">取得に失敗しました。</td></tr>';
@@ -720,13 +678,13 @@ async function loadReport() {
 
 function csvCell(v) { v = String(v == null ? "" : v); return /[",\n\r]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
 function downloadCsv() {
-  const headers = ["会社名", "招待発行日時", "状態", "開始日時", "完了日時", "社員コード", "氏名", "メールアドレス", "部署", "役職", "備考", "①～④：合計"]
+  const headers = ["招待発行日時", "状態", "開始日時", "完了日時", "社員コード", "氏名", "メールアドレス", "部署", "役職", "備考", "①～④：合計"]
     .concat(FOUR_CATEGORY1_IDS.map((category1Id) => FOUR_CATEGORY1_LABELS[category1Id]))
     .concat(PERSONALITY_SUBCATS.map((s) => "⑤行動特性・性格 " + s + "：小計"));
   const lines = [headers.map(csvCell).join(",")];
   visibleSummaryRows().forEach((r) => {
     const line = [
-      r.companyName, fmtDateTime(r.createdAt), statusLabel(r.status), fmtDateTime(r.startedAt), fmtDateTime(r.completedAt),
+      fmtDateTime(r.createdAt), statusLabel(r.status), fmtDateTime(r.startedAt), fmtDateTime(r.completedAt),
       r.employeeCode, r.applicantName, r.applicantEmail, r.department, r.position, r.note,
       sumFourCategory1sText(r),
     ].concat(FOUR_CATEGORY1_IDS.map((category1Id) => scoreText(r.aggByCategory1[category1Id])))
@@ -738,9 +696,8 @@ function downloadCsv() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   const range = getDateRange();
-  const companyFilter = $("companyFilter").value || "all";
   a.href = url;
-  a.download = "biztes_operator_report_" + companyFilter + "_" + range.start + "_" + range.end + ".csv";
+  a.download = "biztes_report_" + companyId + "_" + range.start + "_" + range.end + ".csv";
   document.body.appendChild(a);
   a.click();
   a.remove();
@@ -749,13 +706,13 @@ function downloadCsv() {
 
 function downloadDetailCsv() {
   const headers = [
-    "会社名", "招待発行日時", "状態", "開始日時", "完了日時", "社員コード", "氏名", "メールアドレス", "部署", "役職", "備考",
+    "招待発行日時", "状態", "開始日時", "完了日時", "社員コード", "氏名", "メールアドレス", "部署", "役職", "備考",
     "カテゴリー1", "カテゴリー2", "形式", "問題", "選択肢", "正解", "回答", "正誤", "得点", "配点",
   ];
   const lines = [headers.map(csvCell).join(",")];
   detailRows.forEach((d) => {
     const line = [
-      d.companyName, fmtDateTime(d.createdAt), statusLabel(d.status), fmtDateTime(d.startedAt), fmtDateTime(d.completedAt),
+      fmtDateTime(d.createdAt), statusLabel(d.status), fmtDateTime(d.startedAt), fmtDateTime(d.completedAt),
       d.employeeCode, d.applicantName, d.applicantEmail, d.department, d.position, d.note,
       d.category1, d.subcategory, d.typeLabel, d.questionText, d.choices, d.correctText, d.answerText,
       d.correctFlag === null || d.correctFlag === undefined ? "" : (d.correctFlag ? "正解" : "不正解"),
@@ -768,9 +725,8 @@ function downloadDetailCsv() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   const range = getDateRange();
-  const companyFilter = $("companyFilter").value || "all";
   a.href = url;
-  a.download = "biztes_operator_report_detail_" + companyFilter + "_" + range.start + "_" + range.end + ".csv";
+  a.download = "biztes_report_detail_" + companyId + "_" + range.start + "_" + range.end + ".csv";
   document.body.appendChild(a);
   a.click();
   a.remove();
@@ -792,18 +748,60 @@ $("headRow").addEventListener("click", (e) => {
 
 onAuthStateChanged(auth, async (user) => {
   if (!user) { location.href = "login.html"; return; }
-  try {
+
+  const caSnap = await getDoc(doc(db, "companyAdmins", user.uid));
+  const isActiveCompanyAdmin = caSnap.exists() && caSnap.data().status === "active";
+  const ownCompanyId = isActiveCompanyAdmin ? caSnap.data().companyId : "";
+
+  // operator-question-editor.html と同じ考え方：自社の管理者としてこの画面を開いた場合は、
+  // 運営権限も併せ持つアカウントであっても企業管理者としてとどまる。
+  // 運営者が他社のレポートを見る目的で ?company= 付きで開いた場合のみ運営者として扱う。
+  // ただし運用管理の企業管理ページ「管理画面へ入る」から明示的に入室した場合（?opEnter=1）は、
+  // 自社を兼務していても必ず運営モードとして扱う。
+  const forceOperatorEntry = !!(window.BizTestOperatorMode && window.BizTestOperatorMode.isExplicitEntry());
+  if (isActiveCompanyAdmin && !forceOperatorEntry && (!companyId || companyId === ownCompanyId)) {
+    companyId = ownCompanyId;
+    setBackHomeLink("company-admin-home.html", "← 企業管理者ホームへ戻る");
+  } else {
     const opSnap = await getDoc(doc(db, "operators", user.uid));
-    if (!opSnap.exists()) {
-      await signOut(auth);
-      location.href = "login.html";
-      return;
+    if (opSnap.exists()) {
+      isOperatorUser = true;
+      if (!companyId) {
+        document.body.innerHTML = "<p style='padding:40px;font-family:sans-serif'>URLに ?company=企業ID が指定されていません。運営ホームから遷移してください。</p>";
+        return;
+      }
+    } else {
+      await signOut(auth); location.href = "login.html"; return;
     }
+  }
+
+  const companySnap = await getDoc(doc(db, "companies", companyId));
+  if (!companySnap.exists()) {
+    setStatus("指定された企業が見つかりません。", "error");
+    hideLoading();
+    return;
+  }
+  const companyName = companySnap.data().companyName;
+
+  if (isOperatorUser) {
+    window.BizTestOperatorMode && window.BizTestOperatorMode.renderBanner({ companyId, companyName });
+  }
+
+  try {
+    category1List = await loadEffectiveCategory1List(companyId);
     renderTableHead();
+    // 各カテゴリー1の問題マスタを一度だけ読み込み、回答詳細の問題文・選択肢・配点の参照に使う。
+    // （企業が自社問題を1問も登録していないカテゴリー1は運営のデフォルト問題＝templatesを参照する）
+    itemsByCategory1 = {};
+    await Promise.all(category1List.map(async (p) => {
+      const eff = await loadEffectiveQuestionSet(companyId, p);
+      const map = new Map();
+      (eff.items || []).forEach((item) => map.set(item.id, item));
+      itemsByCategory1[p.id] = map;
+    }));
     const dr = defaultRange();
     $("startDate").value = dr.start;
     $("endDate").value = dr.end;
-    await loadCompanyOptions();
     await loadReport();
   } catch (e) {
     console.error(e);

@@ -5,7 +5,9 @@
   "description": "ビズてす: Firestoreへの初期データ投入・運用スクリプト（サイト本体はビルド不要の静的HTMLです）",
   "scripts": {
     "seed-templates": "node scripts/seed-templates.mjs",
-    "create-operator": "node scripts/create-operator.mjs"
+    "seed-new-categories": "node scripts/seed-new-categories.mjs",
+    "create-operator": "node scripts/create-operator.mjs",
+    "seed-sample-exam-results": "node scripts/seed-sample-exam-results.mjs"
   },
   "dependencies": {
     "firebase-admin": "^12.0.0"

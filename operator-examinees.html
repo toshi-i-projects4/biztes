@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>受験者管理｜ビズてす</title>
+<style>
+body{margin:0;font-family:"Hiragino Maru Gothic ProN","BIZ UDPGothic","Yu Gothic UI","Meiryo",sans-serif;background:#eef2f7;color:#111827;padding:24px;box-sizing:border-box;line-height:1.7}
+.page{max-width:1100px;margin:30px auto;background:#fff;border-radius:16px;box-shadow:0 4px 12px rgba(0,0,0,.08);padding:32px;box-sizing:border-box}
+.header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px}h1{margin:0;font-size:28px}.back-link,.bottom-back-link{color:#2563eb;text-decoration:none;font-weight:bold;font-size:14px}.bottom-back-link{display:inline-block;margin-top:22px}.section-title{font-size:18px;font-weight:bold;margin:0 0 14px}.description{font-size:14px;line-height:1.7;color:#6b7280;margin:0 0 18px}
+.card{background:transparent;border:none;border-radius:0;box-shadow:none;padding:0;box-sizing:border-box;margin:0 0 28px}.card+.card{border-top:1px solid #e5e7eb;padding-top:24px}
+.info-box,.warning-box{background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:14px 16px;margin-bottom:14px;line-height:1.7;white-space:pre-wrap;font-size:14px;color:#111827}.warning-box{background:#fffbeb;border-color:#fde68a;color:#92400e;margin-top:0}
+.form-grid{display:grid;grid-template-columns:180px 1fr;gap:14px 16px;align-items:center}.label{font-size:14px;font-weight:bold;color:#374151}select{width:100%;border:1px solid #d1d5db;border-radius:10px;padding:11px 12px;font-size:15px;box-sizing:border-box;background:#fff;color:#111827}
+.secondary-btn{border:none;border-radius:10px;padding:12px 16px;font-size:15px;font-weight:bold;cursor:pointer;background:#64748b;color:#fff}.secondary-btn:hover{background:#475569}.secondary-btn:disabled{opacity:.6;cursor:not-allowed}
+.status{border-radius:10px;padding:14px 16px;margin-top:14px;margin-bottom:14px;line-height:1.7;white-space:pre-wrap;font-size:14px;font-weight:bold;display:none}.status.ok{display:block;background:#dcfce7;border:1px solid #86efac;color:#166534}.status.error{display:block;background:#fee2e2;border:1px solid #fca5a5;color:#991b1b}.status.warn{display:block;background:#fef3c7;border:1px solid #fbbf24;color:#92400e}
+.table-wrap{overflow-x:auto;overflow-y:scroll;max-height:520px;margin-top:18px;border:1px solid #e5e7eb;border-radius:10px;background:#fff}
+table,.data-table{width:100%;border-collapse:collapse;background:#fff;font-size:13px;min-width:1200px}
+.data-table th,.data-table td,th,td{border:1px solid #e5e7eb;padding:8px 10px;text-align:left;vertical-align:middle;white-space:nowrap}
+.data-table th,th{background:#f3f4f6;color:#374151;font-weight:bold;position:sticky;top:0;z-index:1}
+.data-table tr:hover td{background:#f9fafb}
+.badge{display:inline-block;border-radius:999px;padding:4px 9px;font-size:12px;font-weight:bold;white-space:nowrap}
+.badge.not_started{background:#f3f4f6;color:#6b7280}.badge.in_progress{background:#fef3c7;color:#92400e}.badge.completed{background:#dcfce7;color:#166534}.badge.cancelled{background:#f3f4f6;color:#94a3b8}
+.table-action-btn{border:none;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:bold;cursor:pointer;background:#2563eb;color:#fff;white-space:nowrap;margin:0 4px 0 0}.table-action-btn:hover{background:#1d4ed8}.table-action-btn:disabled{opacity:.55;cursor:not-allowed}.table-action-btn.secondary{background:#64748b}.table-action-btn.secondary:hover{background:#475569}.table-action-btn.danger{background:#fff;border:1px solid #fecaca;color:#dc2626}.table-action-btn.danger:hover{background:#fee2e2}
+.edit-input{width:100%;min-width:100px;border:1px solid #93c5fd;border-radius:6px;padding:5px 7px;font-size:12.5px;box-sizing:border-box;background:#eff6ff;color:#111827}
+.toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px}.toolbar input,.toolbar select{max-width:280px;border:1px solid #d1d5db;border-radius:10px;padding:11px 12px;font-size:15px;box-sizing:border-box;background:#fff;color:#111827}
+.hidden{display:none!important}.small{font-size:13px;color:#6b7280;line-height:1.7}.muted{color:#6b7280}
+.page-loading{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:#eef2f7;color:#1f2937;font-weight:bold}.page-loading.hidden{display:none!important}.loading-box{display:flex;flex-direction:column;align-items:center;gap:12px;background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:24px 28px;box-shadow:0 4px 12px rgba(0,0,0,.08)}.loading-spinner{width:42px;height:42px;border:5px solid #dbeafe;border-top-color:#2563eb;border-radius:50%;animation:spin .9s linear infinite}.loading-text{font-size:14px;color:#374151}@keyframes spin{to{transform:rotate(360deg)}}
+@media(max-width:640px){body{padding:16px}.header{flex-direction:column;align-items:flex-start}.page{padding:24px}.form-grid{grid-template-columns:1fr;gap:8px 0}.toolbar input,.toolbar select{max-width:none;width:100%}}
+</style>
+</head>
+<body>
+<div id="pageLoading" class="page-loading"><div class="loading-box"><div class="loading-spinner"></div><div id="loadingText" class="loading-text">受験者管理を読み込み中...</div></div></div>
+<div class="page">
+  <div class="header"><h1>受験者管理</h1><a class="back-link" href="operator-home.html" id="backHomeLink">← 運営ホームへ戻る</a></div>
+
+  <div class="card" id="companySelectPanel">
+    <p class="section-title">企業を選択</p>
+    <div class="form-grid"><div class="label">対象企業</div><select id="companySelect"><option value="">選択してください</option></select></div>
+  </div>
+
+  <div class="card">
+    <p class="description">採用試験として受験した対象者が実際に入社した場合など、受験後に社員コード・氏名・メールアドレス・部署・役職・備考を変更できます。変更した内容は、レポートの受験結果サマリー・回答詳細やダッシュボードにもそのまま反映されます。また、「削除」から招待・受験結果を完全に削除できます。削除すると、レポートやダッシュボードなど他の画面からも同時に消えます（元に戻せません）。</p>
+    <div class="warning-box">注意：この画面での変更は受験招待そのものの登録内容を書き換えます。受験リンク自体は変更されません（同じリンクのまま、以後の集計・表示にのみ新しい内容が使われます）。</div>
+    <div class="toolbar">
+      <input id="search" placeholder="社員コード・氏名・メール・部署・備考で検索">
+      <select id="filterStatus">
+        <option value="all">すべて</option>
+        <option value="not_started">未受験</option>
+        <option value="in_progress">受験中</option>
+        <option value="completed">受験完了</option>
+        <option value="cancelled">対象外</option>
+      </select>
+      <button class="secondary-btn" id="reloadBtn" type="button">再読み込み</button>
+    </div>
+    <div id="listStatus" class="status"></div>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead><tr><th>操作</th><th>状態</th><th>社員コード</th><th>氏名</th><th>メールアドレス</th><th>部署</th><th>役職</th><th>備考</th><th>発行日</th><th>受験完了日時</th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+    <div id="emptyRows" class="description hidden">まだ受験招待がありません。</div>
+  </div>
+
+  <a class="bottom-back-link" href="operator-home.html" id="backHomeLinkBottom">← 運営ホームへ戻る</a>
+</div>
+
+<script src="operator-mode.js"></script>
+<script type="module">
+import { auth, db } from "./firebase-config.js";
+import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import {
+  doc, getDoc, collection, getDocs, onSnapshot, query, orderBy, updateDoc, deleteDoc, serverTimestamp,
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { escapeHtml } from "./operator-shared.js";
+
+let companyId = "";
+let isOperatorUser = false;
+let currentUser = null;
+let unsubInvites = null;
+let allInvites = [];
+let editingToken = "";
+
+function showPage() {
+  const l = document.getElementById("pageLoading");
+  if (l) { l.classList.add("hidden"); l.style.display = "none"; }
+}
+
+function setBackHomeLink(href, text) {
+  ["backHomeLink", "backHomeLinkBottom"].forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) { el.href = href; el.textContent = text; }
+  });
+}
+
+function setListStatus(msg, type) {
+  const el = document.getElementById("listStatus");
+  el.textContent = msg || "";
+  el.className = "status " + (msg ? (type || "") : "");
+}
+
+onAuthStateChanged(auth, async (user) => {
+  if (!user) { location.href = "login.html"; return; }
+  currentUser = user;
+
+  const urlCompanyParam = new URLSearchParams(location.search).get("company");
+  const caSnap = await getDoc(doc(db, "companyAdmins", user.uid));
+  const isActiveCompanyAdmin = caSnap.exists() && caSnap.data().status === "active";
+  const ownCompanyId = isActiveCompanyAdmin ? caSnap.data().companyId : "";
+
+  // company-admin-home.htmlなど自社の管理画面として開いた場合は、運営権限も併せ持つ
+  // アカウントであっても企業管理者としてとどまる。運営者が他社を操作する目的で
+  // このページを開いた場合のみ、下の運営者判定に進む。
+  // ただし運用管理の企業管理ページ「管理画面へ入る」から明示的に入室した場合（?opEnter=1）は、
+  // 自社を兼務していても必ず運営モードとして扱う。
+  const forceOperatorEntry = !!(window.BizTestOperatorMode && window.BizTestOperatorMode.isExplicitEntry());
+  if (isActiveCompanyAdmin && !forceOperatorEntry && (!urlCompanyParam || urlCompanyParam === ownCompanyId)) {
+    companyId = ownCompanyId;
+    document.getElementById("companySelectPanel").classList.add("hidden");
+    setBackHomeLink("company-admin-home.html", "← 企業管理者ホームへ戻る");
+
+    watchInvites();
+    showPage();
+    return;
+  }
+
+  const opSnap = await getDoc(doc(db, "operators", user.uid));
+  if (opSnap.exists()) {
+    isOperatorUser = true;
+    await loadCompaniesForOperator();
+    showPage();
+    return;
+  }
+
+  await signOut(auth); location.href = "login.html";
+});
+
+async function loadCompaniesForOperator() {
+  const snap = await getDocs(query(collection(db, "companies"), orderBy("createdAt", "desc")));
+  const select = document.getElementById("companySelect");
+  snap.forEach((d) => {
+    const opt = document.createElement("option");
+    opt.value = d.id;
+    opt.textContent = d.data().companyName;
+    opt.dataset.companyName = d.data().companyName;
+    select.appendChild(opt);
+  });
+  const preselect = new URLSearchParams(location.search).get("company");
+  if (preselect) select.value = preselect;
+  select.addEventListener("change", () => {
+    companyId = select.value;
+    editingToken = "";
+    updateOperatorBanner();
+    watchInvites();
+  });
+  if (select.value) { companyId = select.value; updateOperatorBanner(); watchInvites(); }
+}
+
+function updateOperatorBanner() {
+  if (!isOperatorUser || !companyId) return;
+  const select = document.getElementById("companySelect");
+  const opt = select.options[select.selectedIndex];
+  const companyName = opt ? (opt.dataset.companyName || opt.textContent) : "";
+  window.BizTestOperatorMode && window.BizTestOperatorMode.renderBanner({ companyId, companyName });
+}
+
+document.getElementById("logoutBtn") && document.getElementById("logoutBtn").addEventListener("click", async () => {
+  await signOut(auth);
+  location.href = "login.html";
+});
+
+function statusLabel(status) {
+  return { not_started: "未受験", in_progress: "受験中", completed: "受験完了", cancelled: "対象外" }[status] || status;
+}
+
+function fmtDateTime(v) {
+  if (v && v.toDate) return v.toDate().toLocaleString("ja-JP");
+  return "-";
+}
+
+function watchInvites() {
+  if (unsubInvites) unsubInvites();
+  allInvites = [];
+  if (!companyId) { renderRows(); return; }
+
+  const q = query(collection(db, "companies", companyId, "examInvites"), orderBy("createdAt", "desc"));
+  unsubInvites = onSnapshot(q, (snap) => {
+    allInvites = snap.docs.map((d) => ({ token: d.id, ...d.data() }));
+    renderRows();
+  });
+}
+
+function normalizeSearchText(v) {
+  return String(v || "").trim().toLowerCase();
+}
+
+function filteredInvites() {
+  const q = normalizeSearchText(document.getElementById("search").value);
+  const st = document.getElementById("filterStatus").value;
+  return allInvites.filter((invite) => {
+    if (st !== "all" && invite.status !== st) return false;
+    if (!q) return true;
+    return [invite.employeeCode, invite.applicantName, invite.applicantEmail, invite.department, invite.position, invite.note]
+      .some((v) => String(v || "").toLowerCase().includes(q));
+  });
+}
+
+function renderDisplayRow(invite) {
+  const created = invite.createdAt && invite.createdAt.toDate ? invite.createdAt.toDate().toLocaleString("ja-JP") : "-";
+  return `
+    <td>
+      <button class="table-action-btn" type="button" data-action="edit" data-token="${escapeHtml(invite.token)}">編集</button>
+      <button class="table-action-btn danger" type="button" data-action="delete" data-token="${escapeHtml(invite.token)}">削除</button>
+    </td>
+    <td><span class="badge ${invite.status}">${statusLabel(invite.status)}</span></td>
+    <td>${escapeHtml(invite.employeeCode || "")}</td>
+    <td>${escapeHtml(invite.applicantName || "")}</td>
+    <td>${escapeHtml(invite.applicantEmail || "")}</td>
+    <td>${escapeHtml(invite.department || "")}</td>
+    <td>${escapeHtml(invite.position || "")}</td>
+    <td>${escapeHtml(invite.note || "")}</td>
+    <td>${created}</td>
+    <td>${fmtDateTime(invite.completedAt)}</td>
+  `;
+}
+
+function renderEditRow(invite) {
+  return `
+    <td>
+      <button class="table-action-btn" type="button" data-action="save" data-token="${escapeHtml(invite.token)}">保存</button>
+      <button class="table-action-btn secondary" type="button" data-action="cancel" data-token="${escapeHtml(invite.token)}">キャンセル</button>
+    </td>
+    <td><span class="badge ${invite.status}">${statusLabel(invite.status)}</span></td>
+    <td><input class="edit-input" type="text" id="edit-employeeCode" value="${escapeHtml(invite.employeeCode || "")}"></td>
+    <td><input class="edit-input" type="text" id="edit-applicantName" value="${escapeHtml(invite.applicantName || "")}"></td>
+    <td><input class="edit-input" type="email" id="edit-applicantEmail" value="${escapeHtml(invite.applicantEmail || "")}"></td>
+    <td><input class="edit-input" type="text" id="edit-department" value="${escapeHtml(invite.department || "")}"></td>
+    <td><input class="edit-input" type="text" id="edit-position" value="${escapeHtml(invite.position || "")}"></td>
+    <td><input class="edit-input" type="text" id="edit-note" value="${escapeHtml(invite.note || "")}"></td>
+    <td>${invite.createdAt && invite.createdAt.toDate ? invite.createdAt.toDate().toLocaleString("ja-JP") : "-"}</td>
+    <td>${fmtDateTime(invite.completedAt)}</td>
+  `;
+}
+
+function renderRows() {
+  const rows = document.getElementById("rows");
+  const empty = document.getElementById("emptyRows");
+  const list = filteredInvites();
+  rows.innerHTML = "";
+  if (!list.length) {
+    empty.textContent = allInvites.length ? "条件に一致する受験者がありません。" : "まだ受験招待がありません。";
+    empty.classList.remove("hidden");
+    return;
+  }
+  empty.classList.add("hidden");
+  for (const invite of list) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = invite.token === editingToken ? renderEditRow(invite) : renderDisplayRow(invite);
+    rows.appendChild(tr);
+  }
+}
+
+async function saveEdit(token) {
+  const applicantName = document.getElementById("edit-applicantName").value.trim();
+  const applicantEmail = document.getElementById("edit-applicantEmail").value.trim();
+  const employeeCode = document.getElementById("edit-employeeCode").value.trim();
+  const department = document.getElementById("edit-department").value.trim();
+  const position = document.getElementById("edit-position").value.trim();
+  const note = document.getElementById("edit-note").value.trim();
+
+  if (!applicantName) { setListStatus("氏名を入力してください。", "error"); return; }
+
+  setListStatus("保存しています...", "warn");
+  try {
+    await updateDoc(doc(db, "companies", companyId, "examInvites", token), {
+      applicantName,
+      applicantEmail,
+      employeeCode,
+      department,
+      position,
+      note,
+      updatedAt: serverTimestamp(),
+      updatedBy: currentUser ? currentUser.uid : "",
+    });
+    editingToken = "";
+    setListStatus("保存しました。レポート・ダッシュボードにも反映されます。", "ok");
+  } catch (e) {
+    console.error(e);
+    setListStatus("保存に失敗しました：" + (e.code || "") + " " + (e.message || e), "error");
+  }
+}
+
+// 受験招待（examInvites）と、それに紐づく受験結果（examResults）をFirestoreから
+// 完全に削除する（元に戻せない）。ここで削除すると、レポート・ダッシュボードなど
+// 同じデータを参照している他の画面からも自動的に消える。誤操作防止のため、
+// 確認ダイアログを2回表示する。
+async function deleteInviteAndResult(token, btn) {
+  const invite = allInvites.find((inv) => inv.token === token);
+  const label = invite ? (invite.applicantName || invite.applicantEmail || token) : token;
+
+  if (!confirm("「" + label + "」の受験データを削除します。よろしいですか？")) return;
+  if (!confirm("本当に削除してよろしいですか？\nこの操作は取り消せません。招待情報・受験結果は完全に削除され、復元できません。\n削除すると、レポートやダッシュボードなど他の画面からも同時に消えます。")) return;
+
+  if (btn) { btn.disabled = true; btn.textContent = "削除中…"; }
+  setListStatus("", "");
+  try {
+    await deleteDoc(doc(db, "companies", companyId, "examInvites", token));
+    await deleteDoc(doc(db, "companies", companyId, "examResults", token));
+    // allInvites・表示はonSnapshotの通知で自動更新される
+    setListStatus("「" + label + "」の受験データを削除しました。", "ok");
+  } catch (e) {
+    console.error(e);
+    setListStatus("削除に失敗しました：" + (e.code || e.message || e), "error");
+    if (btn) { btn.disabled = false; btn.textContent = "削除"; }
+  }
+}
+
+document.getElementById("rows").addEventListener("click", (e) => {
+  const btn = e.target.closest("button[data-action]");
+  if (!btn) return;
+  const action = btn.dataset.action;
+  const token = btn.dataset.token;
+  if (action === "edit") { editingToken = token; setListStatus("", ""); renderRows(); }
+  else if (action === "cancel") { editingToken = ""; setListStatus("", ""); renderRows(); }
+  else if (action === "save") { saveEdit(token); }
+  else if (action === "delete") { deleteInviteAndResult(token, btn); }
+});
+
+document.getElementById("search").addEventListener("input", renderRows);
+document.getElementById("filterStatus").addEventListener("change", renderRows);
+document.getElementById("reloadBtn").addEventListener("click", (e) => {
+  const btn = e.currentTarget;
+  btn.disabled = true;
+  const original = btn.textContent;
+  btn.textContent = "再読み込み中...";
+  watchInvites();
+  setTimeout(() => {
+    btn.disabled = false;
+    btn.textContent = original;
+  }, 600);
+});
+</script>
+</body>
+</html>

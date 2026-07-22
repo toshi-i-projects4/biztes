@@ -1,0 +1,5 @@
+templates/typing: 2問を投入しました
+templates/reading: 12問を投入しました
+templates/logical: 22問を投入しました
+templates/worklife: 28問を投入しました
+完了しました。

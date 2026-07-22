@@ -4,47 +4,69 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ダッシュボード｜運営管理ページ｜ビズてす</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <style>
-body{margin:0;font-family:"Hiragino Maru Gothic ProN","BIZ UDPGothic","Yu Gothic UI","Meiryo",sans-serif;background:#fff7ed;color:#111827;padding:24px;box-sizing:border-box}
-.wrap{max-width:1480px;margin:0 auto;background:#fff;border-radius:18px;box-shadow:0 4px 12px rgba(0,0,0,.08);padding:28px;box-sizing:border-box;border:1px solid #fed7aa}
+:root{
+  --orange:#f97316;--orange-dark:#ea580c;--orange-deep:#c2410c;--navy:#0f172a;--line:#fed7aa;--bg:#fff7ed;--muted:#7c2d12;
+  /* dataviz固定パレット（company-dashboard.htmlと同一のものを使用し、集計チャートの見た目を揃える） */
+  --cat-1:#2a78d6;/* blue */ --cat-2:#008300;/* green */ --cat-3:#e87ba4;/* magenta */ --cat-4:#eda100;/* yellow */
+  --seq-100:#cde2fb;--seq-200:#9ec5f4;--seq-300:#6da7ec;--seq-400:#3987e5;--seq-500:#256abf;--seq-600:#184f95;--seq-700:#0d366b;
+  --ink-1:#0b0b0b;--ink-2:#52514e;--ink-muted:#898781;--grid:#e1e0d9;--axis:#c3c2b7;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Hiragino Maru Gothic ProN","BIZ UDPGothic","Yu Gothic UI","Meiryo",sans-serif;background:var(--bg);color:#111827;overflow-anchor:none;padding:24px;box-sizing:border-box}
+.wrap{max-width:1300px;margin:0 auto;background:#fff;border-radius:18px;box-shadow:0 4px 12px rgba(0,0,0,.08);padding:28px;box-sizing:border-box;border:1px solid var(--line)}
 .header{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:14px}
 h1{margin:0;font-size:26px}
-.top-link,.bottom-link{color:#c2410c;text-decoration:none;font-weight:bold;font-size:14px}
+.top-link,.bottom-link{color:var(--orange-deep);text-decoration:none;font-weight:bold;font-size:14px}
 .bottom-link{display:inline-block;margin-top:20px}
 .status{display:none;background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:14px 16px;margin-bottom:16px;line-height:1.7;white-space:pre-wrap}
 .status.error{display:block;background:#fee2e2;border-color:#fca5a5;color:#991b1b}
-.filter-box{background:#fff7ed;border:1px solid #fed7aa;border-radius:14px;padding:16px;margin:16px 0}
-.filter-title{font-weight:bold;margin-bottom:12px;color:#7c2d12}
-.controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;align-items:end}
-.control-item label{display:block;font-size:12px;color:#7c2d12;font-weight:bold;margin-bottom:5px}
-select,input{width:100%;box-sizing:border-box;border:1px solid #d1d5db;border-radius:10px;padding:10px 12px;font-size:14px;background:#fff}
-.btn{border:none;border-radius:10px;padding:10px 16px;font-size:14px;font-weight:bold;cursor:pointer;background:#f97316;color:#fff;min-height:40px}
-.btn:hover{background:#ea580c}
+.filter-box{background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:18px 20px;margin:16px 0}
+.filter-title{font-weight:800;margin-bottom:12px;color:var(--muted);font-size:15px}
+.note{font-size:11.5px;color:#78716c;margin-top:10px;line-height:1.7}
 .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin:16px 0}
-.card{background:#fff;border:1px solid #fed7aa;border-radius:14px;padding:14px;box-shadow:0 2px 8px rgba(0,0,0,.04)}
-.card-label{font-size:12px;color:#7c2d12;font-weight:bold;margin-bottom:5px}
+.card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+.card-label{font-size:12px;color:var(--muted);font-weight:bold;margin-bottom:5px}
 .card-value{font-size:28px;font-weight:900;color:#111827}
-.panel{background:#fff;border:1px solid #fed7aa;border-radius:16px;padding:18px;margin-top:16px;box-sizing:border-box}
-.panel-title{font-size:18px;font-weight:bold;margin:0 0 12px}
-.table-wrap{overflow:auto;border:1px solid #f3f4f6;border-radius:12px;max-height:520px}
-table{width:100%;border-collapse:collapse;min-width:1100px;background:#fff}
-th,td{border-bottom:1px solid #f3f4f6;padding:10px 12px;text-align:left;vertical-align:top;font-size:13px;white-space:nowrap}
-th{background:#fff7ed;color:#7c2d12;font-weight:bold;position:sticky;top:0;z-index:1}
-.bar-cell{min-width:160px}
-.bar-track{height:10px;background:#f3f4f6;border-radius:999px;overflow:hidden;margin-top:4px}
-.bar-fill{height:100%;border-radius:999px;background:#f97316}
-.empty{text-align:center;color:#6b7280;padding:24px}
-.note{font-size:12px;color:#6b7280;line-height:1.7;margin-top:10px}
-.rank-list{display:grid;gap:8px}
-.rank-item{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;padding:10px 12px}
-.rank-name{font-weight:bold;color:#111827}
-.rank-sub{font-size:12px;color:#7c2d12}
-.page-loading{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:#fff7ed;color:#7c2d12;font-weight:bold}
+.panel{background:#fff;border:1px solid var(--line);border-radius:16px;padding:22px;margin-top:16px;box-sizing:border-box;box-shadow:0 4px 14px rgba(15,23,42,.04)}
+.panel h2{font-size:16px;margin:0 0 4px;color:var(--navy)}
+.panel .desc{font-size:12px;color:#78716c;margin-bottom:14px;line-height:1.7}
+.chart-row{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(220px,1fr);gap:20px;align-items:start}
+@media(max-width:860px){.chart-row{grid-template-columns:1fr}}
+.chart-box{position:relative;height:380px}
+.chart-side{display:flex;flex-direction:column;gap:10px}
+.legend-list{display:flex;flex-direction:column;gap:6px;font-size:12.5px}
+.legend-item{display:flex;align-items:center;gap:8px}
+.legend-swatch{width:14px;height:3px;border-radius:2px;flex:none}
+.table-wrap{overflow:auto;border:1px solid #f3f4f6;border-radius:12px;max-height:340px;margin-top:14px}
+table{width:100%;border-collapse:collapse;font-size:12px;background:#fff}
+th,td{border-bottom:1px solid #f3f4f6;padding:7px 9px;text-align:left;vertical-align:top;white-space:nowrap}
+th{background:#f8fafc;color:var(--navy);font-weight:800;font-size:11px;position:sticky;top:0}
+.empty{text-align:center;color:#78716c;padding:24px;font-size:13px}
+.controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;align-items:end}
+.control-item label{display:block;font-size:12px;font-weight:800;color:var(--muted);margin-bottom:5px}
+select{width:100%;box-sizing:border-box;border:1px solid #d1d5db;border-radius:9px;padding:9px 11px;font-size:13px;font-family:inherit;background:#fff}
+button{cursor:pointer;font-family:inherit}
+.btn-mini{background:#fff;border:1px solid #d6a370;color:var(--orange-deep);border-radius:8px;padding:6px 10px;font-size:11.5px;font-weight:800}
+.btn-mini:hover{background:#ffedd5}
+.compare-groups{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
+.compare-group{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px}
+.compare-group-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.compare-group-title{font-weight:800;font-size:13px;color:var(--navy)}
+.compare-group-actions{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.compare-group-actions select{width:auto;padding:5px 8px;font-size:11.5px;border-radius:8px}
+.check-list{max-height:220px;overflow:auto;border:1px solid #f3f4f6;border-radius:9px;padding:6px;background:#fffaf4}
+.check-item{display:flex;align-items:center;gap:8px;padding:6px 8px;font-size:12.5px;border-radius:6px;cursor:pointer}
+.check-item:hover{background:#fff}
+.check-item input{width:auto;flex:none}
+.check-item .cnt{color:#a8a29e;font-size:11px;margin-left:auto;white-space:nowrap}
+.page-loading{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:var(--bg);color:var(--muted);font-weight:bold}
 .page-loading.hidden{display:none!important}
-.loading-box{display:flex;flex-direction:column;align-items:center;gap:12px;background:#fff;border:1px solid #fed7aa;border-radius:16px;padding:24px 28px;box-shadow:0 4px 12px rgba(0,0,0,.08)}
-.loading-spinner{width:42px;height:42px;border:5px solid #fed7aa;border-top-color:#f97316;border-radius:50%;animation:spin .9s linear infinite}
+.loading-box{display:flex;flex-direction:column;align-items:center;gap:12px;background:#fff;border:1px solid var(--line);border-radius:16px;padding:24px 28px;box-shadow:0 4px 12px rgba(0,0,0,.08)}
+.loading-spinner{width:42px;height:42px;border:5px solid var(--line);border-top-color:var(--orange);border-radius:50%;animation:spin .9s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-@media(max-width:640px){body{padding:14px}.wrap{padding:20px}.header{align-items:flex-start}.card-value{font-size:24px}}
+@media(max-width:640px){body{padding:14px}.wrap{padding:20px}}
 </style>
 </head>
 <body>
@@ -52,205 +74,751 @@ th{background:#fff7ed;color:#7c2d12;font-weight:bold;position:sticky;top:0;z-ind
 <div class="wrap">
   <div class="header"><h1>ダッシュボード</h1><a class="top-link" href="operator-home.html">← 運営管理ページへ戻る</a></div>
   <div id="status" class="status"></div>
+
   <div class="filter-box">
-    <div class="filter-title">表示条件（招待発行日ベース）</div>
-    <div class="controls">
-      <div class="control-item"><label for="startDate">開始日</label><input type="date" id="startDate"></div>
-      <div class="control-item"><label for="endDate">終了日</label><input type="date" id="endDate"></div>
-      <div class="control-item"><label for="companyFilter">企業</label><select id="companyFilter"><option value="all">すべての企業</option></select></div>
-      <div class="control-item"><label>&nbsp;</label><button class="btn" id="reloadBtn" type="button">再読み込み</button></div>
+    <div class="filter-title">対象を選択（会社・部署・役職）</div>
+    <div class="compare-groups">
+      <div class="compare-group">
+        <div class="compare-group-head">
+          <span class="compare-group-title">会社</span>
+          <div class="compare-group-actions">
+            <select id="targetCompanySortSelect">
+              <option value="name-asc">名前順（A→Z）</option>
+              <option value="name-desc">名前順（Z→A）</option>
+              <option value="count-desc">対象者数が多い順</option>
+              <option value="count-asc">対象者数が少ない順</option>
+            </select>
+            <button type="button" class="btn-mini" id="targetCompanySelectAllBtn">すべて選択</button>
+            <button type="button" class="btn-mini" id="targetCompanyDeselectAllBtn">すべて解除</button>
+          </div>
+        </div>
+        <div class="check-list" id="targetCompanyCheckList"></div>
+      </div>
+      <div class="compare-group">
+        <div class="compare-group-head">
+          <span class="compare-group-title">部署</span>
+          <div class="compare-group-actions">
+            <select id="targetDeptSortSelect">
+              <option value="name-asc">名前順（A→Z）</option>
+              <option value="name-desc">名前順（Z→A）</option>
+              <option value="count-desc">対象者数が多い順</option>
+              <option value="count-asc">対象者数が少ない順</option>
+            </select>
+            <button type="button" class="btn-mini" id="targetDeptSelectAllBtn">すべて選択</button>
+            <button type="button" class="btn-mini" id="targetDeptDeselectAllBtn">すべて解除</button>
+          </div>
+        </div>
+        <div class="check-list" id="targetDeptCheckList"></div>
+      </div>
+      <div class="compare-group">
+        <div class="compare-group-head">
+          <span class="compare-group-title">役職</span>
+          <div class="compare-group-actions">
+            <select id="targetPosSortSelect">
+              <option value="name-asc">名前順（A→Z）</option>
+              <option value="name-desc">名前順（Z→A）</option>
+              <option value="count-desc">対象者数が多い順</option>
+              <option value="count-asc">対象者数が少ない順</option>
+            </select>
+            <button type="button" class="btn-mini" id="targetPosSelectAllBtn">すべて選択</button>
+            <button type="button" class="btn-mini" id="targetPosDeselectAllBtn">すべて解除</button>
+          </div>
+        </div>
+        <div class="check-list" id="targetPosCheckList"></div>
+      </div>
     </div>
-    <div class="note" id="periodHelp"></div>
-  </div>
-  <div class="cards" id="summaryCardsTop" style="display:none">
-    <div class="card"><div class="card-label">対象企業数</div><div class="card-value" id="companyCount">0</div></div>
-    <div class="card"><div class="card-label">受験招待数</div><div class="card-value" id="inviteTotal">0</div></div>
-    <div class="card"><div class="card-label">受験完了数</div><div class="card-value" id="completedTotal">0</div></div>
-    <div class="card"><div class="card-label">受験完了率</div><div class="card-value" id="completionRate">0%</div></div>
-    <div class="card"><div class="card-label">平均総合スコア</div><div class="card-value" id="avgTotalScore">-</div></div>
-  </div>
-  <div class="panel" id="companyPanel" style="display:none">
-    <p class="panel-title">企業別サマリー</p>
-    <div class="table-wrap">
-      <table>
-        <thead><tr><th>企業名</th><th>招待数</th><th>未受験</th><th>受験中</th><th>完了</th><th>完了率</th><th>平均総合スコア</th><th>操作</th></tr></thead>
-        <tbody id="companyBody"><tr><td colspan="8" class="empty">読み込み中です。</td></tr></tbody>
-      </table>
+    <div class="note">会社・部署・役職のうち1つ以上チェックすると、チェックした条件をすべて満たすデータが「対象」になります（例：会社だけ選べばその会社全体、会社と役職を両方選べばその会社のその役職だけが対象になります）。対象はレーダーチャートに1本追加し、散布図ではオレンジ系の色で強調表示します（他社と比較するための機能です）。</div>
+
+    <div class="filter-title" style="margin-top:18px">① レーダーチャート（4能力）・② 行動特性・性格の比較対象</div>
+    <div class="compare-groups">
+      <div class="compare-group">
+        <div class="compare-group-head">
+          <span class="compare-group-title">会社</span>
+          <div class="compare-group-actions">
+            <select id="companySortSelect">
+              <option value="name-asc">名前順（A→Z）</option>
+              <option value="name-desc">名前順（Z→A）</option>
+              <option value="count-desc">対象者数が多い順</option>
+              <option value="count-asc">対象者数が少ない順</option>
+            </select>
+            <button type="button" class="btn-mini" id="companySelectAllBtn">すべて選択</button>
+            <button type="button" class="btn-mini" id="companyDeselectAllBtn">すべて解除</button>
+          </div>
+        </div>
+        <div class="check-list" id="companyCheckList"></div>
+      </div>
+      <div class="compare-group">
+        <div class="compare-group-head">
+          <span class="compare-group-title">部署</span>
+          <div class="compare-group-actions">
+            <select id="deptSortSelect">
+              <option value="name-asc">名前順（A→Z）</option>
+              <option value="name-desc">名前順（Z→A）</option>
+              <option value="count-desc">対象者数が多い順</option>
+              <option value="count-asc">対象者数が少ない順</option>
+            </select>
+            <button type="button" class="btn-mini" id="deptSelectAllBtn">すべて選択</button>
+            <button type="button" class="btn-mini" id="deptDeselectAllBtn">すべて解除</button>
+          </div>
+        </div>
+        <div class="check-list" id="deptCheckList"></div>
+      </div>
+      <div class="compare-group">
+        <div class="compare-group-head">
+          <span class="compare-group-title">役職</span>
+          <div class="compare-group-actions">
+            <select id="posSortSelect">
+              <option value="name-asc">名前順（A→Z）</option>
+              <option value="name-desc">名前順（Z→A）</option>
+              <option value="count-desc">対象者数が多い順</option>
+              <option value="count-asc">対象者数が少ない順</option>
+            </select>
+            <button type="button" class="btn-mini" id="posSelectAllBtn">すべて選択</button>
+            <button type="button" class="btn-mini" id="posDeselectAllBtn">すべて解除</button>
+          </div>
+        </div>
+        <div class="check-list" id="posCheckList"></div>
+      </div>
     </div>
+    <div class="note" id="filterHelp"></div>
   </div>
-  <div class="panel" id="partPanel" style="display:none">
-    <p class="panel-title">パート別 平均スコア（受験完了分）</p>
-    <div id="partRanking" class="rank-list"></div>
+
+  <div class="cards">
+    <div class="card"><div class="card-label">受験完了データ（全体）</div><div class="card-value" id="cardTotal">0</div></div>
+    <div class="card"><div class="card-label">現在の表示対象</div><div class="card-value" id="cardFiltered">0</div></div>
   </div>
+
+  <div class="panel">
+    <h2>① レーダーチャート（4能力）</h2>
+    <div class="desc" id="radarDesc"></div>
+    <div class="chart-row">
+      <div class="chart-box"><canvas id="radarChart"></canvas></div>
+      <div class="chart-side">
+        <div class="legend-list" id="radarLegend"></div>
+      </div>
+    </div>
+    <div class="table-wrap"><table id="radarTable"><thead><tr id="radarTableHead"></tr></thead><tbody id="radarTableBody"></tbody></table></div>
+    <div class="note">①〜④の得点をそれぞれの配点満点に対する割合（%）にしてレーダーチャートにしています（①認知能力・②言語理解能力・③論理思考能力・④実務遂行能力の配点は、各企業に現在登録されている問題の内容から自動計算しています）。上の「会社」「部署」「役職」でチェックした対象に応じて、それぞれの平均を最大3本まで重ねて表示します（同じ枠内で複数チェックした場合は、それらをまとめた集団の平均になります）。</div>
+  </div>
+
+  <div class="panel">
+    <h2>② 行動特性・性格：協調性 × 主体性 散布図</h2>
+    <div class="desc" id="scatterDesc"></div>
+    <div class="controls" style="margin-bottom:14px">
+      <div class="control-item"><label for="colorBySelect">点の色（濃いほど高い）</label><select id="colorBySelect"></select></div>
+      <div class="control-item"><label for="sizeBySelect">点の大きさ（大きいほど高い）</label><select id="sizeBySelect"></select></div>
+    </div>
+    <div class="chart-row">
+      <div class="chart-box"><canvas id="scatterChart"></canvas></div>
+      <div class="chart-side">
+        <div class="note" style="margin-top:0">
+          横軸：主体性の小計（5〜25点） ／ 縦軸：協調性の小計（5〜25点）。背景の4分割は、この2軸をもとにした簡易的なタイプ分類です。上の「対象」および「会社」「部署」「役職」でチェックした対象に一致するデータの点を表示します（氏名・所属など個人が特定される情報は表示していません）。
+        </div>
+      </div>
+    </div>
+    <div class="note">色・大きさに使う項目はプルダウンで切り替えられます（外向性・勤勉性/計画性・ストレス耐性・モチベーション・開放性から選択）。すべての項目を同時に軸へは入れていません（散布図が読み取りにくくなるため）。各点にカーソルを合わせると、主体性・協調性および選択中の項目の値（数値のみ）を確認できます。4分割の枠の名称は、協調性・主体性の高低から見た簡易的な傾向ラベルです。</div>
+  </div>
+
   <a class="bottom-link" href="operator-home.html">← 運営管理ページへ戻る</a>
 </div>
+
 <script type="module">
 import { auth, db } from "./firebase-config.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import {
-  collection, collectionGroup, query, where, getDocs, doc, getDoc,
-} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { escapeHtml as esc } from "./operator-shared.js";
+import { collection, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { escapeHtml as esc, loadEffectiveQuestionSet } from "./operator-shared.js";
 
-const PART_LABELS = { typing: "①タイピング試験", reading: "②リーディングスキル", logical: "③ロジカルシンキング", worklife: "④仕事観アセスメント" };
 const $ = (id) => document.getElementById(id);
-let allCompanies = [];
+
+const FOUR_CATEGORY1_IDS = ["cognitive", "verbal", "logical_thinking", "business_exec"];
+const RADAR_LABELS = { cognitive: "①認知能力", verbal: "②言語理解能力", logical_thinking: "③論理思考能力", business_exec: "④実務遂行能力" };
+const PERSONALITY_SUBCATS = ["主体性", "行動傾向", "協調性", "外向性", "勤勉性・計画性", "ストレス耐性", "モチベーション", "開放性"];
+const EXTRA_TRAITS = ["外向性", "勤勉性・計画性", "ストレス耐性", "モチベーション", "開放性"];
+const SCOPE_BLANK = "__BLANK__";
+
+let applicants = []; // 全企業横断の受験完了データ（集計済み・個人を特定する情報は保持しない）
+
+// ---------------------------------------------------------------------
+// スコア計算ロジック（company-dashboard.htmlと同一。数値の整合性を保つため同じ式を使う）
+// ---------------------------------------------------------------------
+function isScoreableType(type) { return type === "choice" || type === "multi_select" || type === "fill_blank"; }
+
+function typingErrorScore(errors) {
+  const e = Math.max(0, Math.floor(Number(errors) || 0));
+  return Math.max(0, 10 - e);
+}
+function diffTyping(sample, typed) {
+  const a = sample || "", b = typed || "";
+  const n = a.length, m = b.length;
+  if (n === 0 && m === 0) return { matched: 0, errors: 0 };
+  const dp = new Array(n + 1);
+  for (let i = 0; i <= n; i++) { dp[i] = new Array(m + 1).fill(0); dp[i][0] = i; }
+  for (let j = 0; j <= m; j++) dp[0][j] = j;
+  for (let i = 1; i <= n; i++) {
+    for (let j = 1; j <= m; j++) {
+      if (a[i - 1] === b[j - 1]) dp[i][j] = dp[i - 1][j - 1];
+      else dp[i][j] = 1 + Math.min(dp[i - 1][j - 1], dp[i - 1][j], dp[i][j - 1]);
+    }
+  }
+  let i = n, j = m, matched = 0, errors = 0;
+  while (i > 0 || j > 0) {
+    if (i > 0 && j > 0 && a[i - 1] === b[j - 1] && dp[i][j] === dp[i - 1][j - 1]) { matched++; i--; j--; }
+    else if (i > 0 && j > 0 && dp[i][j] === dp[i - 1][j - 1] + 1) { errors++; i--; j--; }
+    else if (i > 0 && dp[i][j] === dp[i - 1][j] + 1) { errors++; i--; }
+    else if (j > 0 && dp[i][j] === dp[i][j - 1] + 1) { errors++; j--; }
+    else if (i > 0) { errors++; i--; }
+    else { errors++; j--; }
+  }
+  return { matched, errors };
+}
+function typingStatsFor(entry, item) {
+  if (entry.typedText != null && item && item.questionText) return diffTyping(item.questionText, entry.typedText);
+  return { matched: entry.matched, errors: entry.errorCount };
+}
+function scoreInfoForAnswer(type, entry, item) {
+  if (type === "typing_passage") {
+    const stats = typingStatsFor(entry, item);
+    return { earned: typingErrorScore(stats.errors), max: 10, isCorrect: null };
+  }
+  if (type === "likert") {
+    const earned = typeof entry.score === "number" ? entry.score : (Number(entry.value) || 0);
+    return { earned, max: 5, isCorrect: null };
+  }
+  if (isScoreableType(type)) {
+    const isCorrect = entry.isCorrect === true;
+    const max = item && typeof item.score === "number" ? item.score : null;
+    const earned = max == null ? null : (isCorrect ? max : 0);
+    return { earned, max, isCorrect };
+  }
+  return { earned: null, max: null, isCorrect: null };
+}
+// itemsByCat: { category1Id -> Map(itemId -> item) }（企業ごとに異なる問題構成を渡す）
+function computeResultAggregate(result, itemsByCat) {
+  const byCategory1 = {};
+  const bySubcat = {};
+  if (result && result.parts) {
+    Object.keys(result.parts).forEach((category1Id) => {
+      const category1Result = result.parts[category1Id];
+      const items = itemsByCat[category1Id];
+      const answers = category1Result && category1Result.answers ? category1Result.answers : [];
+      let score = 0;
+      answers.forEach((entry) => {
+        const item = items ? items.get(entry.itemId) : null;
+        const info = scoreInfoForAnswer(entry.type, entry, item);
+        if (typeof info.earned === "number") score += info.earned;
+        const subcat = entry.subcategory || "";
+        if (subcat) {
+          if (!bySubcat[subcat]) bySubcat[subcat] = { score: 0, answeredCount: 0 };
+          bySubcat[subcat].answeredCount++;
+          if (typeof info.earned === "number") bySubcat[subcat].score += info.earned;
+        }
+      });
+      byCategory1[category1Id] = { score, answeredCount: answers.length };
+    });
+  }
+  return { byCategory1, bySubcat };
+}
+// 指定カテゴリー1の配点満点を、現在登録されている問題マスタから計算する
+function maxForCategory1(items) {
+  return (items || []).reduce((sum, item) => {
+    if (item.type === "typing_passage") return sum + 10;
+    if (isScoreableType(item.type)) return sum + (typeof item.score === "number" ? item.score : 1);
+    return sum;
+  }, 0);
+}
 
 function hideLoading() { const l = $("pageLoading"); if (l) { l.classList.add("hidden"); l.style.display = "none"; } }
 function setStatus(msg, type) { const e = $("status"); e.textContent = msg || ""; e.className = "status " + (msg ? (type || "") : ""); }
-function pad2(n) { return String(n).padStart(2, "0"); }
-function dateKey(d) { return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate()); }
-function round1(n) { return Math.round(n * 10) / 10; }
-function average(arr) { if (!arr.length) return 0; return arr.reduce((a, b) => a + b, 0) / arr.length; }
 
-function getDateRange() { return { start: $("startDate").value, end: $("endDate").value }; }
-function isValidRange(r) { return !!(r.start && r.end && r.start <= r.end); }
-function updatePeriodHelp(r) {
-  if (isValidRange(r)) { $("periodHelp").textContent = "対象期間：" + r.start + " 〜 " + r.end + "　※この期間に発行された受験招待を集計します。"; }
-  else { $("periodHelp").textContent = "開始日・終了日を指定してください（開始日は終了日以前の日付にしてください）。"; }
+// ---------------------------------------------------------------------
+// 企業ごとの問題構成（配点満点）を読み込む。①〜④の4カテゴリー1のみを対象とする
+// （行動特性・性格の下位項目の満点はレーダーチャート上は不要なため計算しない）。
+// ---------------------------------------------------------------------
+async function loadCompanyScoringMaps(companyId) {
+  const itemsByCat = {};
+  await Promise.all(FOUR_CATEGORY1_IDS.map(async (categoryId) => {
+    const eff = await loadEffectiveQuestionSet(companyId, { id: categoryId, scope: "global" });
+    const map = new Map();
+    (eff.items || []).forEach((item) => map.set(item.id, item));
+    itemsByCat[categoryId] = map;
+  }));
+  const catMax = {};
+  FOUR_CATEGORY1_IDS.forEach((categoryId) => { catMax[categoryId] = maxForCategory1(Array.from(itemsByCat[categoryId].values())); });
+  return { itemsByCat, catMax };
 }
-function defaultRange() { const d = new Date(); return { start: dateKey(new Date(d.getFullYear(), d.getMonth(), 1)), end: dateKey(d) }; }
 
-async function loadCompanyOptions() {
+async function loadCompaniesRaw() {
   const snap = await getDocs(collection(db, "companies"));
-  allCompanies = [];
-  snap.forEach((ds) => { const d = ds.data() || {}; allCompanies.push({ companyId: ds.id, companyName: d.companyName || "" }); });
-  allCompanies.sort((a, b) => String(a.companyName).localeCompare(String(b.companyName), "ja"));
-  const sel = $("companyFilter");
-  const cur = sel.value || "all";
-  sel.innerHTML = '<option value="all">すべての企業</option>' + allCompanies.map((c) => '<option value="' + esc(c.companyId) + '">' + esc(c.companyName) + "</option>").join("");
-  sel.value = allCompanies.some((c) => c.companyId === cur) ? cur : "all";
+  const list = [];
+  snap.forEach((ds) => { const d = ds.data() || {}; list.push({ companyId: ds.id, companyName: d.companyName || ds.id }); });
+  list.sort((a, b) => String(a.companyName).localeCompare(String(b.companyName), "ja"));
+  return list;
 }
 
-async function loadData() {
-  const r = getDateRange();
-  updatePeriodHelp(r);
-  if (!isValidRange(r)) {
-    setStatus("開始日・終了日を正しく指定してください（開始日は終了日以前の日付にしてください）。", "error");
-    $("summaryCardsTop").style.display = "none";
-    $("companyPanel").style.display = "none";
-    $("partPanel").style.display = "none";
-    return;
-  }
-  setStatus("", "");
-  $("summaryCardsTop").style.display = "none";
-  $("companyPanel").style.display = "none";
-  $("partPanel").style.display = "none";
-  $("companyBody").innerHTML = '<tr><td colspan="8" class="empty">読み込み中です。</td></tr>';
+// ---------------------------------------------------------------------
+// 全企業横断でデータを読み込み、受験完了データを集計する
+// ---------------------------------------------------------------------
+async function loadAll() {
+  let companiesRaw;
   try {
-    const startDate = new Date(r.start + "T00:00:00");
-    const endDate = new Date(r.end + "T23:59:59.999");
-    const invitesQ = query(collectionGroup(db, "examInvites"), where("createdAt", ">=", startDate), where("createdAt", "<=", endDate));
-    const [invitesSnap, resultsSnap] = await Promise.all([getDocs(invitesQ), getDocs(collectionGroup(db, "examResults"))]);
-
-    const resultMap = {};
-    resultsSnap.forEach((ds) => {
-      const companyId = ds.ref.parent.parent ? ds.ref.parent.parent.id : "";
-      resultMap[companyId + "/" + ds.id] = ds.data() || {};
-    });
-
-    const invites = [];
-    invitesSnap.forEach((ds) => {
-      const companyId = ds.ref.parent.parent ? ds.ref.parent.parent.id : "";
-      const d = ds.data() || {};
-      invites.push({ companyId, token: ds.id, status: d.status || "not_started", result: resultMap[companyId + "/" + ds.id] || null });
-    });
-    render(invites);
+    companiesRaw = await loadCompaniesRaw();
   } catch (e) {
-    console.error(e);
-    let msg = "データの取得に失敗しました。\n" + (e.code || e.message || e);
-    if (e.code === "failed-precondition") msg += "\n\nFirestoreのコレクショングループ用インデックスが未作成の可能性があります。エラー詳細のリンクから作成してください（examInvites の createdAt、examResults に対する「コレクショングループ」範囲のインデックス）。";
-    setStatus(msg, "error");
-  } finally {
-    hideLoading();
+    e.message = "［企業一覧の取得］" + (e.message || e.code || e);
+    throw e;
   }
-}
+  const companyNameMap = {};
+  companiesRaw.forEach((c) => { companyNameMap[c.companyId] = c.companyName; });
 
-function render(invitesAll) {
-  const companyFilter = $("companyFilter").value;
-  const invites = companyFilter === "all" ? invitesAll : invitesAll.filter((i) => i.companyId === companyFilter);
-
-  function blankCompany(id, name) { return { companyId: id, companyName: name, invited: 0, notStarted: 0, inProgress: 0, completed: 0, scores: [] }; }
-  const byCompany = {};
-  allCompanies.forEach((c) => { byCompany[c.companyId] = blankCompany(c.companyId, c.companyName); });
-
-  invites.forEach((inv) => {
-    if (!byCompany[inv.companyId]) byCompany[inv.companyId] = blankCompany(inv.companyId, "");
-    const c = byCompany[inv.companyId];
-    c.invited++;
-    if (inv.status === "completed") {
-      c.completed++;
-      if (inv.result && typeof inv.result.totalScore === "number") c.scores.push(inv.result.totalScore);
-    } else if (inv.status === "in_progress") { c.inProgress++; }
-    else { c.notStarted++; }
-  });
-
-  const rows = Object.values(byCompany).filter((c) => (companyFilter === "all" ? true : c.companyId === companyFilter));
-  rows.sort((a, b) => String(a.companyName).localeCompare(String(b.companyName), "ja"));
-
-  const totalInvited = rows.reduce((a, c) => a + c.invited, 0);
-  const totalCompleted = rows.reduce((a, c) => a + c.completed, 0);
-  const allScores = rows.reduce((a, c) => a.concat(c.scores), []);
-  const completionRate = totalInvited ? round1((totalCompleted / totalInvited) * 100) : 0;
-  const avgScore = allScores.length ? round1(average(allScores)) : null;
-
-  $("companyCount").textContent = rows.filter((c) => c.invited > 0).length;
-  $("inviteTotal").textContent = totalInvited;
-  $("completedTotal").textContent = totalCompleted;
-  $("completionRate").textContent = completionRate + "%";
-  $("avgTotalScore").textContent = avgScore === null ? "-" : avgScore;
-  $("summaryCardsTop").style.display = "grid";
-  $("companyPanel").style.display = "block";
-  $("partPanel").style.display = "block";
-
-  const rowsWithInvites = rows.filter((c) => c.invited > 0 || companyFilter !== "all");
-  if (!rowsWithInvites.length) { $("companyBody").innerHTML = '<tr><td colspan="8" class="empty">データがありません。</td></tr>'; }
-  else {
-    $("companyBody").innerHTML = rowsWithInvites.map((c) => {
-      const rate = c.invited ? round1((c.completed / c.invited) * 100) : 0;
-      const avg = c.scores.length ? round1(average(c.scores)) : "-";
-      return "<tr>"
-        + "<td>" + esc(c.companyName) + "</td>"
-        + "<td>" + c.invited + "</td>"
-        + "<td>" + c.notStarted + "</td>"
-        + "<td>" + c.inProgress + "</td>"
-        + "<td>" + c.completed + "</td>"
-        + '<td class="bar-cell">' + rate + '%<div class="bar-track"><div class="bar-fill" style="width:' + rate + '%"></div></div></td>'
-        + "<td>" + avg + "</td>"
-        + '<td><a href="operator-invites.html?company=' + encodeURIComponent(c.companyId) + '">受験招待・結果へ</a></td>'
-        + "</tr>";
-    }).join("");
+  // examInvites／examResultsは、collectionGroup()による全社横断クエリだと環境によって
+  // permission-deniedになることがあるため、company-dashboard.html等と同じ「会社ごとに
+  // 明示的にコレクションを指定する」クエリ方式に統一する（企業数ぶんループする）。
+  const perCompany = {};
+  try {
+    await Promise.all(companiesRaw.map(async (c) => {
+      const [invSnap, resSnap] = await Promise.all([
+        getDocs(collection(db, "companies", c.companyId, "examInvites")),
+        getDocs(collection(db, "companies", c.companyId, "examResults")),
+      ]);
+      perCompany[c.companyId] = { invSnap, resSnap };
+    }));
+  } catch (e) {
+    e.message = "［受験招待・結果の取得］" + (e.message || e.code || e);
+    throw e;
   }
 
-  const partScores = { typing: [], reading: [], logical: [] };
-  let worklifeCount = 0;
-  invites.forEach((inv) => {
-    if (inv.status !== "completed" || !inv.result || !inv.result.parts) return;
-    const parts = inv.result.parts;
-    ["typing", "reading", "logical"].forEach((p) => {
-      if (parts[p] && typeof parts[p].score === "number") partScores[p].push(parts[p].score);
+  // 受験完了データが実際に存在する企業のみ、問題構成（配点満点）を読み込む
+  // （全企業分を毎回読み込むと企業数が多い場合に読み込みが重くなるため）。
+  const completedCompanyIds = new Set();
+  companiesRaw.forEach((c) => {
+    const { invSnap, resSnap } = perCompany[c.companyId];
+    const resultIds = new Set();
+    resSnap.forEach((ds) => resultIds.add(ds.id));
+    invSnap.forEach((ds) => {
+      const inv = ds.data() || {};
+      if (inv.status === "completed" && resultIds.has(ds.id)) completedCompanyIds.add(c.companyId);
     });
-    if (parts.worklife) worklifeCount++;
   });
-  const partRows = ["typing", "reading", "logical"].map((p) => {
-    const arr = partScores[p];
-    return { label: PART_LABELS[p], count: arr.length, avg: arr.length ? round1(average(arr)) : null };
-  });
-  if (!partRows.some((p) => p.count > 0) && !worklifeCount) {
-    $("partRanking").innerHTML = '<div class="empty">パート別データがありません。</div>';
-  } else {
-    let html = partRows.map((p) => (
-      '<div class="rank-item"><div><div class="rank-name">' + esc(p.label) + '</div><div class="rank-sub">回答 ' + p.count + '件</div></div><div><strong>' + (p.avg === null ? "-" : p.avg) + '</strong></div></div>'
-    )).join("");
-    html += '<div class="rank-item"><div><div class="rank-name">' + esc(PART_LABELS.worklife) + '</div><div class="rank-sub">自由記述のため採点なし</div></div><div><strong>回答 ' + worklifeCount + '件</strong></div></div>';
-    $("partRanking").innerHTML = html;
+
+  const scoringByCompany = {};
+  try {
+    await Promise.all(Array.from(completedCompanyIds).map(async (companyId) => {
+      scoringByCompany[companyId] = await loadCompanyScoringMaps(companyId);
+    }));
+  } catch (e) {
+    e.message = "［各企業の問題構成の取得］" + (e.message || e.code || e);
+    throw e;
   }
+
+  applicants = [];
+  companiesRaw.forEach((c) => {
+    const companyId = c.companyId;
+    const { invSnap, resSnap } = perCompany[companyId];
+    const resultMap = {};
+    resSnap.forEach((ds) => { resultMap[ds.id] = ds.data() || {}; });
+
+    invSnap.forEach((ds) => {
+    const inv = ds.data() || {};
+    if (inv.status !== "completed") return;
+    const result = resultMap[ds.id];
+    if (!result) return;
+    const scoring = scoringByCompany[companyId];
+    if (!scoring) return; // 企業が削除済みなどで問題構成が取得できない場合はスキップ
+
+    const agg = computeResultAggregate(result, scoring.itemsByCat);
+
+    const category1Pct = {};
+    FOUR_CATEGORY1_IDS.forEach((categoryId) => {
+      const a = agg.byCategory1[categoryId];
+      const max = scoring.catMax[categoryId];
+      category1Pct[categoryId] = (a && a.answeredCount && max > 0) ? Math.round((a.score / max) * 1000) / 10 : null;
+    });
+
+    const subcat = {}, subcatAvg = {};
+    let hasAllSubcats = true;
+    PERSONALITY_SUBCATS.forEach((s) => {
+      const a = agg.bySubcat[s];
+      if (a && a.answeredCount) { subcat[s] = a.score; subcatAvg[s] = Math.round((a.score / a.answeredCount) * 10) / 10; }
+      else { subcat[s] = null; subcatAvg[s] = null; hasAllSubcats = false; }
+    });
+
+    applicants.push({
+      token: companyId + "/" + ds.id,
+      companyId,
+      companyName: companyNameMap[companyId] || companyId,
+      department: (inv.department || "").trim(),
+      position: (inv.position || "").trim(),
+      category1Pct, subcat, subcatAvg, hasAllSubcats,
+    });
+    });
+  });
+
+  return companiesRaw;
 }
 
-$("startDate").addEventListener("change", loadData);
-$("endDate").addEventListener("change", loadData);
-$("companyFilter").addEventListener("change", loadData);
-$("reloadBtn").addEventListener("click", loadData);
+// ---------------------------------------------------------------------
+// 比較対象（会社・部署・役職）のチェックボックスUI
+// ---------------------------------------------------------------------
+function countBy(list, keyFn) {
+  const m = new Map();
+  list.forEach((item) => { const k = keyFn(item); m.set(k, (m.get(k) || 0) + 1); });
+  return m;
+}
+function uniqueSorted(values) {
+  return Array.from(new Set(values.filter((v) => v))).sort((a, b) => a.localeCompare(b, "ja"));
+}
+function buildCompanyItems(companiesRaw) {
+  const counts = countBy(applicants, (a) => a.companyId);
+  return companiesRaw.map((c) => ({ key: c.companyId, label: c.companyName, count: counts.get(c.companyId) || 0 }));
+}
+function buildDeptOrPosItems(sourceList, keyFn, blankLabel) {
+  const counts = countBy(sourceList, (a) => keyFn(a) || SCOPE_BLANK);
+  const names = uniqueSorted(sourceList.map(keyFn));
+  const items = names.map((n) => ({ key: n, label: n, count: counts.get(n) || 0 }));
+  const blankCount = counts.get(SCOPE_BLANK) || 0;
+  if (blankCount > 0) items.push({ key: SCOPE_BLANK, label: blankLabel, count: blankCount });
+  return items;
+}
+function sortItems(items, mode) {
+  const arr = items.slice();
+  const cmpName = (a, b) => String(a.label).localeCompare(String(b.label), "ja");
+  if (mode === "name-desc") arr.sort((a, b) => cmpName(b, a));
+  else if (mode === "count-desc") arr.sort((a, b) => b.count - a.count || cmpName(a, b));
+  else if (mode === "count-asc") arr.sort((a, b) => a.count - b.count || cmpName(a, b));
+  else arr.sort(cmpName); // name-asc（既定）
+  return arr;
+}
+
+const compareGroups = {
+  company: { idPrefix: "company", items: [], checked: new Set(), sort: "name-asc" },
+  dept: { idPrefix: "dept", items: [], checked: new Set(), sort: "name-asc" },
+  pos: { idPrefix: "pos", items: [], checked: new Set(), sort: "name-asc" },
+  // 「対象」（他社比較用にレーダーチャートに1本追加し、散布図でオレンジ強調する集団）。
+  // company/dept/pos とはUI・データ構造は同じだが、複数条件をAND（絞り込み）で組み合わせる点が異なる。
+  targetCompany: { idPrefix: "targetCompany", items: [], checked: new Set(), sort: "name-asc" },
+  targetDept: { idPrefix: "targetDept", items: [], checked: new Set(), sort: "name-asc" },
+  targetPos: { idPrefix: "targetPos", items: [], checked: new Set(), sort: "name-asc" },
+};
+const TARGET_GROUP_NAMES = ["targetCompany", "targetDept", "targetPos"];
+
+function renderGroupList(name) {
+  const group = compareGroups[name];
+  const sorted = sortItems(group.items, group.sort);
+  const listEl = $(group.idPrefix + "CheckList");
+  if (!sorted.length) { listEl.innerHTML = '<div class="empty" style="padding:14px">対象データがありません。</div>'; return; }
+  listEl.innerHTML = sorted.map((it) => (
+    '<label class="check-item"><input type="checkbox" data-key="' + esc(it.key) + '"' + (group.checked.has(it.key) ? " checked" : "") + '><span>' + esc(it.label) + '</span><span class="cnt">' + it.count + '件</span></label>'
+  )).join("");
+  listEl.querySelectorAll("input[type=checkbox]").forEach((cb) => {
+    cb.addEventListener("change", () => {
+      const key = cb.dataset.key;
+      if (cb.checked) group.checked.add(key); else group.checked.delete(key);
+      if (name === "targetCompany") refreshTargetDeptPosItems();
+      renderAll();
+    });
+  });
+}
+function setupGroupControls(name) {
+  const group = compareGroups[name];
+  $(group.idPrefix + "SortSelect").addEventListener("change", (e) => { group.sort = e.target.value; renderGroupList(name); });
+  $(group.idPrefix + "SelectAllBtn").addEventListener("click", () => {
+    group.items.forEach((it) => group.checked.add(it.key));
+    if (name === "targetCompany") refreshTargetDeptPosItems();
+    renderGroupList(name);
+    renderAll();
+  });
+  $(group.idPrefix + "DeselectAllBtn").addEventListener("click", () => {
+    group.checked.clear();
+    if (name === "targetCompany") refreshTargetDeptPosItems();
+    renderGroupList(name);
+    renderAll();
+  });
+}
+function groupApplicants(name) {
+  const group = compareGroups[name];
+  if (!group.checked.size) return [];
+  if (name === "company") return applicants.filter((a) => group.checked.has(a.companyId));
+  if (name === "dept") return applicants.filter((a) => group.checked.has(a.department || SCOPE_BLANK));
+  if (name === "pos") return applicants.filter((a) => group.checked.has(a.position || SCOPE_BLANK));
+  return [];
+}
+
+// 「対象」の部署・役職チェックリストは、選択中の「対象」会社に所属するデータだけに
+// 絞り込む（会社が1つも選択されていない場合は全社のデータから一覧を作る）。
+// 会社の選択を変えるたびに呼び出し、部署・役職の選択肢を作り直す。
+function refreshTargetDeptPosItems() {
+  const checkedCompanies = compareGroups.targetCompany.checked;
+  const scope = checkedCompanies.size ? applicants.filter((a) => checkedCompanies.has(a.companyId)) : applicants;
+  compareGroups.targetDept.items = buildDeptOrPosItems(scope, (a) => a.department, "（部署未入力）");
+  compareGroups.targetPos.items = buildDeptOrPosItems(scope, (a) => a.position, "（役職未入力）");
+  // 選択肢から消えた項目は、チェック状態からも取り除く（会社を絞り込んだ結果、
+  // 存在しなくなった部署・役職がチェックされたまま残らないようにする）。
+  const deptKeys = new Set(compareGroups.targetDept.items.map((it) => it.key));
+  Array.from(compareGroups.targetDept.checked).forEach((k) => { if (!deptKeys.has(k)) compareGroups.targetDept.checked.delete(k); });
+  const posKeys = new Set(compareGroups.targetPos.items.map((it) => it.key));
+  Array.from(compareGroups.targetPos.checked).forEach((k) => { if (!posKeys.has(k)) compareGroups.targetPos.checked.delete(k); });
+  renderGroupList("targetDept");
+  renderGroupList("targetPos");
+}
+
+// ---------------------------------------------------------------------
+// 「対象」（会社・部署・役職の複数条件をANDで組み合わせて絞り込む集団。他社比較用）
+// ---------------------------------------------------------------------
+function hasTargetSelection() {
+  return TARGET_GROUP_NAMES.some((name) => compareGroups[name].checked.size > 0);
+}
+function targetApplicants() {
+  let list = applicants;
+  if (compareGroups.targetCompany.checked.size) list = list.filter((a) => compareGroups.targetCompany.checked.has(a.companyId));
+  if (compareGroups.targetDept.checked.size) list = list.filter((a) => compareGroups.targetDept.checked.has(a.department || SCOPE_BLANK));
+  if (compareGroups.targetPos.checked.size) list = list.filter((a) => compareGroups.targetPos.checked.has(a.position || SCOPE_BLANK));
+  return list;
+}
+// チェック中の項目のラベルを「会社：A社・B社」のように短くまとめる（多い場合は件数表示にする）
+function selectedLabelsText(group, prefix) {
+  if (!group.checked.size) return "";
+  const labels = group.items.filter((it) => group.checked.has(it.key)).map((it) => it.label);
+  if (labels.length <= 3) return prefix + "：" + labels.join("・");
+  return prefix + "（" + labels.length + "件選択）";
+}
+function targetLabelParts() {
+  return [
+    selectedLabelsText(compareGroups.targetCompany, "会社"),
+    selectedLabelsText(compareGroups.targetDept, "部署"),
+    selectedLabelsText(compareGroups.targetPos, "役職"),
+  ].filter(Boolean);
+}
+
+// ---------------------------------------------------------------------
+// 集計ヘルパー
+// ---------------------------------------------------------------------
+function avgCategory1Pct(list, category1Id) {
+  const vals = list.map((a) => a.category1Pct[category1Id]).filter((v) => v != null);
+  if (!vals.length) return null;
+  return Math.round((vals.reduce((s, v) => s + v, 0) / vals.length) * 10) / 10;
+}
+
+// ---------------------------------------------------------------------
+// ① レーダーチャート
+// ---------------------------------------------------------------------
+let radarChartInstance = null;
+const GROUP_DEFS = [
+  { name: "company", color: "var(--cat-1)", labelPrefix: "会社" },
+  { name: "dept", color: "var(--cat-3)", labelPrefix: "部署" },
+  { name: "pos", color: "var(--cat-4)", labelPrefix: "役職" },
+];
+function renderRadar() {
+  const labels = FOUR_CATEGORY1_IDS.map((categoryId) => RADAR_LABELS[categoryId]);
+  const datasets = [];
+  const legendRows = [];
+
+  GROUP_DEFS.forEach((d) => {
+    const group = compareGroups[d.name];
+    if (!group.checked.size) return;
+    const list = groupApplicants(d.name);
+    const label = d.labelPrefix + "（" + group.checked.size + "件選択・n=" + list.length + "）";
+    datasets.push(radarDataset(label, FOUR_CATEGORY1_IDS.map((categoryId) => avgCategory1Pct(list, categoryId)), d.color));
+    legendRows.push({ label, color: d.color });
+  });
+
+  if (hasTargetSelection()) {
+    const list = targetApplicants();
+    const label = "対象（" + targetLabelParts().join("・") + "・n=" + list.length + "）";
+    datasets.push(radarDataset(label, FOUR_CATEGORY1_IDS.map((categoryId) => avgCategory1Pct(list, categoryId)), "var(--cat-2)"));
+    legendRows.push({ label, color: "var(--cat-2)" });
+  }
+
+  $("radarDesc").textContent = datasets.length
+    ? "選択中の比較対象（" + legendRows.map((s) => s.label).join("／") + "）を表示しています。"
+    : "「会社」「部署」「役職」のいずれかにチェックを入れるか、上の「対象」を選択すると、4能力の平均を表示できます。";
+
+  const ctx = $("radarChart").getContext("2d");
+  if (radarChartInstance) radarChartInstance.destroy();
+  radarChartInstance = new Chart(ctx, {
+    type: "radar",
+    data: { labels, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: { r: { min: 0, max: 100, ticks: { stepSize: 20, backdropColor: "transparent", color: getCss("--ink-muted") }, grid: { color: getCss("--grid") }, angleLines: { color: getCss("--grid") }, pointLabels: { color: getCss("--ink-1"), font: { size: 12 } } } },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label(ctx2) {
+              const v = ctx2.parsed.r;
+              return " " + ctx2.dataset.label + "：" + (v == null ? "データなし" : v + "%");
+            },
+          },
+        },
+      },
+    },
+  });
+
+  $("radarLegend").innerHTML = legendRows.map((s) =>
+    '<div class="legend-item"><span class="legend-swatch" style="background:' + colorValue(s.color) + '"></span>' + esc(s.label) + "</div>"
+  ).join("");
+
+  const head = $("radarTableHead");
+  head.innerHTML = "<th>区分</th>" + labels.map((l) => "<th>" + esc(l) + "</th>").join("");
+  const body = $("radarTableBody");
+  if (!datasets.length) { body.innerHTML = '<tr><td colspan="5" class="empty">表示できるデータがありません。</td></tr>'; }
+  else {
+    body.innerHTML = legendRows.map((s, i) => (
+      "<tr><td>" + esc(s.label) + "</td>" + datasets[i].data.map((v) => "<td>" + (v == null ? "-" : v + "%") + "</td>").join("") + "</tr>"
+    )).join("");
+  }
+}
+function radarDataset(label, data, colorVar) {
+  const c = colorValue(colorVar);
+  return {
+    label, data,
+    borderColor: c, backgroundColor: c + "26", pointBackgroundColor: c, pointBorderColor: "#fff",
+    borderWidth: 2, pointRadius: 4, pointHoverRadius: 5, fill: true, spanGaps: true,
+  };
+}
+
+// ---------------------------------------------------------------------
+// ② 散布図（主体性 x / 協調性 y）。個人が特定される情報（氏名・部署・役職など）は表示しない。
+// ---------------------------------------------------------------------
+let scatterChartInstance = null;
+const quadrantPlugin = {
+  id: "quadrantBg",
+  beforeDraw(chart) {
+    const { ctx, chartArea, scales } = chart;
+    if (!chartArea || !scales.x || !scales.y) return;
+    const { left, right, top, bottom } = chartArea;
+    const midX = scales.x.getPixelForValue(15);
+    const midY = scales.y.getPixelForValue(15);
+    ctx.save();
+    ctx.strokeStyle = getCss("--axis");
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(midX, top); ctx.lineTo(midX, bottom); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(left, midY); ctx.lineTo(right, midY); ctx.stroke();
+    ctx.fillStyle = getCss("--ink-muted");
+    ctx.font = "11px sans-serif";
+    ctx.textBaseline = "top";
+    const pad = 8;
+    ctx.textAlign = "left"; ctx.fillText("協調×主体（チームリーダー型）", left + pad, top + pad);
+    ctx.textAlign = "right"; ctx.fillText("協調重視・サポート型", right - pad, top + pad);
+    ctx.textAlign = "left"; ctx.fillText("専門職・職人型", left + pad, bottom - 16);
+    ctx.textAlign = "right"; ctx.fillText("自律推進型", right - pad, bottom - 16);
+    ctx.restore();
+  },
+};
+
+function traitColor(v) {
+  if (v == null) return "rgba(137,135,129,0.5)";
+  const steps = ["--seq-100", "--seq-200", "--seq-300", "--seq-400", "--seq-500", "--seq-600", "--seq-700"];
+  const pct = Math.max(0, Math.min(1, (v - 5) / 20));
+  const idx = Math.min(steps.length - 1, Math.floor(pct * steps.length));
+  return getCss(steps[idx]);
+}
+function traitRadius(v) {
+  if (v == null) return 5;
+  const pct = Math.max(0, Math.min(1, (v - 5) / 20));
+  return 5 + pct * 10; // 5px 〜 15px
+}
+
+// 散布図に表示する点の集合。「会社」「部署」「役職」で有効になっている集団と、
+// 選択中の「対象」の合計（重複は除く）を表示する。
+function scatterPoints() {
+  const map = new Map();
+  ["company", "dept", "pos"].forEach((name) => { groupApplicants(name).forEach((a) => map.set(a.token, a)); });
+  targetApplicants().forEach((a) => map.set(a.token, a));
+  return Array.from(map.values());
+}
+
+function renderScatter() {
+  const filtered = scatterPoints().filter((a) => a.hasAllSubcats);
+  const colorTrait = $("colorBySelect").value;
+  const sizeTrait = $("sizeBySelect").value;
+  const targetTokens = new Set(targetApplicants().map((a) => a.token));
+
+  const points = filtered.map((a) => ({ x: a.subcat["主体性"], y: a.subcat["協調性"], a }));
+
+  const ctx = $("scatterChart").getContext("2d");
+  if (scatterChartInstance) scatterChartInstance.destroy();
+  scatterChartInstance = new Chart(ctx, {
+    type: "scatter",
+    data: {
+      datasets: [{
+        label: "受験者",
+        data: points,
+        backgroundColor: points.map((p) => targetTokens.has(p.a.token) ? getCss("--orange") : traitColor(p.a.subcat[colorTrait])),
+        borderColor: points.map((p) => targetTokens.has(p.a.token) ? getCss("--orange-dark") : "rgba(255,255,255,.8)"),
+        borderWidth: points.map((p) => targetTokens.has(p.a.token) ? 2 : 1),
+        radius: points.map((p) => traitRadius(p.a.subcat[sizeTrait])),
+        hoverRadius: points.map((p) => traitRadius(p.a.subcat[sizeTrait]) + 3),
+      }],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: {
+        x: { min: 5, max: 25, ticks: { stepSize: 5, color: getCss("--ink-muted") }, grid: { color: getCss("--grid") }, title: { display: true, text: "主体性（小計）", color: getCss("--ink-2") } },
+        y: { min: 5, max: 25, ticks: { stepSize: 5, color: getCss("--ink-muted") }, grid: { color: getCss("--grid") }, title: { display: true, text: "協調性（小計）", color: getCss("--ink-2") } },
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            title() { return ""; },
+            label(ctx2) {
+              const a = points[ctx2.dataIndex].a;
+              const lines = ["主体性：" + (a.subcat["主体性"] == null ? "-" : a.subcat["主体性"]), "協調性：" + (a.subcat["協調性"] == null ? "-" : a.subcat["協調性"])];
+              if (colorTrait !== "主体性" && colorTrait !== "協調性") lines.push(colorTrait + "：" + (a.subcat[colorTrait] == null ? "-" : a.subcat[colorTrait]));
+              if (sizeTrait !== colorTrait && sizeTrait !== "主体性" && sizeTrait !== "協調性") lines.push(sizeTrait + "：" + (a.subcat[sizeTrait] == null ? "-" : a.subcat[sizeTrait]));
+              return lines;
+            },
+          },
+        },
+      },
+    },
+    plugins: [quadrantPlugin],
+  });
+
+  const excluded = scatterPoints().length - filtered.length;
+  const targetNote = hasTargetSelection() ? "　オレンジ色の点：対象のデータです。" : "";
+  $("scatterDesc").textContent = "対象：" + filtered.length + "名" + (excluded > 0 ? "（行動特性・性格の回答が一部ないデータ " + excluded + "名は除外しています）" : "") + targetNote;
+}
+
+// ---------------------------------------------------------------------
+// 色ユーティリティ（CSS変数 → 実際の色値。Chart.jsはcanvasに直接描画するためCSS変数をそのまま渡せない）
+// ---------------------------------------------------------------------
+let cssCache = null;
+function getCss(varName) {
+  if (!cssCache) cssCache = getComputedStyle(document.documentElement);
+  return cssCache.getPropertyValue(varName).trim();
+}
+function colorValue(v) { return v.startsWith("var(") ? getCss(v.slice(4, -1)) : v; }
+
+// ---------------------------------------------------------------------
+// 全体再描画
+// ---------------------------------------------------------------------
+function renderAll() {
+  $("cardTotal").textContent = applicants.length;
+  $("cardFiltered").textContent = scatterPoints().length;
+  const activeLabels = [];
+  if (hasTargetSelection()) activeLabels.push("対象（" + targetLabelParts().join("・") + "）");
+  if (compareGroups.company.checked.size) activeLabels.push("会社（" + compareGroups.company.checked.size + "社選択）");
+  if (compareGroups.dept.checked.size) activeLabels.push("部署（" + compareGroups.dept.checked.size + "件選択）");
+  if (compareGroups.pos.checked.size) activeLabels.push("役職（" + compareGroups.pos.checked.size + "件選択）");
+  $("filterHelp").textContent = activeLabels.length
+    ? "表示中の比較対象：" + activeLabels.join("／")
+    : "比較対象が選択されていません。「対象」を選択するか、「会社」「部署」「役職」のいずれかにチェックを入れてください。";
+  renderRadar();
+  renderScatter();
+}
+
+function setupTraitSelects() {
+  const opts = EXTRA_TRAITS.map((t) => '<option value="' + esc(t) + '">' + esc(t) + "</option>").join("");
+  $("colorBySelect").innerHTML = opts;
+  $("sizeBySelect").innerHTML = opts;
+  $("colorBySelect").value = "外向性";
+  $("sizeBySelect").value = "勤勉性・計画性";
+}
+
+["company", "dept", "pos", "targetCompany", "targetDept", "targetPos"].forEach(setupGroupControls);
+$("colorBySelect").addEventListener("change", renderScatter);
+$("sizeBySelect").addEventListener("change", renderScatter);
 
 onAuthStateChanged(auth, async (user) => {
   if (!user) { location.href = "login.html"; return; }
@@ -261,14 +829,30 @@ onAuthStateChanged(auth, async (user) => {
       location.href = "login.html";
       return;
     }
-    const dr = defaultRange();
-    $("startDate").value = dr.start;
-    $("endDate").value = dr.end;
-    await loadCompanyOptions();
-    await loadData();
+    setupTraitSelects();
+    const companiesRaw = await loadAll();
+
+    compareGroups.company.items = buildCompanyItems(companiesRaw);
+    compareGroups.company.checked = new Set(companiesRaw.map((c) => c.companyId)); // 既定：全社を選択済みにする
+    compareGroups.dept.items = buildDeptOrPosItems(applicants, (a) => a.department, "（部署未入力）");
+    compareGroups.pos.items = buildDeptOrPosItems(applicants, (a) => a.position, "（役職未入力）");
+    renderGroupList("company");
+    renderGroupList("dept");
+    renderGroupList("pos");
+
+    // 「対象」は会社チェック無し（全社スコープ）から開始する。
+    compareGroups.targetCompany.items = buildCompanyItems(companiesRaw);
+    renderGroupList("targetCompany");
+    refreshTargetDeptPosItems();
+
+    if (!applicants.length) {
+      setStatus("受験完了データがまだありません。受験が完了するとここに表示されます。", "");
+    }
+    renderAll();
   } catch (e) {
     console.error(e);
-    setStatus("読み込みに失敗しました。\n" + (e.message || e), "error");
+    setStatus("取得に失敗しました：" + (e.message || e.code || e), "error");
+  } finally {
     hideLoading();
   }
 });

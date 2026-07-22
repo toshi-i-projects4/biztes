@@ -7,11 +7,12 @@
 <style>
 :root{--blue:#2563eb;--blue-dark:#1d4ed8;--navy:#0f172a;--line:#e5e7eb;--bg:#f5f7fb;--muted:#64748b}
 *{box-sizing:border-box}
-body{margin:0;font-family:"Hiragino Maru Gothic ProN","BIZ UDPGothic","Yu Gothic UI","Meiryo",sans-serif;background:var(--bg);color:#111827;line-height:1.7}
-.header{background:#fff;border-bottom:1px solid var(--line);padding:16px 24px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
-.header h1{font-size:17px;margin:0;color:var(--blue-dark)}
-.header a.back{font-size:12px;color:var(--muted);text-decoration:none}
-.wrap{max-width:960px;margin:24px auto;padding:0 20px}
+body{margin:0;font-family:"Hiragino Maru Gothic ProN","BIZ UDPGothic","Yu Gothic UI","Meiryo",sans-serif;background:var(--bg);color:#111827;line-height:1.7;padding:24px;box-sizing:border-box}
+.header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;margin-bottom:18px}
+.header h1{font-size:28px;margin:0;color:#111827}
+.top-link,.bottom-link{color:#2563eb;text-decoration:none;font-weight:bold;font-size:14px}
+.bottom-link{display:inline-block;margin-top:22px}
+.wrap{max-width:960px;margin:24px auto;background:#fff;border-radius:18px;box-shadow:0 4px 12px rgba(0,0,0,.08);padding:28px;box-sizing:border-box}
 .panel{background:#fff;border:1px solid var(--line);border-radius:18px;padding:22px;margin-bottom:20px;box-shadow:0 4px 14px rgba(15,23,42,.04)}
 .panel h2{font-size:15px;margin:0 0 10px;color:var(--navy)}
 .description{font-size:13px;color:var(--muted);margin:0 0 14px}
@@ -26,6 +27,10 @@ button:disabled{opacity:.55;cursor:not-allowed}
 table{width:100%;border-collapse:collapse;font-size:12.5px}
 th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line)}
 th{color:var(--muted);font-weight:800;font-size:11.5px}
+.table-wrap{overflow-x:auto;overflow-y:scroll;max-height:420px;border:1px solid var(--line);border-radius:10px}
+.table-wrap table{min-width:900px}
+.table-wrap th,.table-wrap td{white-space:nowrap}
+.table-wrap th{background:#f9fafb;position:sticky;top:0;z-index:1}
 .badge{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:800}
 .badge.ok{background:#dcfce7;color:#166534}
 .badge.ng{background:#fee2e2;color:#991b1b}
@@ -48,12 +53,12 @@ th{color:var(--muted);font-weight:800;font-size:11.5px}
 </style>
 </head>
 <body>
-<div class="header">
-  <h1 id="pageTitle">企業管理者の招待・管理</h1>
-  <a class="back" href="#" id="backLink">← 戻る</a>
-</div>
-
 <div class="wrap">
+  <div class="header">
+    <h1 id="pageTitle">企業管理者招待</h1>
+    <a class="top-link" href="#" id="backLink">← 戻る</a>
+  </div>
+
   <div class="panel">
     <h2>新しい企業管理者を招待する</h2>
     <p class="description">招待した人は、案内メールのURLから自分でパスワードを設定してアカウントを作成します（Firestoreへ直接入力する必要はありません）。</p>
@@ -85,20 +90,26 @@ th{color:var(--muted);font-weight:800;font-size:11.5px}
 
   <div class="panel">
     <h2>招待状況</h2>
-    <table>
-      <thead><tr><th>操作</th><th>状態</th><th>社員コード</th><th>氏名</th><th>部署</th><th>役職</th><th>メールアドレス</th><th>備考</th><th>ビズてす申込者</th></tr></thead>
-      <tbody id="pendingRows"><tr><td colspan="9" class="empty">読み込み中です。</td></tr></tbody>
-    </table>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>操作</th><th>状態</th><th>社員コード</th><th>氏名</th><th>部署</th><th>役職</th><th>メールアドレス</th><th>備考</th><th>ビズてす申込者</th></tr></thead>
+        <tbody id="pendingRows"><tr><td colspan="9" class="empty">読み込み中です。</td></tr></tbody>
+      </table>
+    </div>
   </div>
 
   <div class="panel">
     <h2>企業管理者一覧</h2>
-    <p class="description">ビズてす権限（企業管理者としての権限）を持つアカウントの一覧です。社員コード・部署・役職・備考・ビズてす申込者は「編集」から変更できます。</p>
-    <table>
-      <thead><tr><th>操作</th><th>状態</th><th>ビズてす権限</th><th>社員コード</th><th>氏名</th><th>部署</th><th>役職</th><th>メールアドレス</th><th>備考</th><th>UID</th><th>ビズてす申込者</th></tr></thead>
-      <tbody id="adminRows"><tr><td colspan="11" class="empty">読み込み中です。</td></tr></tbody>
-    </table>
+    <p class="description">ビズてす権限（企業管理者としての権限）を持つアカウントの一覧です。社員コード・氏名・部署・役職・メールアドレス・備考・ビズてす申込者は「編集」から変更できます。</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>操作</th><th>状態</th><th>ビズてす権限</th><th>社員コード</th><th>氏名</th><th>部署</th><th>役職</th><th>メールアドレス</th><th>備考</th><th>UID</th><th>ビズてす申込者</th></tr></thead>
+        <tbody id="adminRows"><tr><td colspan="11" class="empty">読み込み中です。</td></tr></tbody>
+      </table>
+    </div>
   </div>
+
+  <a class="bottom-link" href="#" id="backLinkBottom">← 戻る</a>
 </div>
 
 <div class="modal-overlay hidden" id="editModal">
@@ -110,6 +121,7 @@ th{color:var(--muted);font-weight:800;font-size:11.5px}
       <div class="form-row"><label>氏名</label><input id="editName" placeholder="例：山田 太郎"></div>
       <div class="form-row"><label>部署</label><input id="editDepartment" placeholder="例：営業部"></div>
       <div class="form-row"><label>役職</label><input id="editPosition" placeholder="例：一般、主任、課長、部長"></div>
+      <div class="form-row"><label>メールアドレス</label><input id="editEmail" type="email" placeholder="例：admin@example.co.jp"></div>
     </div>
     <div class="checkbox-row"><input id="editIsApplicant" type="checkbox"><label for="editIsApplicant">ビズてす申込者（ビズてすを申し込んだ方）</label></div>
     <div class="form-row" style="margin-bottom:0"><label>備考</label><textarea id="editNote"></textarea></div>
@@ -136,6 +148,12 @@ let isOperatorUser = false;
 let currentUid = "";
 
 const $ = (id) => document.getElementById(id);
+function setBackLink(href, text) {
+  ["backLink", "backLinkBottom"].forEach((id) => {
+    const el = $(id);
+    if (el) { el.href = href; el.textContent = text; }
+  });
+}
 
 function esc(v) {
   return String(v == null ? "" : v).replace(/[&<>"']/g, (c) => (
@@ -153,30 +171,37 @@ onAuthStateChanged(auth, async (user) => {
   if (!user) { location.href = "login.html"; return; }
   currentUid = user.uid;
 
-  const opSnap = await getDoc(doc(db, "operators", user.uid));
-  if (opSnap.exists()) {
-    isOperatorUser = true;
-    if (!companyId) {
-      document.body.innerHTML = "<p style='padding:40px;font-family:sans-serif'>URLに ?company=企業ID が指定されていません。運営ホームから遷移してください。</p>";
-      return;
-    }
-    $("backLink").href = "operator-home.html";
-    $("backLink").textContent = "← 運営ホームへ戻る";
+  const caSnap = await getDoc(doc(db, "companyAdmins", user.uid));
+  const isActiveCompanyAdmin = caSnap.exists() && caSnap.data().status === "active";
+  const ownCompanyId = isActiveCompanyAdmin ? caSnap.data().companyId : "";
+
+  // 企業管理者ホームから自社の企業設定ページとして開いた場合（URLの企業指定が無い、または自社を指定している場合）は、
+  // 運営者権限も併せ持つアカウントであっても、ここでは企業管理者として画面にとどまる。
+  // 運営者が他社を操作する目的でこのページを開いた場合のみ、下の運営者判定に進む。
+  // ただし運用管理の企業管理ページ「管理画面へ入る」から明示的に入室した場合（?opEnter=1）は、
+  // 自社を兼務していても必ず運営モードとして扱う。
+  const forceOperatorEntry = !!(window.BizTestOperatorMode && window.BizTestOperatorMode.isExplicitEntry());
+  if (isActiveCompanyAdmin && !forceOperatorEntry && (!companyId || companyId === ownCompanyId)) {
+    companyId = ownCompanyId;
+    setBackLink("company-admin-home.html", "← 企業管理者ホームへ戻る");
   } else {
-    const caSnap = await getDoc(doc(db, "companyAdmins", user.uid));
-    if (!caSnap.exists() || caSnap.data().status !== "active") {
+    const opSnap = await getDoc(doc(db, "operators", user.uid));
+    if (opSnap.exists()) {
+      isOperatorUser = true;
+      if (!companyId) {
+        document.body.innerHTML = "<p style='padding:40px;font-family:sans-serif'>URLに ?company=企業ID が指定されていません。運営ホームから遷移してください。</p>";
+        return;
+      }
+      setBackLink("operator-home.html", "← 運営ホームへ戻る");
+    } else {
       await signOut(auth);
       location.href = "login.html";
       return;
     }
-    companyId = caSnap.data().companyId;
-    $("backLink").href = "company-admin-home.html";
-    $("backLink").textContent = "← 企業管理者ホームへ戻る";
   }
 
   const companySnap = await getDoc(doc(db, "companies", companyId));
   companyName = companySnap.exists() ? (companySnap.data().companyName || companyId) : companyId;
-  $("pageTitle").textContent = companyName + " の企業管理者 招待・管理";
 
   if (isOperatorUser) {
     window.BizTestOperatorMode && window.BizTestOperatorMode.renderBanner({ companyId, companyName });
@@ -366,6 +391,7 @@ function openEditModal(uid) {
   $("editName").value = a.name || "";
   $("editDepartment").value = a.department || "";
   $("editPosition").value = a.position || "";
+  $("editEmail").value = a.email || "";
   $("editIsApplicant").checked = a.isApplicant === true;
   $("editNote").value = a.note || "";
   setEditStatus("", "");
@@ -379,11 +405,15 @@ $("editSaveBtn").addEventListener("click", async () => {
   const uid = $("editUid").value;
   const name = normText($("editName").value);
   if (!name) { setEditStatus("氏名を入力してください。", "error"); return; }
+  const email = normEmail($("editEmail").value);
+  if (!email) { setEditStatus("メールアドレスを入力してください。", "error"); return; }
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { setEditStatus("メールアドレスの形式が正しくありません。", "error"); return; }
   const data = {
     employeeCode: normText($("editEmployeeCode").value),
     name: name,
     department: normText($("editDepartment").value),
     position: normText($("editPosition").value),
+    email: email,
     isApplicant: $("editIsApplicant").checked === true,
     note: normText($("editNote").value),
     updatedAt: serverTimestamp(),
@@ -391,6 +421,13 @@ $("editSaveBtn").addEventListener("click", async () => {
   };
   try {
     $("editSaveBtn").disabled = true;
+    setEditStatus("重複を確認しています...", "");
+    // 他の企業管理者が既に同じメールアドレスを使用していないか確認する
+    // （ログイン用Firebase Authのメールアドレス自体はこの画面からは変更されません。
+    // ここで変更するのは、一覧に表示されるプロフィール上のメールアドレスです）。
+    const dupSnap = await getDocs(query(collection(db, "companyAdmins"), where("email", "==", email)));
+    const dupTaken = dupSnap.docs.some((d) => d.id !== uid);
+    if (dupTaken) { setEditStatus("このメールアドレスは既に他の企業管理者が使用しています。", "error"); $("editSaveBtn").disabled = false; return; }
     setEditStatus("保存中...", "");
     await updateDoc(doc(db, "companyAdmins", uid), data);
     await loadAdmins();

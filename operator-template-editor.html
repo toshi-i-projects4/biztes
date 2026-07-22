@@ -3,22 +3,23 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ビズてす 問題管理</title>
+<title>問題管理｜運営管理ページ｜ビズてす</title>
 <style>
-:root{--blue:#2563eb;--blue-dark:#1d4ed8;--navy:#0f172a;--line:#e5e7eb;--bg:#f5f7fb;--muted:#64748b;--orange:#f97316}
+:root{--orange:#f97316;--orange-dark:#ea580c;--orange-deep:#c2410c;--navy:#0f172a;--line:#fed7aa;--bg:#fff7ed;--muted:#64748b}
 *{box-sizing:border-box}
 body{margin:0;font-family:"Hiragino Maru Gothic ProN","BIZ UDPGothic","Yu Gothic UI","Meiryo",sans-serif;background:var(--bg);color:#111827;padding:24px;box-sizing:border-box}
-.header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;margin-bottom:18px}
-.header h1{font-size:28px;margin:0;color:#111827}
-.header .sub{font-size:12px;color:var(--muted)}
-.top-link,.bottom-link{color:#2563eb;text-decoration:none;font-weight:bold;font-size:14px}
-.bottom-link{display:inline-block;margin-top:22px}
-.wrap{max-width:1100px;margin:24px auto;background:#fff;border-radius:18px;box-shadow:0 4px 12px rgba(0,0,0,.08);padding:28px;box-sizing:border-box}
-.tabs{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap}
+.wrap{max-width:1100px;margin:0 auto;background:#fff;border-radius:18px;box-shadow:0 4px 12px rgba(0,0,0,.08);padding:28px;box-sizing:border-box;border:1px solid var(--line)}
+.header{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:14px}
+.header h1{font-size:26px;margin:0;color:#111827}
+.header .sub{font-size:12px;color:var(--muted);margin-top:4px}
+.top-link,.bottom-link{font-size:14px;font-weight:bold;color:var(--orange-deep);text-decoration:none}
+.bottom-link{display:inline-block;margin-top:20px}
+.info-box{background:#fff7ed;border:1px solid #fed7aa;color:#7c2d12;border-radius:12px;padding:12px 16px;font-size:12.5px;line-height:1.8;margin-bottom:18px;white-space:pre-wrap}
+.tabs{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap;align-items:center}
 .tab{background:#fff;border:1px solid var(--line);border-radius:999px;padding:9px 16px;font-size:13px;font-weight:800;color:var(--muted);cursor:pointer}
-.tab.active{background:var(--blue);border-color:var(--blue);color:#fff}
-.tab-add{background:#fff;border:2px dashed #93c5fd;border-radius:999px;padding:9px 16px;font-size:13px;font-weight:800;color:var(--blue-dark);cursor:pointer}
-.tab-add:hover{background:#eff6ff}
+.tab.active{background:var(--orange);border-color:var(--orange);color:#fff}
+.tab-add{background:#fff;border:2px dashed #fdba74;border-radius:999px;padding:9px 16px;font-size:13px;font-weight:800;color:var(--orange-deep);cursor:pointer}
+.tab-add:hover{background:#ffedd5}
 .panel{background:#fff;border:1px solid var(--line);border-radius:18px;padding:22px;margin-bottom:20px;box-shadow:0 4px 14px rgba(15,23,42,.04)}
 .panel h2{font-size:15px;margin:0 0 12px;color:var(--navy)}
 .settings-grid{display:grid;grid-template-columns:2fr 1fr 1fr;gap:14px;align-items:end}
@@ -26,8 +27,8 @@ body{margin:0;font-family:"Hiragino Maru Gothic ProN","BIZ UDPGothic","Yu Gothic
 .form-row textarea,.form-row input,.form-row select{width:100%;border:1px solid #d1d5db;border-radius:9px;padding:9px 11px;font-size:13px;font-family:inherit}
 .form-row textarea{resize:vertical;min-height:56px}
 button{cursor:pointer;font-family:inherit}
-button.primary{background:var(--blue);color:#fff;border:none;border-radius:9px;padding:10px 16px;font-size:13px;font-weight:800}
-button.primary:hover{background:var(--blue-dark)}
+button.primary{background:var(--orange);color:#fff;border:none;border-radius:9px;padding:10px 16px;font-size:13px;font-weight:800}
+button.primary:hover{background:var(--orange-dark)}
 button.ghost{background:#fff;border:1px solid #cbd5e1;color:var(--navy);border-radius:9px;padding:9px 14px;font-size:12.5px;font-weight:800}
 .section-title{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
 .section-title h2{margin:0}
@@ -39,7 +40,7 @@ th{color:var(--muted);font-weight:800;font-size:11.5px}
 .badge.practice{background:#fef3c7;color:#92400e}
 .badge.real{background:#dbeafe;color:#1e40af}
 .badge.inactive{background:#f3f4f6;color:#9ca3af}
-.row-actions a,.row-actions button{font-size:11.5px;font-weight:800;color:var(--blue-dark);background:none;border:none;padding:0;margin-right:10px}
+.row-actions a,.row-actions button{font-size:11.5px;font-weight:800;color:var(--orange-deep);background:none;border:none;padding:0;margin-right:10px}
 .row-actions .danger{color:#dc2626}
 .stage-header{background:#f8fafc;font-weight:800;color:var(--navy);padding:8px 10px}
 .empty{color:var(--muted);font-size:13px;padding:12px 0}
@@ -49,45 +50,38 @@ th{color:var(--muted);font-weight:800;font-size:11.5px}
 .modal-box h3{margin:0 0 16px;font-size:16px;color:var(--navy)}
 .modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
 .choice-row{display:grid;grid-template-columns:36px 1fr;gap:8px;align-items:center;margin-bottom:8px}
-.choice-row span{font-weight:800;color:var(--blue-dark)}
+.choice-row span{font-weight:800;color:var(--orange-deep)}
 .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px}
 .hint{font-size:11.5px;color:var(--muted);margin-top:3px}
-.copy-templates{margin-top:8px}
-.tab-group{display:inline-flex;align-items:center;gap:3px}
-.tab-delete{background:#fff;border:1px solid var(--line);border-radius:999px;width:26px;height:26px;display:flex;align-items:center;justify-content:center;color:#dc2626;font-weight:800;font-size:14px;padding:0;cursor:pointer}
-.tab-delete:hover{background:#fee2e2;border-color:#fca5a5}
+@media(max-width:640px){body{padding:14px}.wrap{padding:20px}}
 </style>
 </head>
 <body>
 <div class="wrap">
   <div class="header">
     <div>
-      <h1 id="companyTitle">問題管理</h1>
-      <div class="sub" id="companySub">読み込み中…</div>
+      <h1>問題管理</h1>
+      <div class="sub">運営管理｜全社共通のデフォルト問題（テンプレート）</div>
     </div>
-    <div>
-      <a class="top-link" href="operator-home.html" id="backHomeLink">← 運営ホームへ戻る</a>
-    </div>
+    <a class="top-link" href="operator-home.html">← 運営管理ページへ戻る</a>
   </div>
+
+  <div class="info-box">ここで作成・編集した問題は、各企業のデフォルト問題として使われます。企業側がそのカテゴリー1に1問でも自社の問題を登録すると、以後はそのカテゴリー1全体で企業側の問題が優先され、ここでの編集内容は使われなくなります（未編集のカテゴリー1だけ、ここでの内容がそのまま使われ続けます）。</div>
 
   <div class="tabs" id="tabBar"></div>
 
-  <div class="panel">
+  <div class="panel" id="settingsPanel" style="display:none">
     <h2>カテゴリー1設定</h2>
     <div class="settings-grid">
-      <div class="form-row"><label>受験画面に表示する説明文</label><textarea id="setInstructions"></textarea></div>
+      <div class="form-row"><label>カテゴリー1名（表示ラベル）</label><input id="setLabel"></div>
       <div class="form-row"><label>練習の制限時間（秒・0=無制限）</label><input id="setPracticeTime" type="number" min="0"></div>
       <div class="form-row"><label>本番の制限時間（秒）</label><input id="setRealTime" type="number" min="0"></div>
     </div>
+    <div class="form-row" style="margin-top:14px"><label>受験画面に表示する説明文</label><textarea id="setInstructions"></textarea></div>
     <div style="margin-top:12px"><button class="primary" id="saveSettingsBtn">カテゴリー1設定を保存</button></div>
-    <div class="copy-templates" id="copyTemplateBlock">
-      <button class="ghost" id="copyTemplateBtn">テンプレートの初期問題をこのカテゴリー1にコピー</button>
-      <div class="hint">既に登録済みの問題がある場合、同じIDのテンプレート問題は上書きされます。1問でも自社の問題を登録すると、以後このカテゴリー1は運営のデフォルト問題より自社の問題が優先されます。あわせて「受験画面に表示する説明文」「練習の制限時間」「本番の制限時間」もテンプレートの内容が上の入力欄に反映されますが、これらは「カテゴリー1設定を保存」を押すまで保存されません。</div>
-    </div>
-    <div class="hint" id="customCategory1Hint" style="display:none">このカテゴリーは自社限定です（運営のデフォルト問題はありません）。ここで登録した問題がそのまま出題されます。</div>
   </div>
 
-  <div class="panel">
+  <div class="panel" id="itemsPanel" style="display:none">
     <div class="section-title">
       <h2>問題一覧</h2>
       <button class="primary" id="addItemBtn">＋ 問題を追加</button>
@@ -99,7 +93,9 @@ th{color:var(--muted);font-weight:800;font-size:11.5px}
     <div id="emptyItems" class="empty" style="display:none">このカテゴリー1にはまだ問題が登録されていません。</div>
   </div>
 
-  <a class="bottom-link" href="operator-home.html" id="backHomeLinkBottom">← 運営ホームへ戻る</a>
+  <div id="noCategory1sEmpty" class="empty" style="display:none">カテゴリーがまだありません。「＋ カテゴリーを追加」から作成してください。</div>
+
+  <a class="bottom-link" href="operator-home.html">← 運営管理ページへ戻る</a>
 </div>
 
 <div class="modal-overlay" id="modalOverlay">
@@ -178,7 +174,6 @@ th{color:var(--muted);font-weight:800;font-size:11.5px}
   </div>
 </div>
 
-<script src="operator-mode.js"></script>
 <script type="module">
 import { auth, db, CATEGORY1_TYPES, ALL_TYPES } from "./firebase-config.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
@@ -186,25 +181,12 @@ import {
   doc, getDoc, setDoc, updateDoc, deleteDoc, collection, onSnapshot,
   query, orderBy, serverTimestamp, addDoc,
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import {
-  copyTemplateItemsToCompany, escapeHtml,
-  loadEffectiveCategory1List, createCompanyCustomCategory1, deleteCompanyCustomCategory1,
-  loadTemplateCategory1Settings,
-} from "./operator-shared.js";
+import { loadGlobalCategory1Defs, createGlobalCategory1Def, escapeHtml } from "./operator-shared.js";
 
-function setBackHomeLink(href, text) {
-  ["backHomeLink", "backHomeLinkBottom"].forEach((id) => {
-    const el = document.getElementById(id);
-    if (el) { el.href = href; el.textContent = text; }
-  });
-}
-const params = new URLSearchParams(location.search);
-let companyId = params.get("company");
 let category1s = [];
 let currentCategory1 = null;
 let editingItemId = null;
 let unsubscribeItems = null;
-let isOperatorUser = false;
 
 const TYPE_LABELS = {
   typing_passage: "お手本テキスト",
@@ -217,110 +199,59 @@ const TYPE_LABELS = {
 
 onAuthStateChanged(auth, async (user) => {
   if (!user) { location.href = "login.html"; return; }
-
-  const caSnap = await getDoc(doc(db, "companyAdmins", user.uid));
-  const isActiveCompanyAdmin = caSnap.exists() && caSnap.data().status === "active";
-  const ownCompanyId = isActiveCompanyAdmin ? caSnap.data().companyId : "";
-
-  // 企業管理者ホームから自社の問題管理ページとして開いた場合（URLの企業指定が無い、または自社を指定している場合）は、
-  // 運営者権限も併せ持つアカウントであっても、ここでは企業管理者として画面にとどまる。
-  // 運営者が他社を操作する目的でこのページを開いた場合のみ、下の運営者判定に進む。
-  // ただし運用管理の企業管理ページ「管理画面へ入る」から明示的に入室した場合（?opEnter=1）は、
-  // 自社を兼務していても必ず運営モードとして扱う。
-  const forceOperatorEntry = !!(window.BizTestOperatorMode && window.BizTestOperatorMode.isExplicitEntry());
-  if (isActiveCompanyAdmin && !forceOperatorEntry && (!companyId || companyId === ownCompanyId)) {
-    companyId = ownCompanyId;
-    setBackHomeLink("company-admin-home.html", "← 企業管理者ホームへ戻る");
-  } else {
-    const opSnap = await getDoc(doc(db, "operators", user.uid));
-    if (opSnap.exists()) {
-      isOperatorUser = true;
-      if (!companyId) {
-        document.body.innerHTML = "<p style='padding:40px;font-family:sans-serif'>URLに ?company=企業ID が指定されていません。運営ホームから遷移してください。</p>";
-        return;
-      }
-    } else {
-      await signOut(auth); location.href = "login.html"; return;
-    }
-  }
-
-  const companySnap = await getDoc(doc(db, "companies", companyId));
-  if (!companySnap.exists()) {
-    document.getElementById("companySub").textContent = "指定された企業が見つかりません。";
+  const opSnap = await getDoc(doc(db, "operators", user.uid));
+  if (!opSnap.exists()) {
+    document.body.innerHTML = "<p style='padding:40px;font-family:sans-serif'>この画面は運営者アカウントでのログインが必要です。</p>";
     return;
   }
-  const companyName = companySnap.data().companyName;
-  document.getElementById("companyTitle").textContent = "問題管理";
-  document.getElementById("companySub").textContent = "";
-
-  if (isOperatorUser) {
-    window.BizTestOperatorMode && window.BizTestOperatorMode.renderBanner({ companyId, companyName });
-  }
-
   await loadCategory1sAndRender();
 });
 
 async function loadCategory1sAndRender() {
-  category1s = await loadEffectiveCategory1List(companyId);
+  category1s = await loadGlobalCategory1Defs();
   if (!currentCategory1 || !category1s.some((p) => p.id === currentCategory1)) {
     currentCategory1 = category1s.length ? category1s[0].id : null;
   }
   renderTabs();
-  if (currentCategory1) await loadCategory1(currentCategory1);
-}
-
-function currentCategory1Def() {
-  return category1s.find((p) => p.id === currentCategory1) || null;
+  if (currentCategory1) {
+    document.getElementById("settingsPanel").style.display = "block";
+    document.getElementById("itemsPanel").style.display = "block";
+    document.getElementById("noCategory1sEmpty").style.display = "none";
+    await loadCategory1(currentCategory1);
+  } else {
+    document.getElementById("settingsPanel").style.display = "none";
+    document.getElementById("itemsPanel").style.display = "none";
+    document.getElementById("noCategory1sEmpty").style.display = "block";
+  }
 }
 
 function renderTabs() {
   const bar = document.getElementById("tabBar");
   bar.innerHTML = "";
   category1s.forEach((category1) => {
-    const group = document.createElement("div");
-    group.className = "tab-group";
     const btn = document.createElement("button");
-    btn.type = "button";
     btn.className = "tab" + (category1.id === currentCategory1 ? " active" : "");
     btn.textContent = category1.label || category1.id;
     btn.addEventListener("click", () => switchCategory1(category1.id));
-    group.appendChild(btn);
-    if (category1.scope === "custom") {
-      const delBtn = document.createElement("button");
-      delBtn.type = "button";
-      delBtn.className = "tab-delete";
-      delBtn.title = "このカテゴリーを削除";
-      delBtn.textContent = "×";
-      delBtn.addEventListener("click", (e) => { e.stopPropagation(); deleteCustomCategory(category1); });
-      group.appendChild(delBtn);
-    }
-    bar.appendChild(group);
+    bar.appendChild(btn);
   });
   const addBtn = document.createElement("button");
   addBtn.className = "tab-add";
   addBtn.type = "button";
-  addBtn.textContent = "＋ カテゴリーを追加（自社限定）";
-  addBtn.addEventListener("click", addCustomCategory);
+  addBtn.textContent = "＋ カテゴリーを追加";
+  addBtn.addEventListener("click", addCategory);
   bar.appendChild(addBtn);
 }
 
-async function addCustomCategory() {
-  const label = prompt("新しいカテゴリー1名を入力してください。\nこのカテゴリーは自社だけで使われ、他社には表示されません。\n例：⑤自社サービス理解度チェック");
+async function addCategory() {
+  const label = prompt("新しいカテゴリー1名を入力してください。\n例：⑤ビジネスマナー確認");
   if (!label) return;
   const trimmed = label.trim();
   if (!trimmed) return;
-  const category1Id = await createCompanyCustomCategory1(companyId, trimmed);
+  const category1Id = await createGlobalCategory1Def(trimmed);
   currentCategory1 = category1Id;
   await loadCategory1sAndRender();
-  alert(`カテゴリー「${trimmed}」を追加しました。このタブで問題を登録してください。`);
-}
-
-async function deleteCustomCategory(category1) {
-  const ok = confirm(`カテゴリー「${category1.label || category1.id}」を削除します。\n\nこのカテゴリーに登録されている問題もすべて削除され、元に戻せません。\nよろしいですか？`);
-  if (!ok) return;
-  await deleteCompanyCustomCategory1(companyId, category1.id);
-  if (currentCategory1 === category1.id) currentCategory1 = null;
-  await loadCategory1sAndRender();
+  alert(`カテゴリー「${trimmed}」を追加しました。各企業の受験フローにも、このカテゴリーがデフォルトとして自動的に組み込まれます。`);
 }
 
 async function switchCategory1(category1Id) {
@@ -329,27 +260,22 @@ async function switchCategory1(category1Id) {
   await loadCategory1(category1Id);
 }
 
-async function loadCategory1(category1Id) {
-  const category1 = currentCategory1Def();
-  const copyBlock = document.getElementById("copyTemplateBlock");
-  const customHint = document.getElementById("customCategory1Hint");
-  if (category1 && category1.scope === "custom") {
-    copyBlock.style.display = "none";
-    customHint.style.display = "block";
-  } else {
-    copyBlock.style.display = "block";
-    customHint.style.display = "none";
-  }
+function typeOptionsForCurrentCategory1() {
+  return CATEGORY1_TYPES[currentCategory1] || ALL_TYPES;
+}
 
-  const setRef = doc(db, "companies", companyId, "questionSets", category1Id);
+async function loadCategory1(category1Id) {
+  const setRef = doc(db, "templates", category1Id);
   const setSnap = await getDoc(setRef);
-  const settings = setSnap.exists() ? setSnap.data() : { instructions: "", practiceTimeLimitSec: 0, realTimeLimitSec: 0 };
+  const settings = setSnap.exists() ? setSnap.data() : {};
+  const category1Def = category1s.find((p) => p.id === category1Id) || {};
+  document.getElementById("setLabel").value = settings.partLabel || category1Def.label || "";
   document.getElementById("setInstructions").value = settings.instructions || "";
   document.getElementById("setPracticeTime").value = settings.practiceTimeLimitSec || 0;
   document.getElementById("setRealTime").value = settings.realTimeLimitSec || 0;
 
   if (unsubscribeItems) unsubscribeItems();
-  const itemsRef = collection(db, "companies", companyId, "questionSets", category1Id, "items");
+  const itemsRef = collection(db, "templates", category1Id, "items");
   const q = query(itemsRef, orderBy("order", "asc"));
   unsubscribeItems = onSnapshot(q, (snap) => renderItems(snap));
 }
@@ -398,17 +324,12 @@ function itemRow(item) {
 }
 
 async function deleteItem(itemId) {
-  if (!confirm("この問題を削除します。よろしいですか？")) return;
-  await deleteDoc(doc(db, "companies", companyId, "questionSets", currentCategory1, "items", itemId));
+  if (!confirm("このデフォルト問題を削除します。よろしいですか？")) return;
+  await deleteDoc(doc(db, "templates", currentCategory1, "items", itemId));
 }
 
 // ---- モーダル制御 ----
 const overlay = document.getElementById("modalOverlay");
-
-function typeOptionsForCurrentCategory1() {
-  // 元からある4カテゴリー1は出題形式が固定。運営・企業が新しく追加したカテゴリーは全形式から自由に選べる。
-  return CATEGORY1_TYPES[currentCategory1] || ALL_TYPES;
-}
 
 function updateFormVisibility() {
   const type = document.getElementById("fType").value;
@@ -495,7 +416,7 @@ document.getElementById("saveItemBtn").addEventListener("click", async () => {
     updatedAt: serverTimestamp(),
   };
 
-  const itemsRef = collection(db, "companies", companyId, "questionSets", currentCategory1, "items");
+  const itemsRef = collection(db, "templates", currentCategory1, "items");
   if (editingItemId) {
     await updateDoc(doc(itemsRef, editingItemId), data);
   } else {
@@ -506,34 +427,22 @@ document.getElementById("saveItemBtn").addEventListener("click", async () => {
 });
 
 document.getElementById("saveSettingsBtn").addEventListener("click", async () => {
-  const category1 = currentCategory1Def();
-  const ref = doc(db, "companies", companyId, "questionSets", currentCategory1);
+  const label = document.getElementById("setLabel").value.trim();
+  const ref = doc(db, "templates", currentCategory1);
   await setDoc(ref, {
-    partLabel: category1 ? (category1.label || currentCategory1) : currentCategory1,
+    partLabel: label,
     instructions: document.getElementById("setInstructions").value,
     practiceTimeLimitSec: Number(document.getElementById("setPracticeTime").value) || 0,
     realTimeLimitSec: Number(document.getElementById("setRealTime").value) || 0,
     updatedAt: serverTimestamp(),
   }, { merge: true });
+  // partDefinitions側の表示ラベルも合わせて更新する
+  await setDoc(doc(db, "partDefinitions", currentCategory1), {
+    label: label || currentCategory1,
+    updatedAt: serverTimestamp(),
+  }, { merge: true });
+  await loadCategory1sAndRender();
   alert("カテゴリー1設定を保存しました。");
-});
-
-document.getElementById("copyTemplateBtn").addEventListener("click", async () => {
-  if (!confirm("テンプレートの初期問題をこのカテゴリー1にコピーします。同じIDの問題は上書きされます。\n「受験画面に表示する説明文」「制限時間」もテンプレートの内容が入力欄に反映されますが、保存は「カテゴリー1設定を保存」を押すまで行われません。\nよろしいですか？")) return;
-
-  // 問題（items）はこれまで通り、コピーした時点でそのまま保存される。
-  const count = await copyTemplateItemsToCompany(companyId, currentCategory1);
-
-  // カテゴリー1設定（説明文・制限時間）は入力欄に反映するだけで、
-  // ここでは保存しない。実際に保存されるのは「カテゴリー1設定を保存」ボタンが押された時のみ。
-  const templateSettings = await loadTemplateCategory1Settings(currentCategory1);
-  if (templateSettings) {
-    document.getElementById("setInstructions").value = templateSettings.instructions || "";
-    document.getElementById("setPracticeTime").value = templateSettings.practiceTimeLimitSec || 0;
-    document.getElementById("setRealTime").value = templateSettings.realTimeLimitSec || 0;
-  }
-
-  alert(`${count}問をコピーしました。説明文・制限時間も入力欄に反映しました。内容を確認のうえ、「カテゴリー1設定を保存」を押して保存してください。`);
 });
 </script>
 </body>

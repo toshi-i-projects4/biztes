@@ -3,60 +3,160 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ビズてす 企業管理者ホーム</title>
+<title>企業管理者ホーム｜ビズてす</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <style>
-:root{--blue:#2563eb;--blue-dark:#1d4ed8;--navy:#0f172a;--line:#e5e7eb;--bg:#f5f7fb;--muted:#64748b}
+:root{--blue:#2563eb;--blue-dark:#1d4ed8;--navy:#0f172a;--line:#e5e7eb;--bg:#f5f7fb;--muted:#64748b;--orange:#f97316;--orange-deep:#c2410c}
 *{box-sizing:border-box}
 body{margin:0;font-family:"Hiragino Maru Gothic ProN","BIZ UDPGothic","Yu Gothic UI","Meiryo",sans-serif;background:var(--bg);color:#111827}
-.header{background:#fff;border-bottom:1px solid var(--line);padding:16px 24px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
-.header h1{font-size:18px;margin:0;color:var(--blue-dark)}
-.header .userbox{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:12px}
-.header .userbox a{color:var(--blue-dark);font-weight:800;text-decoration:none;font-size:13px}
-.header .userbox a:hover{text-decoration:underline}
-.header button{background:#111827;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:12px;cursor:pointer}
-.wrap{max-width:880px;margin:28px auto;padding:0 20px}
-.panel{background:#fff;border:1px solid var(--line);border-radius:18px;padding:24px;margin-bottom:22px;box-shadow:0 4px 14px rgba(15,23,42,.04)}
-.panel h2{font-size:16px;margin:0 0 14px;color:var(--navy)}
-.badge{display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:800}
+.top-bar{max-width:1400px;margin:0 auto;padding:8px 20px 2px;display:grid;grid-template-columns:240px 1fr;align-items:center;gap:24px;box-sizing:border-box}
+.page-logo{width:170px;max-width:170px;justify-self:center;display:block}
+.company-identity{display:flex;flex-direction:column;justify-content:center;gap:3px}
+.company-identity .company-name{margin:0}
+.company-identity .company-id{margin:0}
+.layout{max-width:1400px;margin:0 auto 24px;display:flex;gap:24px;align-items:stretch;padding:0 20px;box-sizing:border-box}
+.left-sidebar{width:240px;background:linear-gradient(180deg,var(--blue),var(--blue-dark));padding:18px 24px;border-radius:16px;box-shadow:0 4px 12px rgba(0,0,0,.10);box-sizing:border-box;color:#fff;margin-top:16px;flex-shrink:0}
+.sidebar-heading{font-size:15px;font-weight:900;letter-spacing:.02em;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,.3);text-align:center}
+.side-menu{display:grid;gap:8px;margin-bottom:12px}
+.side-menu-link{display:block;text-decoration:none;color:#fff;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.28);border-radius:10px;padding:10px 14px;font-size:14px;font-weight:bold}
+.side-menu-link:hover{background:rgba(255,255,255,.26)}
+.side-menu-link.toggle{width:100%;text-align:left;cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-family:inherit}
+.side-menu-link.toggle .caret{transition:transform .15s ease;font-size:11px}
+.side-menu-link.toggle.open .caret{transform:rotate(180deg)}
+.side-submenu{display:grid;gap:6px;margin:2px 0 0;padding-left:14px}
+.side-submenu.hidden{display:none}
+.side-submenu-link{font-size:13px;padding:8px 12px;background:rgba(255,255,255,.10)}
+.test-only-link{display:block;text-decoration:none;color:#78350f;background:repeating-linear-gradient(45deg,#fef3c7,#fef3c7 10px,#fde68a 10px,#fde68a 20px);border:2px dashed #f59e0b;border-radius:10px;padding:10px 14px;font-size:12.5px;font-weight:bold;text-align:center;box-sizing:border-box}
+.op-link-btn{display:block;width:100%;box-sizing:border-box;text-align:left;text-decoration:none;margin-top:2px;padding:10px 14px;border:2px solid var(--orange);border-radius:10px;background:#ffedd5;color:var(--orange-deep);cursor:pointer;font-size:14px;font-weight:bold}
+.op-link-btn:hover{background:#fed7aa}
+.user-info{margin-top:12px;font-size:13px;color:#fff;line-height:1.6;word-break:break-all;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.28);border-radius:10px;padding:10px 14px}
+.logout-btn{display:block;width:100%;box-sizing:border-box;margin-top:10px;padding:10px 24px;border:2px solid transparent;border-radius:10px;background:#111827;color:#fff;cursor:pointer;font-size:14px;font-weight:bold}
+.logout-btn:hover{background:#000}
+.main-content{flex:1;background:#fff;padding:16px 28px 18px;border-radius:16px;box-shadow:0 4px 12px rgba(0,0,0,.08);box-sizing:border-box;min-height:320px;line-height:1.35;margin-top:16px}
+.panel{margin-bottom:12px}
+.panel h2{font-size:14.5px;margin:0 0 7px;color:var(--navy)}
+.badge{display:inline-block;vertical-align:middle;padding:2px 8px;border-radius:999px;font-size:10.5px;font-weight:800;margin-right:7px}
 .badge.active{background:#dcfce7;color:#166534}
 .badge.suspended{background:#f3f4f6;color:#6b7280}
-.company-name{font-size:20px;font-weight:800;color:var(--navy);margin-bottom:6px}
-.company-id{font-size:12px;color:var(--muted);margin-bottom:14px}
-.links{display:grid;gap:12px;grid-template-columns:1fr 1fr}
-a.link-card{display:block;background:#f8fafc;border:1px solid var(--line);border-radius:14px;padding:16px;text-decoration:none;color:var(--navy);font-weight:800;font-size:14px}
-a.link-card:hover{background:#eff6ff;border-color:#bfdbfe}
-a.link-card .sub{display:block;font-weight:400;color:var(--muted);font-size:12px;margin-top:4px}
+.badge.ok{background:#dcfce7;color:#166534}
+.badge.ng{background:#fee2e2;color:#991b1b}
+.company-name{font-size:17px;font-weight:800;color:var(--navy);margin-bottom:3px;line-height:1.3}
+.company-id{font-size:12px;color:var(--muted);margin-bottom:0}
 .empty{color:var(--muted);font-size:13px;padding:16px 0}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,190px));justify-content:start;gap:8px;margin-bottom:6px}
+.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px 14px;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+.card-label{font-size:11px;color:var(--muted);font-weight:800;margin-bottom:2px}
+.card-value{font-size:19px;font-weight:900;color:var(--navy)}
+.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:12px;max-height:150px}
+table{width:auto;min-width:0;border-collapse:collapse;font-size:12.5px;background:#fff}
+th,td{border-bottom:1px solid #f3f4f6;padding:5px 9px;text-align:left;white-space:nowrap}
+th{background:#f8fafc;color:var(--navy);font-weight:800;font-size:11.5px;position:sticky;top:0}
+.charts-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:800px){.charts-row{grid-template-columns:1fr}}
+.chart-mini-title{font-size:12.5px;font-weight:800;color:var(--muted);margin-bottom:5px}
+.chart-mini-box{position:relative;height:200px}
+.chart-empty{height:200px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:12.5px;background:var(--bg);border-radius:10px}
+.chart-link{margin-top:8px;display:flex;flex-direction:column;align-items:flex-start;gap:4px}
+.chart-link a{color:var(--blue-dark);font-weight:800;font-size:13px;text-decoration:none}
 .hidden{display:none!important}
 .notice-box{background:#fffbeb;border:1px solid #fde68a;color:#92400e;border-radius:12px;padding:14px 16px;font-size:14px;line-height:1.7;white-space:pre-wrap}
 .notice-box a{color:#92400e;font-weight:800}
-@media(max-width:640px){.links{grid-template-columns:1fr}}
+.page-loading{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:var(--bg);color:#1d4ed8;font-weight:bold}
+.page-loading.hidden{display:none!important}
+.loading-box{display:flex;flex-direction:column;align-items:center;gap:12px}
+.loading-spinner{width:42px;height:42px;border:5px solid var(--line);border-top-color:var(--blue);border-radius:50%;animation:spin .9s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media(max-width:1000px){
+  .top-bar{grid-template-columns:1fr;row-gap:6px;justify-items:center;padding:10px 20px 4px}
+  .page-logo{width:145px;max-width:145px;justify-self:center}
+  .layout{display:flex;flex-direction:column}
+  .main-content{order:1;width:100%;margin-top:0}
+  .left-sidebar{order:2;width:100%;margin-top:0}
+}
 </style>
 </head>
 <body>
-<div class="header">
-  <h1>ビズてす 企業管理者ホーム</h1>
-  <div class="userbox"><a class="link-btn" href="operator-home.html" id="toOperatorLink" style="display:none;margin-right:6px">運営管理ページへ →</a><span id="adminEmail"></span><button id="logoutBtn">ログアウト</button></div>
-</div>
-
-<div class="wrap">
-  <div class="panel" id="companyPanel">
-    <h2>自社情報</h2>
-    <div id="companyBody" class="empty">読み込み中…</div>
+<div id="pageLoading" class="page-loading"><div class="loading-box"><div class="loading-spinner"></div><div>企業管理者ホームを読み込み中...</div></div></div>
+<div class="top-bar"><img src="logo.png" alt="ビズてす ロゴ" class="page-logo"><div id="companyIdentity" class="company-identity"></div></div>
+<div class="layout">
+  <div class="left-sidebar">
+    <div class="sidebar-heading">企業管理者ホーム</div>
+    <nav class="side-menu">
+      <div id="gatedMenu" class="side-menu hidden" style="margin:0">
+        <a class="side-menu-link" id="questionEditorLink" href="operator-question-editor.html">問題管理</a>
+        <button type="button" class="side-menu-link toggle" id="inviteMenuToggle" aria-expanded="false">受験者・管理者招待<span class="caret">▾</span></button>
+        <div id="inviteSubMenu" class="side-submenu hidden">
+          <a class="side-menu-link side-submenu-link" id="inviteSingleLink" href="operator-invites.html">受験招待（個別）</a>
+          <a class="side-menu-link side-submenu-link" id="inviteBulkLink" href="operator-invites-bulk.html">受験招待（一括）</a>
+          <a class="side-menu-link side-submenu-link" href="company-admin-invite.html">企業管理者招待</a>
+        </div>
+      </div>
+      <a class="side-menu-link" href="account-settings.html">アカウント設定</a>
+      <a class="side-menu-link" href="privacy.html">プライバシーポリシー</a>
+      <a class="side-menu-link" href="manual.html">マニュアル</a>
+      <a id="termsMenuLink" class="side-menu-link hidden" href="terms-agreement.html">利用規約同意</a>
+      <a id="toOperatorLink" class="op-link-btn hidden" href="operator-home.html">運営管理ページ</a>
+      <a class="test-only-link" href="landing.html" target="_blank" rel="noopener">🚧 工事中：ランディングページ確認用 🚧</a>
+      <a class="test-only-link" href="biztes-shiryo.html" target="_blank" rel="noopener">🚧 工事中：ビズてす_資料請求送付資料.pptx 🚧</a>
+    </nav>
+    <div id="userInfo" class="user-info">確認中...</div>
+    <button class="logout-btn" id="logoutBtn" type="button">ログアウト</button>
   </div>
 
-  <div id="termsNotice" class="panel hidden"></div>
+  <div class="main-content">
+    <div class="panel hidden" id="adminsPanel">
+      <h2>企業管理者情報</h2>
+      <p style="font-size:12px;color:var(--muted);margin:0 0 8px">企業管理者権限が有効な方、およびビズてす申込者に指定されている方（権限が無効でも表示）の一覧です。</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>社員コード</th><th>氏名</th><th>部署</th><th>役職</th><th>メールアドレス</th><th>状態</th><th>ビズてす権限</th><th>ビズてす申込者</th></tr></thead>
+          <tbody id="adminsTableBody"><tr><td colspan="8" class="empty">読み込み中…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
 
-  <div class="panel" id="linksPanel">
-    <h2>できること</h2>
-    <div class="links" id="linkGrid"></div>
+    <div class="panel hidden" id="statsPanel">
+      <h2>受験状況</h2>
+      <div class="cards">
+        <div class="card"><div class="card-label">受験完了数</div><div class="card-value" id="statCompleted">-</div></div>
+        <div class="card"><div class="card-label">未受験者数</div><div class="card-value" id="statNotDone">-</div></div>
+      </div>
+      <div class="chart-link"><a href="operator-examinees.html" id="examineeManageLinkStats">受験者情報の編集・削除や未受験者を確認する（受験者管理へ）→</a></div>
+    </div>
+
+    <div class="panel hidden" id="chartsPanel">
+      <h2>全社の傾向（簡易表示）</h2>
+      <div class="charts-row">
+        <div>
+          <div class="chart-mini-title">① レーダーチャート（4能力）（全社平均）</div>
+          <div class="chart-mini-box"><canvas id="miniRadarChart"></canvas></div>
+        </div>
+        <div>
+          <div class="chart-mini-title">② 協調性 × 主体性 散布図（全社）</div>
+          <div class="chart-mini-box"><canvas id="miniScatterChart"></canvas></div>
+        </div>
+      </div>
+      <div class="chart-link">
+        <a href="company-dashboard.html">部署別・役職別の比較や個人ごとの詳細を見る（ダッシュボードへ）→</a>
+        <a href="company-report.html">受験データのサマリー・詳細を出力する（レポート（全社）へ）→</a>
+        <a href="company-report-individual.html">個人ごとのレポートを出力する（レポート（個人）へ）→</a>
+      </div>
+    </div>
+
+    <div id="termsNotice" class="panel hidden"></div>
   </div>
 </div>
 
 <script type="module">
 import { auth, db } from "./firebase-config.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { doc, getDoc, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { loadEffectiveCategory1List, loadEffectiveQuestionSet } from "./operator-shared.js";
+
+function hideLoading() {
+  const l = document.getElementById("pageLoading");
+  if (l) { l.classList.add("hidden"); l.style.display = "none"; }
+}
 
 let myCompanyId = "";
 let myIsApplicant = false;
@@ -69,16 +169,23 @@ onAuthStateChanged(auth, async (user) => {
     // 企業管理者としてこの画面にとどまる。
     // 運営（オペレーター）権限も併せ持つアカウントの場合は、運営管理ページへの導線を出す
     // （ビズもんと同様、ログイン直後は企業管理ページを優先し、そこから運営管理ページへ移動する）。
-    document.getElementById("adminEmail").textContent = user.email;
     myCompanyId = caSnap.data().companyId;
     myIsApplicant = caSnap.data().isApplicant === true;
+    document.getElementById("termsMenuLink").classList.toggle("hidden", !myIsApplicant);
+
+    document.getElementById("questionEditorLink").href = "operator-question-editor.html?company=" + encodeURIComponent(myCompanyId);
+    document.getElementById("inviteSingleLink").href = "operator-invites.html?company=" + encodeURIComponent(myCompanyId);
+    document.getElementById("inviteBulkLink").href = "operator-invites-bulk.html?company=" + encodeURIComponent(myCompanyId);
+    document.getElementById("examineeManageLinkStats").href = "operator-examinees.html?company=" + encodeURIComponent(myCompanyId);
 
     const opSnap = await getDoc(doc(db, "operators", user.uid));
-    if (opSnap.exists()) {
-      document.getElementById("toOperatorLink").style.display = "inline";
+    const hasOperatorPermission = opSnap.exists();
+    if (hasOperatorPermission) {
+      document.getElementById("toOperatorLink").classList.remove("hidden");
     }
 
-    await loadCompanyAndGate();
+    await loadCompanyAndGate(user, hasOperatorPermission);
+    hideLoading();
     return;
   }
 
@@ -96,6 +203,14 @@ document.getElementById("logoutBtn").addEventListener("click", async () => {
   location.href = "login.html";
 });
 
+document.getElementById("inviteMenuToggle").addEventListener("click", () => {
+  const btn = document.getElementById("inviteMenuToggle");
+  const sub = document.getElementById("inviteSubMenu");
+  const open = sub.classList.toggle("hidden") === false;
+  btn.classList.toggle("open", open);
+  btn.setAttribute("aria-expanded", open ? "true" : "false");
+});
+
 function escapeHtml(v) {
   return String(v == null ? "" : v).replace(/[&<>"']/g, (c) => (
     { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]
@@ -110,17 +225,28 @@ function showTermsNotice(message, withLink) {
     + "</div>";
 }
 
-async function loadCompanyAndGate() {
-  const body = document.getElementById("companyBody");
-  if (!myCompanyId) { body.textContent = "所属企業が設定されていません。運営にお問い合わせください。"; return; }
+async function loadCompanyAndGate(user, hasOperatorPermission) {
+  const identity = document.getElementById("companyIdentity");
+  const userInfo = document.getElementById("userInfo");
+  if (!myCompanyId) {
+    identity.textContent = "所属企業が設定されていません。運営にお問い合わせください。";
+    userInfo.innerHTML = "ログイン中：" + escapeHtml(user.email) + "<br>権限：管理者" + (hasOperatorPermission ? "（運営権限あり）" : "");
+    return;
+  }
   const snap = await getDoc(doc(db, "companies", myCompanyId));
-  if (!snap.exists()) { body.textContent = "所属企業の情報が見つかりません。運営にお問い合わせください。"; return; }
+  if (!snap.exists()) {
+    identity.textContent = "所属企業の情報が見つかりません。運営にお問い合わせください。";
+    userInfo.innerHTML = "ログイン中：" + escapeHtml(user.email) + "<br>権限：管理者" + (hasOperatorPermission ? "（運営権限あり）" : "");
+    return;
+  }
   const c = snap.data();
-  body.innerHTML = `
+  identity.innerHTML = `
     <div class="company-name">${escapeHtml(c.companyName || "")}</div>
-    <div class="company-id">会社ID: ${escapeHtml(myCompanyId)}</div>
-    <span class="badge ${c.status === "active" ? "active" : "suspended"}">${c.status === "active" ? "有効" : "停止中"}</span>
+    <div class="company-id"><span class="badge ${c.status === "active" ? "active" : "suspended"}">${c.status === "active" ? "有効" : "停止中"}</span>会社ID: ${escapeHtml(myCompanyId)}</div>
   `;
+  userInfo.innerHTML = "ログイン中：" + escapeHtml(user.email)
+    + "<br>権限：管理者" + (hasOperatorPermission ? "（運営権限あり）" : "")
+    + "<br>企業：" + escapeHtml(c.companyName || myCompanyId);
 
   const termsAccepted = c.termsAccepted === true;
   const serviceEnabled = c.serviceEnabled === true;
@@ -132,26 +258,265 @@ async function loadCompanyAndGate() {
     } else {
       showTermsNotice("この企業はまだ利用を開始できません。自社の「ビズてす申込者」による利用規約同意が必要です。申込者にご確認ください。", false);
     }
-    document.getElementById("linksPanel").classList.add("hidden");
+    document.getElementById("gatedMenu").classList.add("hidden");
     return;
   }
   if (!serviceEnabled) {
     showTermsNotice("この企業のサービス利用は現在停止されています。運営にお問い合わせください。", false);
-    document.getElementById("linksPanel").classList.add("hidden");
+    document.getElementById("gatedMenu").classList.add("hidden");
     return;
   }
 
-  renderLinks();
+  document.getElementById("gatedMenu").classList.remove("hidden");
+  document.getElementById("statsPanel").classList.remove("hidden");
+  document.getElementById("adminsPanel").classList.remove("hidden");
+  document.getElementById("chartsPanel").classList.remove("hidden");
+  loadStats();
+  loadAdmins();
+  loadCharts();
 }
 
-function renderLinks() {
-  const grid = document.getElementById("linkGrid");
-  const cid = encodeURIComponent(myCompanyId);
-  grid.innerHTML = `
-    <a class="link-card" href="operator-question-editor.html?company=${cid}">問題を編集する<span class="sub">4パートの問題内容・設定を編集します</span></a>
-    <a class="link-card" href="operator-invites.html?company=${cid}">受験招待・結果を確認する<span class="sub">応募者への招待発行、受験状況・スコアを確認します</span></a>
-    <a class="link-card" href="company-admin-invite.html">自社の管理者を管理する<span class="sub">自社の追加管理者を招待・無効化します</span></a>
-  `;
+async function loadAdmins() {
+  const body = document.getElementById("adminsTableBody");
+  try {
+    const adminsSnap = await getDocs(query(collection(db, "companyAdmins"), where("companyId", "==", myCompanyId)));
+    const rows = [];
+    adminsSnap.forEach((ds) => {
+      const a = ds.data() || {};
+      const status = a.status || "active";
+      const isApplicant = a.isApplicant === true;
+      // 表示対象：企業管理者権限が有効な人、またはビズてす申込者が「はい」の人
+      // （無効化されていても申込者なら表示する）。どちらでもない人は表示しない。
+      if (status !== "active" && !isApplicant) return;
+      rows.push({
+        employeeCode: a.employeeCode || "", name: a.name || "", department: a.department || "", position: a.position || "",
+        email: a.email || "", status, isApplicant,
+      });
+    });
+    if (!rows.length) {
+      body.innerHTML = '<tr><td colspan="8" class="empty">登録されている企業管理者がいません。</td></tr>';
+      return;
+    }
+    rows.sort((x, y) => String(x.name).localeCompare(String(y.name), "ja"));
+    body.innerHTML = rows.map((r) => (
+      "<tr><td>" + escapeHtml(r.employeeCode) + "</td><td>" + escapeHtml(r.name) + "</td><td>" + escapeHtml(r.department) + "</td><td>" + escapeHtml(r.position) + "</td>"
+      + "<td>" + escapeHtml(r.email) + "</td>"
+      + "<td>" + (r.status === "active" ? '<span class="badge ok">有効</span>' : '<span class="badge ng">無効</span>') + "</td>"
+      + '<td><span class="badge ok">企業管理者</span></td>'
+      + "<td>" + (r.isApplicant ? '<span class="badge ok">はい</span>' : "いいえ") + "</td>"
+      + "</tr>"
+    )).join("");
+  } catch (e) {
+    console.warn(e);
+    body.innerHTML = '<tr><td colspan="8" class="empty">読み込みに失敗しました。</td></tr>';
+  }
+}
+
+async function loadStats() {
+  try {
+    const invitesSnap = await getDocs(collection(db, "companies", myCompanyId, "examInvites"));
+
+    let invited = 0;
+    let completed = 0;
+    invitesSnap.forEach((ds) => {
+      invited++;
+      const d = ds.data() || {};
+      if (d.status === "completed") completed++;
+    });
+    const notDone = invited - completed;
+
+    document.getElementById("statCompleted").textContent = completed;
+    document.getElementById("statNotDone").textContent = notDone;
+  } catch (e) {
+    console.warn(e);
+    ["statCompleted", "statNotDone"].forEach((id) => {
+      document.getElementById(id).textContent = "-";
+    });
+  }
+}
+
+// ---------------------------------------------------------------------
+// 全社の傾向（簡易表示）：レーダーチャート（4能力）・協調性×主体性 散布図
+// company-dashboard.htmlと同じ計算式（現在の問題構成から配点を都度計算し、
+// 得点率(%)にする）を使うが、ホーム画面では「全社平均」の静的な表示のみとし、
+// 部署・役職別の絞り込みや個人プロフィールなどの詳細はダッシュボードに任せる。
+// ---------------------------------------------------------------------
+const FOUR_CATEGORY1_IDS = ["cognitive", "verbal", "logical_thinking", "business_exec"];
+const RADAR_LABELS = { cognitive: "①認知能力", verbal: "②言語理解能力", logical_thinking: "③論理思考能力", business_exec: "④実務遂行能力" };
+
+function isScoreableType(type) { return type === "choice" || type === "multi_select" || type === "fill_blank"; }
+
+function maxForCategory1(items) {
+  return (items || []).reduce((sum, item) => {
+    if (item.type === "typing_passage") return sum + 10;
+    if (isScoreableType(item.type)) return sum + (typeof item.score === "number" ? item.score : 1);
+    return sum;
+  }, 0);
+}
+
+function categoryEarnedForResult(result, category1Id, itemsByCategory1) {
+  const items = itemsByCategory1[category1Id];
+  const part = result.parts && result.parts[category1Id];
+  if (!part || !part.answers) return null;
+  let score = 0;
+  let answered = 0;
+  part.answers.forEach((entry) => {
+    if (entry.type === "typing_passage") {
+      score += typeof entry.score === "number" ? entry.score : 0;
+      answered++;
+    } else if (isScoreableType(entry.type)) {
+      const item = items ? items.get(entry.itemId) : null;
+      const max = item && typeof item.score === "number" ? item.score : null;
+      if (max != null) { score += (entry.isCorrect ? max : 0); answered++; }
+    }
+  });
+  return { score, answered };
+}
+
+function subcatSumForResult(result, subcatName) {
+  if (!result.parts) return null;
+  let sum = 0;
+  let count = 0;
+  Object.values(result.parts).forEach((part) => {
+    (part.answers || []).forEach((entry) => {
+      if (entry.type === "likert" && entry.subcategory === subcatName) {
+        sum += typeof entry.score === "number" ? entry.score : (Number(entry.value) || 0);
+        count++;
+      }
+    });
+  });
+  return count ? sum : null;
+}
+
+let miniRadarChart = null;
+let miniScatterChart = null;
+
+function showChartEmpty(canvasId, message) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas || !canvas.parentNode) return;
+  const div = document.createElement("div");
+  div.className = "chart-empty";
+  div.textContent = message;
+  canvas.parentNode.replaceChild(div, canvas);
+}
+
+function renderMiniRadar(values, hasData) {
+  if (!hasData || typeof Chart === "undefined") {
+    showChartEmpty("miniRadarChart", "受験完了データがありません。");
+    return;
+  }
+  const ctx = document.getElementById("miniRadarChart").getContext("2d");
+  if (miniRadarChart) miniRadarChart.destroy();
+  miniRadarChart = new Chart(ctx, {
+    type: "radar",
+    data: {
+      labels: FOUR_CATEGORY1_IDS.map((id) => RADAR_LABELS[id]),
+      datasets: [{
+        label: "全社平均",
+        data: values,
+        borderColor: "#2563eb",
+        backgroundColor: "rgba(37,99,235,.18)",
+        pointBackgroundColor: "#2563eb",
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      devicePixelRatio: (window.devicePixelRatio || 1) * 2,
+      events: [],
+      scales: { r: { min: 0, max: 100, ticks: { stepSize: 25, backdropColor: "transparent", font: { size: 11 } }, pointLabels: { font: { size: 11, weight: "bold" } } } },
+      plugins: { legend: { display: false } },
+    },
+  });
+}
+
+function renderMiniScatter(points) {
+  if (!points.length || typeof Chart === "undefined") {
+    showChartEmpty("miniScatterChart", "受験完了データがありません。");
+    return;
+  }
+  const ctx = document.getElementById("miniScatterChart").getContext("2d");
+  if (miniScatterChart) miniScatterChart.destroy();
+  miniScatterChart = new Chart(ctx, {
+    type: "scatter",
+    data: {
+      datasets: [{
+        label: "受験者",
+        data: points,
+        backgroundColor: "rgba(37,99,235,.55)",
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      devicePixelRatio: (window.devicePixelRatio || 1) * 2,
+      events: [],
+      scales: {
+        x: { min: 5, max: 25, title: { display: true, text: "主体性", font: { size: 11, weight: "bold" } }, ticks: { font: { size: 11 } } },
+        y: { min: 5, max: 25, title: { display: true, text: "協調性", font: { size: 11, weight: "bold" } }, ticks: { font: { size: 11 } } },
+      },
+      plugins: { legend: { display: false } },
+    },
+  });
+}
+
+async function loadCharts() {
+  try {
+    const allCategory1s = await loadEffectiveCategory1List(myCompanyId);
+    const coreCategory1s = allCategory1s.filter((c) => FOUR_CATEGORY1_IDS.includes(c.id));
+    const itemsByCategory1 = {};
+    await Promise.all(coreCategory1s.map(async (c) => {
+      const eff = await loadEffectiveQuestionSet(myCompanyId, c);
+      const map = new Map();
+      (eff.items || []).forEach((item) => map.set(item.id, item));
+      itemsByCategory1[c.id] = map;
+    }));
+    const category1Max = {};
+    FOUR_CATEGORY1_IDS.forEach((id) => {
+      category1Max[id] = maxForCategory1(Array.from((itemsByCategory1[id] || new Map()).values()));
+    });
+
+    const [invitesSnap, resultsSnap] = await Promise.all([
+      getDocs(collection(db, "companies", myCompanyId, "examInvites")),
+      getDocs(collection(db, "companies", myCompanyId, "examResults")),
+    ]);
+    const resultMap = {};
+    resultsSnap.forEach((ds) => { resultMap[ds.id] = ds.data() || {}; });
+
+    const catSums = {};
+    const catCounts = {};
+    FOUR_CATEGORY1_IDS.forEach((id) => { catSums[id] = 0; catCounts[id] = 0; });
+    const scatterPoints = [];
+
+    invitesSnap.forEach((ds) => {
+      const inv = ds.data() || {};
+      if (inv.status !== "completed") return;
+      const result = resultMap[ds.id];
+      if (!result) return;
+
+      FOUR_CATEGORY1_IDS.forEach((id) => {
+        const agg = categoryEarnedForResult(result, id, itemsByCategory1);
+        const max = category1Max[id];
+        if (agg && agg.answered && max > 0) {
+          catSums[id] += (agg.score / max) * 100;
+          catCounts[id]++;
+        }
+      });
+
+      const x = subcatSumForResult(result, "主体性");
+      const y = subcatSumForResult(result, "協調性");
+      if (x != null && y != null) scatterPoints.push({ x, y });
+    });
+
+    const hasRadarData = FOUR_CATEGORY1_IDS.some((id) => catCounts[id] > 0);
+    const radarValues = FOUR_CATEGORY1_IDS.map((id) => (catCounts[id] ? Math.round((catSums[id] / catCounts[id]) * 10) / 10 : 0));
+    renderMiniRadar(radarValues, hasRadarData);
+    renderMiniScatter(scatterPoints);
+  } catch (e) {
+    console.warn(e);
+    showChartEmpty("miniRadarChart", "読み込みに失敗しました。");
+    showChartEmpty("miniScatterChart", "読み込みに失敗しました。");
+  }
 }
 </script>
 </body>

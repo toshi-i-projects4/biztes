@@ -58,18 +58,21 @@ th{background:#fff7ed;color:#7c2d12;position:sticky;top:0}
 
     <p class="section-title">企業情報</p>
     <div class="form-grid">
-      <div class="label">会社ID<span class="required">必須</span></div><input id="companyId" placeholder="例：C001">
       <div class="label">会社名<span class="required">必須</span></div><input id="companyName" placeholder="例：株式会社サンプル">
+      <div class="label">会社ID<span class="required">必須</span></div><input id="companyId" placeholder="例：C001">
+      <div class="label">ご希望プラン</div><input id="plan" placeholder="任意入力（例：スタンダード）">
+      <div class="label">想定従業員数</div><input id="employeeCountPlan" placeholder="任意入力（例：50名）">
     </div>
 
     <p class="section-title" style="margin-top:22px">最初の企業管理者（申込者）情報</p>
-    <div class="description" style="margin-bottom:12px">この方が「ビズてす申込者」として初回登録を行い、以後は自社の問題編集・受験招待発行・受験結果確認・自社の追加管理者の招待ができます。</div>
+    <div class="description" style="margin-bottom:12px">この方が「申込者」として、初回登録・利用規約同意を行い、サービス利用を開始します。以後、ユーザー招待や各種設定はこの方（管理者）が行います。</div>
     <div class="form-grid">
-      <div class="label">社員コード</div><input id="employeeCode" placeholder="任意入力（例：C0001）">
+      <div class="label">社員コード<span class="required">必須</span></div><input id="employeeCode" placeholder="例：C0001">
       <div class="label">氏名<span class="required">必須</span></div><input id="contactName" placeholder="例：山田 太郎">
+      <div class="label">メールアドレス<span class="required">必須</span></div><input id="contactEmail" type="email" placeholder="例：admin@example.com">
+      <div class="label">電話番号</div><input id="contactPhone" placeholder="任意入力">
       <div class="label">部署</div><input id="department" placeholder="任意入力（例：総務部）">
       <div class="label">役職</div><input id="position" placeholder="任意入力（例：部長）">
-      <div class="label">メールアドレス<span class="required">必須</span></div><input id="contactEmail" type="email" placeholder="例：admin@example.com">
       <div class="label">備考</div><textarea id="note" placeholder="任意入力"></textarea>
     </div>
     <div class="warning-box">注意：この画面で登録した時点では、まだログイン用アカウントは作成されません。最初の企業管理者本人が「初回登録」画面でパスワードを設定して初めて本登録されます。</div>
@@ -163,7 +166,7 @@ $("mailtoBtn").addEventListener("click", () => {
 });
 
 function clearForm() {
-  ["companyId", "companyName", "employeeCode", "contactName", "contactEmail", "department", "position", "note"].forEach((id) => { $(id).value = ""; });
+  ["companyId", "companyName", "plan", "employeeCountPlan", "employeeCode", "contactName", "contactEmail", "contactPhone", "department", "position", "note"].forEach((id) => { $(id).value = ""; });
   setStatus("", "");
 }
 
@@ -171,6 +174,7 @@ function validate(company, admin) {
   if (!company.companyId) return "会社IDを入力してください。";
   if (!/^[A-Za-z0-9_-]+$/.test(company.companyId)) return "会社IDは半角英数字・ハイフン・アンダースコアのみ使用できます。";
   if (!company.companyName) return "会社名を入力してください。";
+  if (!admin.employeeCode) return "社員コードを入力してください。";
   if (!admin.name) return "氏名を入力してください。";
   if (!admin.email) return "メールアドレスを入力してください。";
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(admin.email)) return "メールアドレスの形式が正しくありません。";
@@ -181,11 +185,14 @@ async function registerApplication() {
   const company = {
     companyId: normText($("companyId").value),
     companyName: normText($("companyName").value),
+    plan: normText($("plan").value),
+    employeeCountPlan: normText($("employeeCountPlan").value),
   };
   const admin = {
     employeeCode: normText($("employeeCode").value),
     name: normText($("contactName").value),
     email: normEmail($("contactEmail").value),
+    phone: normText($("contactPhone").value),
     department: normText($("department").value),
     position: normText($("position").value),
     note: normText($("note").value),
@@ -211,11 +218,16 @@ async function registerApplication() {
     batch.set(companyRef, {
       companyId: company.companyId,
       companyName: company.companyName,
+      plan: company.plan,
+      employeeCountPlan: company.employeeCountPlan,
       status: "active",
       termsAccepted: false,
       serviceEnabled: false,
       contactName: admin.name,
       contactEmail: admin.email,
+      contactPhone: admin.phone,
+      note: admin.note,
+      appliedAt: serverTimestamp(),
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
@@ -267,7 +279,7 @@ async function loadRecent() {
     if (!rows.length) { $("recentTbody").innerHTML = '<tr><td colspan="6">登録済みのお申し込みはまだありません。</td></tr>'; return; }
     $("recentTbody").innerHTML = rows.map((r) => (
       "<tr><td>" + escapeHtml(r.companyId) + "</td><td>" + escapeHtml(r.companyName) + "</td><td>" + escapeHtml(r.contactName) + "</td><td>" + escapeHtml(r.contactEmail) + "</td><td>" + fmtDate(r.createdAt) + "</td>"
-      + '<td><a href="company-admin-invite.html?company=' + encodeURIComponent(r.companyId) + '">企業管理者を招待・管理</a></td></tr>'
+      + '<td><a href="operator-companies.html">企業管理ページ</a></td></tr>'
     )).join("");
   } catch (e) {
     console.error(e);

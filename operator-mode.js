@@ -14,6 +14,21 @@
 (function (global) {
   "use strict";
 
+  function getQueryParam(name) {
+    try {
+      return new URLSearchParams(location.search).get(name) || "";
+    } catch (e) {
+      return "";
+    }
+  }
+
+  // operator-companies.html の「管理画面へ入る」リンクには ?opEnter=1 が付与される。
+  // これが付いている場合、たとえ対象企業IDがログインユーザー自身の所属企業（兼務）と
+  // 一致していても、必ず運営モード（バナー表示・オペレーターとしての操作）を優先する。
+  function isExplicitEntry() {
+    return getQueryParam("opEnter") === "1";
+  }
+
   function esc(v) {
     return String(v == null ? "" : v).replace(/[&<>"']/g, (c) => (
       { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]
@@ -62,19 +77,20 @@
       '<span class="bo-badge">運営モード</span>' +
       "<span>現在の操作対象企業：<strong>" + companyLabel + "</strong></span>" +
       "</span>" +
-      '<span class="bo-left"><a href="operator-home.html">← 運営ホームへ戻る</a></span>';
+      '<span class="bo-left"><a href="operator-companies.html">← 企業管理ページ（運用管理）へ戻る</a></span>';
   }
 
   function renderMissingCompanyNotice(message) {
     const banner = ensureBannerEl();
     banner.innerHTML =
       '<span class="bo-left"><span class="bo-badge">運営モード</span><span>' +
-      esc(message || "対象企業が指定されていません。運営ホームから入り直してください。") +
+      esc(message || "対象企業が指定されていません。企業管理ページから入り直してください。") +
       "</span></span>" +
-      '<span class="bo-left"><a href="operator-home.html">← 運営ホームへ戻る</a></span>';
+      '<span class="bo-left"><a href="operator-companies.html">← 企業管理ページ（運用管理）へ戻る</a></span>';
   }
 
   global.BizTestOperatorMode = {
+    isExplicitEntry: isExplicitEntry,
     renderBanner: renderBanner,
     renderMissingCompanyNotice: renderMissingCompanyNotice,
   };

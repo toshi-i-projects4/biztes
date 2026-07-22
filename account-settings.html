@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>アカウント設定｜ビズてす</title>
+<style>
+  body { margin: 0; font-family: "Hiragino Maru Gothic ProN", "BIZ UDPGothic", "Yu Gothic UI", "Meiryo", sans-serif; background: #f5f7fb; color: #111827; padding: 28px; box-sizing: border-box; }
+  .page { max-width: 920px; margin: 0 auto; }
+  .header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
+  h1 { margin: 0; font-size: 28px; color: #111827; }
+  .back-link { color: #2563eb; text-decoration: none; font-weight: bold; font-size: 14px; }
+  .bottom-back-link { display: inline-block; margin-top: 20px; color: #2563eb; text-decoration: none; font-weight: bold; font-size: 14px; }
+  .card { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 18px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); padding: 28px; box-sizing: border-box; margin-bottom: 18px; }
+  .section-title { font-size: 18px; font-weight: bold; margin: 0 0 14px; color: #111827; }
+  .description { font-size: 14px; line-height: 1.7; color: #6b7280; margin: 0 0 18px; }
+  .info-box { background: #eff6ff; border-left: 4px solid #2563eb; border-radius: 10px; padding: 14px 16px; color: #1e3a8a; font-size: 14px; line-height: 1.7; margin-bottom: 18px; white-space: pre-wrap; }
+  .warning-box { background: #fffbeb; border-left: 4px solid #f59e0b; border-radius: 10px; padding: 14px 16px; color: #92400e; font-size: 14px; line-height: 1.7; margin-top: 16px; }
+  .form-grid { display: grid; grid-template-columns: 220px 1fr; gap: 16px 18px; align-items: center; }
+  .label { font-size: 14px; font-weight: bold; color: #374151; }
+  input { width: 100%; border: 1px solid #d1d5db; border-radius: 10px; padding: 11px 12px; font-size: 15px; box-sizing: border-box; background: #ffffff; color: #111827; }
+  input:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.15); }
+  input[readonly] { background: #f9fafb; color: #6b7280; }
+  .password-wrap { position: relative; }
+  .password-wrap input { padding-right: 48px; }
+  .eye-btn { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); width: 34px; height: 34px; border: none; background: transparent; border-radius: 8px; cursor: pointer; color: #6b7280; display: flex; align-items: center; justify-content: center; padding: 0; }
+  .eye-btn:hover { background: #f3f4f6; color: #111827; }
+  .eye-btn svg { width: 21px; height: 21px; }
+  .button-row { display: flex; justify-content: flex-end; gap: 12px; margin-top: 22px; }
+  .primary-btn, .secondary-btn { border: none; border-radius: 12px; padding: 12px 22px; font-size: 15px; font-weight: bold; cursor: pointer; }
+  .primary-btn { background: #2563eb; color: #ffffff; }
+  .primary-btn:hover { background: #1d4ed8; }
+  .primary-btn:disabled { opacity: .65; cursor: not-allowed; }
+  .secondary-btn { background: #f3f4f6; color: #111827; }
+  .status { min-height: 24px; margin-top: 16px; font-size: 14px; line-height: 1.6; white-space: pre-wrap; }
+  .status.ok { color: #166534; }
+  .status.error { color: #dc2626; }
+  .status.warn { color: #92400e; }
+  .small-note { font-size: 13px; color: #6b7280; line-height: 1.6; margin-top: 6px; }
+  .password-count { font-size: 13px; color: #6b7280; line-height: 1.6; margin-top: 6px; }
+  .page-loading { position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center; justify-content: center; background: #f5f7fb; color: #1d4ed8; font-weight: bold; }
+  .page-loading.hidden { display: none !important; }
+  .loading-box { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  .loading-spinner { width: 42px; height: 42px; border: 5px solid #e5e7eb; border-top-color: #2563eb; border-radius: 50%; animation: spin .9s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @media (max-width: 720px) { body { padding: 18px; } .header { flex-direction: column; align-items: flex-start; } .form-grid { grid-template-columns: 1fr; gap: 8px 0; } .button-row { flex-direction: column; } .primary-btn, .secondary-btn { width: 100%; } }
+</style>
+</head>
+<body>
+<div id="pageLoading" class="page-loading"><div class="loading-box"><div class="loading-spinner"></div><div>読み込み中...</div></div></div>
+<div class="page">
+  <div class="header"><h1>アカウント設定</h1><a class="back-link" href="company-admin-home.html">← 企業管理者ホームへ戻る</a></div>
+
+  <div class="card"><p class="section-title">現在のアカウント情報</p><p class="description">現在ログインしているアカウント情報を確認できます。</p><div class="form-grid"><div class="label">現在のメールアドレス</div><input type="email" id="currentEmail" readonly><div class="label">メール確認状態</div><input type="text" id="emailVerified" readonly></div></div>
+
+  <div class="card"><p class="section-title">メールアドレス変更</p><div class="info-box">メールアドレス変更には、本人確認のため現在のパスワードを入力します。変更後、再ログインが必要になる場合があります。</div><div class="form-grid"><div class="label">新しいメールアドレス</div><input type="email" id="newEmail" autocomplete="email" placeholder="新しいメールアドレスを入力"><div class="label">現在のパスワード</div><div class="password-wrap"><input type="password" id="emailCurrentPassword" autocomplete="current-password" placeholder="現在のパスワードを入力"><button type="button" class="eye-btn" data-target="emailCurrentPassword" aria-label="パスワードを表示" title="パスワードを表示"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"></path><circle cx="12" cy="12" r="3"></circle></svg></button></div></div><div class="button-row"><button type="button" class="primary-btn" id="updateEmailBtn">メールアドレスを変更</button></div><div id="emailStatus" class="status"></div></div>
+
+  <div class="card"><p class="section-title">パスワード変更</p><div id="passwordPolicy" class="info-box"></div><div class="form-grid"><div class="label">現在のパスワード</div><div class="password-wrap"><input type="password" id="currentPassword" autocomplete="current-password" placeholder="現在のパスワードを入力"><button type="button" class="eye-btn" data-target="currentPassword" aria-label="パスワードを表示" title="パスワードを表示"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"></path><circle cx="12" cy="12" r="3"></circle></svg></button></div><div class="label">新しいパスワード</div><div><div class="password-wrap"><input type="password" id="newPassword" autocomplete="new-password" maxlength="128" placeholder="新しいパスワードを入力"><button type="button" class="eye-btn" data-target="newPassword" aria-label="パスワードを表示" title="パスワードを表示"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"></path><circle cx="12" cy="12" r="3"></circle></svg></button></div><div class="small-note">15文字以上で入力してください。英大文字・小文字・数字・記号の組み合わせは必須ではありません。</div><div id="passwordCount" class="password-count">0 / 128文字</div></div><div class="label">新しいパスワード確認</div><div class="password-wrap"><input type="password" id="newPasswordConfirm" autocomplete="new-password" maxlength="128" placeholder="新しいパスワードをもう一度入力"><button type="button" class="eye-btn" data-target="newPasswordConfirm" aria-label="パスワードを表示" title="パスワードを表示"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"></path><circle cx="12" cy="12" r="3"></circle></svg></button></div></div><div class="button-row"><button type="button" class="primary-btn" id="updatePasswordBtn">パスワードを変更</button></div><div id="passwordStatus" class="status"></div><div class="warning-box">注意：メールアドレスやパスワードの変更後は、認証状態が更新されるため、再ログインが必要になる場合があります。</div></div>
+
+  <a class="bottom-back-link" href="company-admin-home.html">← 企業管理者ホームへ戻る</a>
+</div>
+
+<script type="module">
+  import { auth, db } from "./firebase-config.js";
+  import { onAuthStateChanged, signOut, EmailAuthProvider, reauthenticateWithCredential, updateEmail, updatePassword, sendEmailVerification } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  import { doc, getDoc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  import { PASSWORD_POLICY_TEXT, validatePassword, getPasswordLengthMessage, getPasswordLengthStatus, applyPasswordCountStyle } from "./password-policy.js";
+
+  let currentUser = null;
+
+  function hideLoading() { const l = document.getElementById("pageLoading"); if (l) { l.classList.add("hidden"); l.style.display = "none"; } }
+
+  const currentEmailEl = document.getElementById("currentEmail"), emailVerifiedEl = document.getElementById("emailVerified"), newEmailEl = document.getElementById("newEmail"), emailCurrentPasswordEl = document.getElementById("emailCurrentPassword"), currentPasswordEl = document.getElementById("currentPassword"), newPasswordEl = document.getElementById("newPassword"), newPasswordConfirmEl = document.getElementById("newPasswordConfirm"), passwordCountEl = document.getElementById("passwordCount"), emailStatusEl = document.getElementById("emailStatus"), passwordStatusEl = document.getElementById("passwordStatus"), updateEmailBtn = document.getElementById("updateEmailBtn"), updatePasswordBtn = document.getElementById("updatePasswordBtn");
+  document.getElementById("passwordPolicy").textContent = PASSWORD_POLICY_TEXT;
+
+  function setStatus(el, message, type) { el.textContent = message; el.className = "status " + (type || ""); }
+  function refreshUserInfo(user) { currentEmailEl.value = user.email || ""; emailVerifiedEl.value = user.emailVerified ? "確認済み" : "未確認"; }
+  async function reauthenticate(password) {
+    if (!currentUser || !currentUser.email) throw new Error("ログイン情報を確認できません。");
+    const credential = EmailAuthProvider.credential(currentUser.email, password);
+    await reauthenticateWithCredential(currentUser, credential);
+  }
+  function normalizeEmail(value) { return String(value || "").trim().toLowerCase(); }
+  function updatePasswordCount() {
+    const password = newPasswordEl.value;
+    const status = getPasswordLengthStatus(password);
+    passwordCountEl.textContent = getPasswordLengthMessage(password);
+    applyPasswordCountStyle(passwordCountEl, status);
+  }
+  async function updateFirestoreCompanyAdminEmail(email) {
+    if (!currentUser || !currentUser.uid) throw new Error("ログインユーザーを確認できません。");
+    await updateDoc(doc(db, "companyAdmins", currentUser.uid), {
+      email: email,
+      updatedAt: serverTimestamp(),
+      updatedBy: currentUser.uid,
+      emailSyncPending: false,
+      pendingAuthEmail: "",
+      emailSyncError: "",
+    });
+  }
+  async function markEmailSyncPending(newEmail, errorMessage) {
+    if (!currentUser || !currentUser.uid) return;
+    try {
+      await updateDoc(doc(db, "companyAdmins", currentUser.uid), {
+        emailSyncPending: true,
+        pendingAuthEmail: newEmail,
+        emailSyncError: String(errorMessage || ""),
+        emailSyncFailedAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        updatedBy: currentUser.uid,
+      });
+    } catch (flagError) {
+      console.error("emailSyncPending flag update also failed", flagError);
+    }
+  }
+  newPasswordEl.addEventListener("input", updatePasswordCount);
+
+  updateEmailBtn.addEventListener("click", async function () {
+    const newEmail = normalizeEmail(newEmailEl.value);
+    const password = emailCurrentPasswordEl.value;
+    setStatus(emailStatusEl, "", "");
+    if (!newEmail || !password) { setStatus(emailStatusEl, "新しいメールアドレスと現在のパスワードを入力してください。", "error"); return; }
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(newEmail)) { setStatus(emailStatusEl, "メールアドレスの形式が正しくありません。", "error"); return; }
+    try {
+      updateEmailBtn.disabled = true;
+      updateEmailBtn.textContent = "変更中...";
+      await reauthenticate(password);
+      await updateEmail(currentUser, newEmail);
+      try {
+        await updateFirestoreCompanyAdminEmail(newEmail);
+      } catch (firestoreError) {
+        console.error("companyAdmins.email update failed", firestoreError);
+        await markEmailSyncPending(newEmail, firestoreError && firestoreError.message ? firestoreError.message : String(firestoreError));
+        await sendEmailVerification(currentUser).catch(function (e) { console.warn("sendEmailVerification skipped", e); });
+        await currentUser.reload();
+        currentUser = auth.currentUser;
+        refreshUserInfo(currentUser);
+        newEmailEl.value = ""; emailCurrentPasswordEl.value = "";
+        setStatus(emailStatusEl, "メールアドレスは変更されましたが、企業管理者情報の更新に失敗しました。\n運営に同期エラーが記録されましたので、お問い合わせください。\n\nエラー内容：" + (firestoreError && firestoreError.message ? firestoreError.message : String(firestoreError)), "warn");
+        return;
+      }
+      await sendEmailVerification(currentUser);
+      await currentUser.reload();
+      currentUser = auth.currentUser;
+      refreshUserInfo(currentUser);
+      newEmailEl.value = ""; emailCurrentPasswordEl.value = "";
+      setStatus(emailStatusEl, "メールアドレスを変更しました。確認メールを送信しました。企業管理者情報のメールアドレスも更新しました。必要に応じて再ログインしてください。", "ok");
+    } catch (error) {
+      console.error(error);
+      let message = "メールアドレスの変更に失敗しました。入力内容を確認してください。";
+      if (error.code === "auth/email-already-in-use") message = "このメールアドレスは既に使用されています。";
+      if (error.code === "auth/invalid-email") message = "メールアドレスの形式が正しくありません。";
+      if (error.code === "auth/wrong-password" || error.code === "auth/invalid-credential") message = "現在のパスワードが正しくありません。";
+      if (error.code === "auth/requires-recent-login") message = "安全のため、再ログイン後にもう一度変更してください。";
+      if (error.code === "permission-denied") message = "メールアドレス変更後の企業管理者情報の更新に必要な権限がありません。運営に連絡してください。";
+      setStatus(emailStatusEl, message, "error");
+    } finally {
+      updateEmailBtn.disabled = false;
+      updateEmailBtn.textContent = "メールアドレスを変更";
+    }
+  });
+
+  updatePasswordBtn.addEventListener("click", async function () {
+    const currentPassword = currentPasswordEl.value, newPassword = newPasswordEl.value, confirmPassword = newPasswordConfirmEl.value;
+    setStatus(passwordStatusEl, "", "");
+    if (!currentPassword || !newPassword || !confirmPassword) { setStatus(passwordStatusEl, "現在のパスワード、新しいパスワード、確認用パスワードを入力してください。", "error"); return; }
+    const passwordError = validatePassword(newPassword, "新しいパスワード");
+    if (passwordError) { setStatus(passwordStatusEl, passwordError, "error"); return; }
+    if (newPassword !== confirmPassword) { setStatus(passwordStatusEl, "新しいパスワードと確認用パスワードが一致しません。", "error"); return; }
+    try {
+      updatePasswordBtn.disabled = true;
+      updatePasswordBtn.textContent = "変更中...";
+      await reauthenticate(currentPassword);
+      await updatePassword(currentUser, newPassword);
+      currentPasswordEl.value = ""; newPasswordEl.value = ""; newPasswordConfirmEl.value = "";
+      updatePasswordCount();
+      setStatus(passwordStatusEl, "パスワードを変更しました。次回ログイン時から新しいパスワードを使用してください。", "ok");
+    } catch (error) {
+      console.error(error);
+      let message = "パスワードの変更に失敗しました。入力内容を確認してください。";
+      if (error.code === "auth/wrong-password" || error.code === "auth/invalid-credential") message = "現在のパスワードが正しくありません。";
+      if (error.code === "auth/weak-password") message = "新しいパスワードが弱すぎます。15文字以上のパスフレーズを設定してください。";
+      if (error.code === "auth/requires-recent-login") message = "安全のため、再ログイン後にもう一度変更してください。";
+      setStatus(passwordStatusEl, message, "error");
+    } finally {
+      updatePasswordBtn.disabled = false;
+      updatePasswordBtn.textContent = "パスワードを変更";
+    }
+  });
+
+  document.querySelectorAll(".eye-btn").forEach(button => {
+    button.addEventListener("click", function () {
+      const targetId = button.getAttribute("data-target");
+      const input = document.getElementById(targetId);
+      if (!input) return;
+      const isHidden = input.type === "password";
+      input.type = isHidden ? "text" : "password";
+      button.setAttribute("aria-label", isHidden ? "パスワードを非表示" : "パスワードを表示");
+      button.setAttribute("title", isHidden ? "パスワードを非表示" : "パスワードを表示");
+      input.focus();
+    });
+  });
+
+  onAuthStateChanged(auth, async function (user) {
+    if (!user) { location.href = "login.html"; return; }
+    try {
+      const caSnap = await getDoc(doc(db, "companyAdmins", user.uid));
+      if (!caSnap.exists() || caSnap.data().status !== "active") {
+        alert("この画面は企業管理者アカウントでのログインが必要です。管理者にお問い合わせください。");
+        await signOut(auth);
+        location.href = "login.html";
+        return;
+      }
+      currentUser = user;
+      refreshUserInfo(user);
+      updatePasswordCount();
+    } catch (e) {
+      console.error(e);
+      setStatus(emailStatusEl, "権限確認に失敗しました。\n" + (e.message || e), "error");
+    } finally {
+      hideLoading();
+    }
+  });
+</script>
+</body>
+</html>

@@ -28,6 +28,10 @@ rules_version = '2';
 //   （companyIdは推測困難ではないため）。問題文自体は機密性が極めて高い情報ではない想定で
 //   割り切っているが、将来的にはCloud Functions経由でトークン検証してから問題を配信する方式へ
 //   強化することを推奨する。
+// - （v6で追加）templates / partDefinitions / companies/{companyId}/customParts も同様の考え方で、
+//   サインイン済みであれば読める設計にしている。企業が自社パートに1問も問題を登録していない場合、
+//   受験者は templates（運営のデフォルト問題）をそのまま読んで受験する。書き込みはこれまで通り
+//   templates・partDefinitionsはオペレーターのみ、customPartsはオペレーターまたは自社の企業管理者のみ。
 // - examInvites / examResults は token（ドキュメントID）を知らなければ辿り着けない前提。
 // - companies/{companyId} 自体の get は、応募者の受験導線（企業名表示など）を壊さないため、
 //   引き続き「サインイン済みであれば誰でも閲覧可」の広い設定を維持する。企業の新規登録・
@@ -113,12 +117,16 @@ service cloud.firestore {
         && (!("name" in request.resource.data) || request.resource.data.name is string)
         && (!("department" in request.resource.data) || request.resource.data.department is string)
         && (!("position" in request.resource.data) || request.resource.data.position is string)
+        && (!("email" in request.resource.data) || request.resource.data.email is string)
         && (!("note" in request.resource.data) || request.resource.data.note is string)
         && (!("isApplicant" in request.resource.data) || request.resource.data.isApplicant is bool)
         && (!("status" in request.resource.data) || request.resource.data.status in ["active", "inactive"]);
     }
     // company-admin-invite.html：企業管理者が、同じ企業の企業管理者（自分自身も含む）の
-    // 社員コード・氏名・部署・役職・備考・ビズてす申込者フラグを編集できる。
+    // 社員コード・氏名・部署・役職・メールアドレス・備考・ビズてす申込者フラグを編集できる。
+    // （このメールアドレスはプロフィール上の表示用項目であり、Firebase Authenticationの
+    // ログイン用メールアドレスとは別。ログイン用メールアドレスの変更・同期は
+    // account-settings.html → canUpdateOwnCompanyAdminEmail() の経路を使う。）
     // ただし自分自身のstatus（有効/無効）だけは、この経路からは変更できない
     // （誤って自分自身を無効化してしまうことを防止）。
     function canCompanyAdminUpdateSameCompanyAdmin(uid) {
@@ -126,7 +134,7 @@ service cloud.firestore {
         && resource.data.companyId == myCompanyId()
         && request.resource.data.companyId == myCompanyId()
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-          "employeeCode", "name", "department", "position", "note", "isApplicant", "status",
+          "employeeCode", "name", "department", "position", "email", "note", "isApplicant", "status",
           "updatedAt", "updatedBy"
         ])
         && (
@@ -134,6 +142,25 @@ service cloud.firestore {
           !request.resource.data.diff(resource.data).affectedKeys().hasAny(["status"])
         )
         && validCompanyAdminProfileFields();
+    }
+
+    // account-settings.html：企業管理者本人によるメールアドレス更新。
+    // Firebase Authenticationのメールアドレスを変更した後、companyAdmins側のemailを
+    // 本人が同期できるようにする（それ以外のフィールドは変更不可）。
+    function canUpdateOwnCompanyAdminEmail(uid) {
+      return isSignedIn()
+        && request.auth.uid == uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          "email", "updatedAt", "updatedBy",
+          "emailSyncPending", "pendingAuthEmail", "emailSyncError", "emailSyncFailedAt"
+        ])
+        && request.resource.data.email is string
+        && request.resource.data.updatedBy == request.auth.uid
+        && (!("updatedAt" in request.resource.data) || request.resource.data.updatedAt is timestamp)
+        && (!("emailSyncPending" in request.resource.data) || request.resource.data.emailSyncPending is bool)
+        && (!("pendingAuthEmail" in request.resource.data) || request.resource.data.pendingAuthEmail is string)
+        && (!("emailSyncError" in request.resource.data) || request.resource.data.emailSyncError is string)
+        && (!("emailSyncFailedAt" in request.resource.data) || request.resource.data.emailSyncFailedAt is timestamp);
     }
 
     // ---- pendingOperators（運営専任メンバーの招待） ----
@@ -242,7 +269,8 @@ service cloud.firestore {
       // 編集を許可。companyId・email・uid・role等の付け替えは不可。
       // 企業管理者は、同じ企業の管理者（自分自身を含む）のプロフィール項目を編集できるが、
       // 自分自身のstatusだけはこの経路から変更できない（誤って自分を無効化することを防止）。
-      allow update: if isOperator() || canCompanyAdminUpdateSameCompanyAdmin(uid);
+      // account-settings.html から、本人がメールアドレスだけを同期更新することも許可する。
+      allow update: if isOperator() || canCompanyAdminUpdateSameCompanyAdmin(uid) || canUpdateOwnCompanyAdminEmail(uid);
       // アカウントの完全削除は行わず、statusの無効化のみを運用とする。
       allow delete: if false;
     }
@@ -301,13 +329,26 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // ---- デフォルト問題テンプレート（オペレーターのみ） ----
+    // ---- デフォルト問題テンプレート ----
+    // 読み取りは、questionSets/itemsと同様に「サインイン済みであれば companyId が分かれば読める」
+    // 設計に合わせ、応募者（受験者）が自社未編集パートのデフォルト問題を受験時に読めるよう
+    // isSignedIn() まで緩和する。書き込みは引き続きオペレーターのみ。
     match /templates/{partId} {
-      allow read, write: if isOperator();
+      allow read: if isSignedIn();
+      allow write: if isOperator();
 
       match /items/{itemId} {
-        allow read, write: if isOperator();
+        allow read: if isSignedIn();
+        allow write: if isOperator();
       }
+    }
+
+    // ---- カテゴリー（パート）定義：全社共通のデフォルトカテゴリー一覧 ----
+    // 運営が「問題編集」画面から追加する。読み取りは各企業の受験フロー・問題編集画面から
+    // 必要になるため、questionSets/templatesと同様にサインイン済みであれば誰でも可とする。
+    match /partDefinitions/{partId} {
+      allow read: if isSignedIn();
+      allow write: if isOperator();
     }
 
     // ---- 企業 ----
@@ -341,9 +382,27 @@ service cloud.firestore {
           && request.resource.data.serviceEnabled == true
           && request.resource.data.termsAcceptedBy == request.auth.uid
           && request.resource.data.termsAcceptedSource == "applicant_web_agreement"
-          && request.resource.data.termsVersion == "2026-07-16"
+          && request.resource.data.termsVersion == "2026-07-19"
         );
       allow delete: if false;
+
+      // ---- 企業情報の変更履歴（operator-companies.htmlの「編集」から会社名・電話番号・
+      // ご希望プラン・想定従業員数を変更した際の記録。誰が・いつ・何を変更したかを
+      // 一覧の編集画面から確認できるようにするため）。編集はオペレーターのみのため、
+      // 履歴の読み書きもオペレーターのみに限定する。
+      match /changeLogs/{logId} {
+        allow read: if isOperator();
+        allow create: if isOperator()
+          && request.resource.data.companyId == companyId
+          && request.resource.data.updatedBy == request.auth.uid
+          && request.resource.data.keys().hasOnly([
+            "companyId", "logType", "targetCompanyId", "targetCompanyName", "action",
+            "before", "after", "changes", "updatedAt", "updatedBy", "updatedByEmail",
+            "updatedByName", "page"
+          ]);
+        allow update: if false;
+        allow delete: if false;
+      }
 
       // ---- 出題セット（パート単位の設定） ----
       match /questionSets/{partId} {
@@ -357,6 +416,14 @@ service cloud.firestore {
         }
       }
 
+      // ---- 自社限定カテゴリー（企業が追加する独自パート） ----
+      // 一覧はquestionSets同様、受験者が受験フローで参照できるようサインイン済みなら閲覧可。
+      // 追加・編集はオペレーターまたは自社の企業管理者のみ。
+      match /customParts/{partId} {
+        allow get, list: if isOperator() || isSignedIn();
+        allow write: if isOperator() || sameCompany(companyId);
+      }
+
       // ---- 受験招待 ----
       match /examInvites/{token} {
         // オペレーター・自社の企業管理者は全件、応募者は「自分が開始した招待」
@@ -367,12 +434,24 @@ service cloud.firestore {
         allow list: if isOperator() || sameCompany(companyId);
         allow create, delete: if isOperator() || sameCompany(companyId);
 
-        // 応募者が受験開始する瞬間だけ、自分のUIDを紐付ける更新を許可する
+        // 応募者が受験開始する瞬間だけ、自分のUIDを紐付ける更新を許可する。
+        // 加えて、受験終了（結果送信）の瞬間に、応募者本人が自分の招待を
+        // in_progress → completed に更新することも許可する（exam.htmlのsubmitExam()参照）。
+        // これが無いと結果送信時のupdateDocがpermission-deniedで失敗し、
+        // 「結果を送信しています…」画面のまま止まってしまう。
         allow update: if isOperator() || sameCompany(companyId) || (
           isSignedIn() &&
           resource.data.status == "not_started" &&
           request.resource.data.anonUid == request.auth.uid &&
           request.resource.data.status == "in_progress" &&
+          request.resource.data.applicantName == resource.data.applicantName &&
+          request.resource.data.applicantEmail == resource.data.applicantEmail
+        ) || (
+          isSignedIn() &&
+          resource.data.status == "in_progress" &&
+          resource.data.anonUid == request.auth.uid &&
+          request.resource.data.anonUid == resource.data.anonUid &&
+          request.resource.data.status == "completed" &&
           request.resource.data.applicantName == resource.data.applicantName &&
           request.resource.data.applicantEmail == resource.data.applicantEmail
         );
@@ -386,6 +465,20 @@ service cloud.firestore {
           get(/databases/$(database)/documents/companies/$(companyId)/examInvites/$(token)).data.anonUid == request.auth.uid;
         allow update, delete: if isOperator() || sameCompany(companyId);
       }
+    }
+
+    // ---- 運営レポート（全社横断）用：コレクショングループクエリ ----
+    // operator-report.html（レポート・全社）は、特定企業を指定せず全企業のexamInvites /
+    // examResultsを横断して集計するため、collectionGroup()クエリを使う。
+    // 上の companies/{companyId}/examInvites・examResults の match ブロック内に書いた
+    // allow list はそのサブコレクションへの直接クエリにしか適用されず、collectionGroup()
+    // クエリには別途「/{path=**}/コレクション名」形式のトップレベルの match が必要になる
+    // （Firestoreセキュリティルールの仕様）。ここではオペレーターのみに限定して許可する。
+    match /{path=**}/examInvites/{token} {
+      allow list: if isOperator();
+    }
+    match /{path=**}/examResults/{token} {
+      allow list: if isOperator();
     }
   }
 }
