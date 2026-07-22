@@ -137,9 +137,17 @@ section[id]{scroll-margin-top:90px}
 .price-row .scale{font-weight:900;color:var(--navy);font-size:15px}
 .price-row .scale span{display:block;font-weight:normal;font-size:12px;color:var(--muted);margin-top:3px}
 .price-row .amount{font-weight:900;color:var(--blue-dark);font-size:15px;white-space:nowrap}
+.price-row .amount small{font-size:11px;font-weight:800;color:var(--muted);margin-left:4px}
 @media(max-width:560px){
   .price-row{padding:16px 18px;flex-direction:column;align-items:flex-start;gap:6px}
 }
+
+/* オプション */
+.card.option{border-left:5px solid var(--blue-dark);display:flex;flex-direction:column}
+.card.option .icon{background:#eef2ff;color:var(--blue-dark);width:auto;min-width:44px;padding:0 12px;font-size:13px;letter-spacing:1px}
+.card.option p{font-size:13.5px;color:var(--slate);flex:1}
+.option-price{margin-top:14px;font-weight:900;color:var(--blue-dark);font-size:17px}
+.option-price span{font-size:12px;font-weight:800;color:var(--muted);margin-left:4px}
 
 /* お問い合わせ */
 .contact-wrap{background:#fff;border:1px solid var(--line);border-radius:22px;padding:32px;max-width:720px;margin:0 auto;box-shadow:0 4px 14px rgba(15,23,42,.04)}
@@ -213,6 +221,7 @@ footer.site{border-top:1px solid var(--line);padding:36px 0;background:#fff}
       <a href="#scenes">活用シーン</a>
       <a href="#flow">導入の流れ</a>
       <a href="#pricing">料金</a>
+      <a href="#options">オプション</a>
     </nav>
     <a class="nav-cta" href="#contact">お問い合わせ・お申し込み</a>
   </div>
@@ -441,16 +450,24 @@ footer.site{border-top:1px solid var(--line);padding:36px 0;background:#fff}
 <section id="pricing" class="price section">
   <div class="container center">
     <div class="eyebrow white">Price</div>
-    <h2>ご利用料金について</h2>
-    <p style="color:#e2e8f0">料金体系は、ご利用目的（既存社員向けの組織診断／採用選考向けの試験利用）や対象人数に応じて個別にご案内しています。</p>
-    <div class="pricing-note">診断項目（5領域・約30項目）、個人・部署・組織単位のダッシュボード、レポート出力などの基本機能は、いずれのご利用目的でも共通してご利用いただけます。具体的なプラン・お見積りは、お問い合わせフォームよりお気軽にご相談ください。</div>
+    <h2>料金プラン</h2>
+    <p style="color:#e2e8f0">ご利用人数に応じたシンプルな料金体系です。基本機能はすべての規模で共通してご利用いただけます。</p>
+    <div class="pricing-note">5領域の診断と働き方の嗜好を問うアンケート、ダッシュボードのレーダーチャート・散布図、問題作成・編集機能など、基本機能はすべてのプランで共通です。301名以上のご利用や、特別な運用要件がある場合は、お問い合わせフォームより個別にご相談ください。</div>
     <div class="price-table">
       <div class="price-row">
-        <span class="scale">既存社員向け（組織診断）<span>部署・拠点単位でのご利用を想定</span></span>
-        <span class="amount">お問い合わせください</span>
+        <span class="scale">〜100名</span>
+        <span class="amount">月額 20,000円<small>（税別）</small></span>
       </div>
       <div class="price-row">
-        <span class="scale">採用選考向け（試験利用）<span>1名からご利用いただけます</span></span>
+        <span class="scale">101〜200名</span>
+        <span class="amount">月額 40,000円<small>（税別）</small></span>
+      </div>
+      <div class="price-row">
+        <span class="scale">201〜300名</span>
+        <span class="amount">月額 60,000円<small>（税別）</small></span>
+      </div>
+      <div class="price-row">
+        <span class="scale">301名〜</span>
         <span class="amount">お問い合わせください</span>
       </div>
     </div>
@@ -458,6 +475,47 @@ footer.site{border-top:1px solid var(--line);padding:36px 0;background:#fff}
       <a class="button blue" href="#contact">お問い合わせ・お申し込み</a>
     </div>
   </div>
+</section>
+
+<section id="options" class="container section compact">
+  <div class="center">
+    <div class="eyebrow">Options</div>
+    <h2>オプションサービス</h2>
+    <p class="lead">基本の料金プランに加えて、導入支援からカスタマイズ、データ活用まで、必要に応じて選べるオプションをご用意しています。</p>
+  </div>
+  <div class="cards">
+    <div class="card option">
+      <div class="icon">設定</div>
+      <h3>導入支援</h3>
+      <p>初期設定代行。ユーザー登録やカテゴリー設定など、導入時の初期設定をまとめて代行します。</p>
+      <div class="option-price">50,000円</div>
+    </div>
+    <div class="card option">
+      <div class="icon">作成</div>
+      <h3>自社専用クイズ作成サービス</h3>
+      <p>ヒアリング・構成・問題作成・校正まで、自社専用問題の作成を丸ごと代行します。</p>
+      <div class="option-price">50,000円<span>〜（応相談）</span></div>
+    </div>
+    <div class="card option">
+      <div class="icon">追加</div>
+      <h3>自社専用クイズ追加サービス</h3>
+      <p>すでに作成済みの自社専用問題を、「自社理解」というカスタムカテゴリーへアップロードします。</p>
+      <div class="option-price">10,000円<span>／回</span></div>
+    </div>
+    <div class="card option">
+      <div class="icon">分析</div>
+      <h3>データ分析サービス</h3>
+      <p>個人別・部署別ランキング作成、他社比較など、学習データを活用した詳細な分析を提供します。</p>
+      <div class="option-price">50,000円<span>〜（応相談）</span></div>
+    </div>
+    <div class="card option">
+      <div class="icon">提案</div>
+      <h3>教育訓練施策の提案</h3>
+      <p>学習データをもとに、次の教育・研修施策のご提案を継続的に行います。</p>
+      <div class="option-price">50,000円<span>〜（応相談）</span></div>
+    </div>
+  </div>
+  <p class="center lead" style="margin-top:24px">オプションの詳細やお見積りは、お問い合わせフォームよりお気軽にご相談ください。</p>
 </section>
 
 <section id="contact" class="container section">
