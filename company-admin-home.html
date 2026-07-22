@@ -51,6 +51,11 @@ body{margin:0;font-family:"Hiragino Maru Gothic ProN","BIZ UDPGothic","Yu Gothic
 table{width:auto;min-width:0;border-collapse:collapse;font-size:12.5px;background:#fff}
 th,td{border-bottom:1px solid #f3f4f6;padding:5px 9px;text-align:left;white-space:nowrap}
 th{background:#f8fafc;color:var(--navy);font-weight:800;font-size:11.5px;position:sticky;top:0}
+.panel .desc{font-size:12px;color:var(--muted);margin-bottom:8px;line-height:1.6}
+.survey-table-wrap{overflow:auto;border:1px solid var(--line);border-radius:12px;max-height:340px}
+.survey-table-wrap table{width:100%}
+.survey-table-wrap td.survey-q-cell{background:#fff;white-space:normal;max-width:360px}
+.survey-table-wrap td{white-space:normal}
 .charts-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 @media(max-width:800px){.charts-row{grid-template-columns:1fr}}
 .chart-mini-title{font-size:12.5px;font-weight:800;color:var(--muted);margin-bottom:5px}
@@ -141,6 +146,12 @@ th{background:#f8fafc;color:var(--navy);font-weight:800;font-size:11.5px;positio
         <a href="company-report.html">受験データのサマリー・詳細を出力する（レポート（全社）へ）→</a>
         <a href="company-report-individual.html">個人ごとのレポートを出力する（レポート（個人）へ）→</a>
       </div>
+    </div>
+
+    <div class="panel hidden" id="surveyPanel">
+      <h2>③ アンケート結果（全社）</h2>
+      <div class="desc" id="surveyDesc"></div>
+      <div id="surveyAggregateBlock"></div>
     </div>
 
     <div id="termsNotice" class="panel hidden"></div>
@@ -274,6 +285,7 @@ async function loadCompanyAndGate(user, hasOperatorPermission) {
   loadStats();
   loadAdmins();
   loadCharts();
+  loadSurvey();
 }
 
 async function loadAdmins() {
@@ -516,6 +528,99 @@ async function loadCharts() {
     console.warn(e);
     showChartEmpty("miniRadarChart", "読み込みに失敗しました。");
     showChartEmpty("miniScatterChart", "読み込みに失敗しました。");
+  }
+}
+
+// ---------------------------------------------------------------------
+// ③ アンケート結果（全社）：company-dashboard.htmlの「アンケート結果」パネルと同じ考え方で、
+// survey_choice/survey_multi_select（正解のない択一・複数選択形式）の設問を、
+// 選択肢ごとの回答人数・割合として全社分だけ集計して表示する（部署・役職別の絞り込みや
+// 個人ごとの回答のハイライトは行わない。自由記述の内容は表示しない＝レポート（個人）に任せる）。
+// ---------------------------------------------------------------------
+async function loadSurvey() {
+  const panel = document.getElementById("surveyPanel");
+  try {
+    const allCategory1s = await loadEffectiveCategory1List(myCompanyId);
+    const itemsByCategory1 = {};
+    await Promise.all(allCategory1s.map(async (c) => {
+      const eff = await loadEffectiveQuestionSet(myCompanyId, c);
+      itemsByCategory1[c.id] = eff.items || [];
+    }));
+
+    // カテゴリーをまたいで、アンケート形式（survey_choice/survey_multi_select）の設問だけを出題順に集める
+    const surveyItems = [];
+    allCategory1s.forEach((c) => {
+      (itemsByCategory1[c.id] || [])
+        .filter((item) => item.type === "survey_choice" || item.type === "survey_multi_select")
+        .sort((x, y) => (x.order || 0) - (y.order || 0))
+        .forEach((item) => surveyItems.push(item));
+    });
+    if (!surveyItems.length) { panel.classList.add("hidden"); return; }
+
+    const [invitesSnap, resultsSnap] = await Promise.all([
+      getDocs(collection(db, "companies", myCompanyId, "examInvites")),
+      getDocs(collection(db, "companies", myCompanyId, "examResults")),
+    ]);
+    const resultMap = {};
+    resultsSnap.forEach((ds) => { resultMap[ds.id] = ds.data() || {}; });
+
+    const answersByItemId = {};
+    surveyItems.forEach((item) => { answersByItemId[item.id] = []; });
+
+    let completedCount = 0;
+    invitesSnap.forEach((ds) => {
+      const inv = ds.data() || {};
+      if (inv.status !== "completed") return;
+      const result = resultMap[ds.id];
+      if (!result || !result.parts) return;
+      completedCount++;
+      Object.values(result.parts).forEach((part) => {
+        (part.answers || []).forEach((entry) => {
+          if (entry.type !== "survey_choice" && entry.type !== "survey_multi_select") return;
+          if (!answersByItemId[entry.itemId]) return;
+          const selectedArr = Array.isArray(entry.selected) ? entry.selected : (entry.selected ? [entry.selected] : []);
+          if (selectedArr.length) answersByItemId[entry.itemId].push(selectedArr);
+        });
+      });
+    });
+
+    const tableRows = [];
+    surveyItems.forEach((item) => {
+      const choices = item.choices || [];
+      if (!choices.length) return;
+      const responses = answersByItemId[item.id] || [];
+      const answeredCount = responses.length;
+      const counts = {};
+      choices.forEach((c) => { counts[c.key] = 0; });
+      responses.forEach((selectedArr) => {
+        selectedArr.forEach((k) => { counts[k] = (counts[k] || 0) + 1; });
+      });
+      choices.forEach((c, idx) => {
+        const cnt = counts[c.key] || 0;
+        const pct = answeredCount ? Math.round((cnt / answeredCount) * 1000) / 10 : 0;
+        tableRows.push(
+          "<tr>" +
+          (idx === 0 ? '<td class="survey-q-cell" rowspan="' + choices.length + '">' + escapeHtml(item.questionText || "") + "</td>" : "") +
+          "<td>" + escapeHtml(c.key + "：" + c.text) + "</td>" +
+          "<td>" + cnt + "</td>" +
+          "<td>" + (answeredCount ? pct + "%" : "-") + "</td>" +
+          "</tr>"
+        );
+      });
+    });
+
+    if (!tableRows.length) { panel.classList.add("hidden"); return; }
+
+    document.getElementById("surveyAggregateBlock").innerHTML =
+      '<div class="survey-table-wrap"><table><thead><tr><th>設問</th><th>選択肢</th><th>人数</th><th>割合</th></tr></thead><tbody>' +
+      tableRows.join("") + "</tbody></table></div>";
+    document.getElementById("surveyDesc").textContent =
+      "受験完了者全社（n=" + completedCount + "）の回答を、選択肢ごとの人数・割合で集計しています。"
+      + "部署・役職別の比較や個人ごとの回答は、ダッシュボード・レポート（個人）でご確認いただけます。";
+    panel.classList.remove("hidden");
+  } catch (e) {
+    console.warn(e);
+    panel.classList.add("hidden");
   }
 }
 </script>
