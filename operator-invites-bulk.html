@@ -42,8 +42,8 @@ textarea#bulkText{min-height:180px;font-family:ui-monospace,Consolas,monospace;f
       <input type="file" id="csvFile" accept=".csv,text/csv">
       <div id="fileName" class="file-name">CSVファイルを選択してください。</div>
     </div>
-    <p class="small">Excelやスプレッドシートからのコピー＆ペーストにも対応しています。1行につき1名、「氏名,メールアドレス,社員コード,部署,役職,備考」の順で入力してください（メールアドレス以降は省略できます）。</p>
-    <textarea id="bulkText" placeholder="山田 太郎,yamada@example.com,B0002,営業部,主任,新規招待&#10;佐藤 花子,sato@example.com&#10;鈴木 一郎"></textarea>
+    <p class="small">Excelやスプレッドシートからのコピー＆ペーストにも対応しています。1行につき1名、「氏名,メールアドレス,社員コード,部署,役職,備考」の順で入力してください（氏名とメールアドレスは必須、社員コード以降は省略できます）。</p>
+    <textarea id="bulkText" placeholder="山田 太郎,yamada@example.com,B0002,営業部,主任,新規招待&#10;佐藤 花子,sato@example.com"></textarea>
     <div class="warning-box">注意：発行後に内容を一括で修正することはできません。発行前に「内容を確認する」で必ずプレビューを確認してください。</div>
     <div id="bulkStatus" class="status"></div>
     <div class="button-row"><button class="secondary-btn" id="templateBtn" type="button">テンプレートCSVをダウンロード</button><button class="primary-btn" id="previewBtn" type="button">内容を確認する</button></div>
@@ -91,7 +91,7 @@ textarea#bulkText{min-height:180px;font-family:ui-monospace,Consolas,monospace;f
     </div>
     <div class="table-wrap">
       <table class="data-table">
-        <thead><tr><th>操作</th><th>コピー</th><th>メール作成</th><th>状態</th><th>発行日</th><th>受験開始日時</th><th>受験完了日時</th><th>社員コード</th><th>氏名</th><th>部署</th><th>役職</th><th>メールアドレス</th><th>備考</th><th>受験リンク</th></tr></thead>
+        <thead><tr><th>操作</th><th>リンクのコピー</th><th>メール作成</th><th>状態</th><th>発行日</th><th>受験開始日時</th><th>受験完了日時</th><th>社員コード</th><th>氏名</th><th>部署</th><th>役職</th><th>メールアドレス</th><th>備考</th><th>受験リンク</th></tr></thead>
         <tbody id="inviteRows"></tbody>
       </table>
     </div>
@@ -280,7 +280,7 @@ function parseCsvLikeLine(line) {
 }
 
 function parseBulkLine(line) {
-  // 「氏名,メールアドレス,社員コード,部署,役職,備考」の順。メールアドレス以降は省略可。
+  // 「氏名,メールアドレス,社員コード,部署,役職,備考」の順。氏名・メールアドレスは必須、社員コード以降は省略可。
   const parts = parseCsvLikeLine(line);
   const name = (parts[0] || "").trim();
   const email = (parts[1] || "").trim();
@@ -305,7 +305,7 @@ document.getElementById("templateBtn").addEventListener("click", () => {
     "受験招待_一括登録テンプレート.csv",
     "﻿氏名,メールアドレス,社員コード,部署,役職,備考\n" +
     "# 1行につき1名を入力してください。\n" +
-    "# 「氏名,メールアドレス,社員コード,部署,役職,備考」の順で入力してください（メールアドレス以降は省略できます）。\n" +
+    "# 「氏名,メールアドレス,社員コード,部署,役職,備考」の順で入力してください（氏名とメールアドレスは必須、社員コード以降は省略できます）。\n" +
     "# 入力例：山田 太郎,yamada@example.com,B0002,営業部,主任,新規招待\n" +
     "# 「#」で始まる行は説明用のコメントです。削除しても、そのままにしても取り込み時は無視されます。\n" +
     "山田 太郎,yamada@example.com,B0002,営業部,主任,新規招待\n",
@@ -326,7 +326,8 @@ document.getElementById("previewBtn").addEventListener("click", () => {
     const { name, email, employeeCode, department, position, note } = parseBulkLine(line);
     let error = "";
     if (!name) error = "氏名が空です";
-    else if (email && !isValidEmail(email)) error = "メールアドレスの形式が正しくありません";
+    else if (!email) error = "メールアドレスが空です";
+    else if (!isValidEmail(email)) error = "メールアドレスの形式が正しくありません";
     return { index: i + 1, name, email, employeeCode, department, position, note, error };
   });
 
@@ -429,7 +430,7 @@ document.getElementById("confirmBulkBtn").addEventListener("click", async () => 
         <td>${escapeHtml(r.note)}</td>
         <td class="link-cell">${escapeHtml(r.link)}</td>
         <td>
-          <button class="table-action-btn secondary" type="button" data-action="copy" data-link="${escapeHtml(r.link)}">コピー</button>
+          <button class="table-action-btn secondary" type="button" data-action="copy" data-link="${escapeHtml(r.link)}">リンクのコピー</button>
           <button class="table-action-btn" type="button" data-action="mail" data-name="${escapeHtml(r.name)}" data-email="${escapeHtml(r.email)}" data-link="${escapeHtml(r.link)}">メール作成</button>
         </td>
       </tr>
@@ -438,7 +439,7 @@ document.getElementById("confirmBulkBtn").addEventListener("click", async () => 
       b.addEventListener("click", (e) => {
         navigator.clipboard.writeText(e.target.dataset.link);
         e.target.textContent = "コピー済み";
-        setTimeout(() => { e.target.textContent = "コピー"; }, 1500);
+        setTimeout(() => { e.target.textContent = "リンクのコピー"; }, 1500);
       });
     });
     document.querySelectorAll('#resultRows button[data-action="mail"]').forEach((b) => {
@@ -532,7 +533,7 @@ function renderInvites() {
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td>${actionCell}</td>
-      <td><button class="table-action-btn secondary" type="button" data-action="copy" data-link="${escapeHtml(link)}">コピー</button></td>
+      <td><button class="table-action-btn secondary" type="button" data-action="copy" data-link="${escapeHtml(link)}">リンクのコピー</button></td>
       <td><button class="table-action-btn" type="button" data-action="mail" data-name="${escapeHtml(invite.applicantName || "")}" data-email="${escapeHtml(invite.applicantEmail || "")}" data-link="${escapeHtml(link)}">メール作成</button></td>
       <td><span class="badge ${invite.status}">${statusLabel(invite.status)}</span></td>
       <td>${created}</td>
@@ -551,7 +552,7 @@ function renderInvites() {
     tr.querySelector('button[data-action="copy"]').addEventListener("click", (e) => {
       navigator.clipboard.writeText(e.target.dataset.link);
       e.target.textContent = "コピー済み";
-      setTimeout(() => { e.target.textContent = "コピー"; }, 1500);
+      setTimeout(() => { e.target.textContent = "リンクのコピー"; }, 1500);
     });
     tr.querySelector('button[data-action="mail"]').addEventListener("click", (e) => {
       openMailtoForRow(e.target.dataset.name, e.target.dataset.email, e.target.dataset.link);
