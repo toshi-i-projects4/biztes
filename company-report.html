@@ -159,6 +159,8 @@ const TYPE_LABELS = {
   fill_blank: "空欄補充",
   sentence_completion: "自由記述",
   likert: "5段階評価",
+  survey_choice: "アンケート（択一選択）",
+  survey_multi_select: "アンケート（複数選択）",
 };
 // 正誤判定・得点の概念がある形式（choice/multi_select/fill_blank）
 function isScoreableType(type) { return type === "choice" || type === "multi_select" || type === "fill_blank"; }
@@ -475,10 +477,10 @@ function category1LabelOf(category1Id) {
   return p ? (p.label || category1Id) : category1Id;
 }
 
-// 選択肢一覧のテキスト化（choice/multi_select は問題マスタの選択肢、likertは固定5段階ラベル）
+// 選択肢一覧のテキスト化（choice/multi_select/survey_choice/survey_multi_select は問題マスタの選択肢、likertは固定5段階ラベル）
 function choicesText(type, item) {
   if (type === "likert") return LIKERT_LABELS.map((l, i) => (i + 1) + ":" + l).join(" / ");
-  if ((type === "choice" || type === "multi_select") && item && Array.isArray(item.choices)) {
+  if ((type === "choice" || type === "multi_select" || type === "survey_choice" || type === "survey_multi_select") && item && Array.isArray(item.choices)) {
     return item.choices.map((c) => c.key + ":" + c.text).join(" / ");
   }
   return "";
@@ -519,6 +521,10 @@ function buildDetailRow(baseInfo, category1Id, entry) {
     correctText = joinIfArray(entry.correct);
     answerText = joinIfArray(entry.selected);
     correctFlag = info.isCorrect;
+  } else if (type === "survey_choice" || type === "survey_multi_select") {
+    // アンケート形式：正解の概念はなく、選択済み値と自由記述を両方表示する
+    const selectedText = joinIfArray(entry.selected);
+    answerText = selectedText + (entry.freeText ? (selectedText ? "　/自由記述：" : "自由記述：") + entry.freeText : "");
   } else {
     // sentence_completion 等の自由記述
     answerText = entry.freeText || "";

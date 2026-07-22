@@ -237,6 +237,7 @@ function afterStage(category1Id, fromStage) {
 // ---------- 択一・複数選択・空欄補充・自由記述（形式が混在してもよい） ----------
 // 元は選択式（renderChoiceSet）と自由記述（renderFreeTextSet）に分かれていたが、
 // 新しく追加するカテゴリーでは1カテゴリー1内に複数の形式が混在しうるため、1つの関数にまとめている。
+// likert・sentence_completion・survey_choice・survey_multi_select はいずれも正解の概念が無いため含めない
 function isScoreableType(type) {
   return type === "choice" || type === "multi_select" || type === "fill_blank";
 }
@@ -264,6 +265,16 @@ function renderItemSet(category1Id, targetStage, items, timeLimit) {
           <input type="radio" name="q_${item.id}" value="${i + 1}">
           <span>${escapeHtml(label)}</span>
         </label>`).join("") + `</div>`;
+    } else if (item.type === "survey_choice" || item.type === "survey_multi_select") {
+      // アンケート形式：選択肢（最大10個・正解なし）に加えて、自由記述欄を自動的に付ける
+      const inputType = item.type === "survey_multi_select" ? "checkbox" : "radio";
+      const choicesHtml = (item.choices || []).map((c) => `
+        <label class="choice-opt">
+          <input type="${inputType}" name="q_${item.id}" value="${escapeHtml(c.key)}">
+          <span><strong>${escapeHtml(c.key)}</strong>：${escapeHtml(c.text)}</span>
+        </label>`).join("");
+      body = `<div class="choices" data-item="${item.id}">${choicesHtml}</div>
+        <textarea class="free-text" data-freetext="${item.id}" placeholder="自由にご記入ください（任意）" style="margin-top:10px"></textarea>`;
     } else {
       const inputType = item.type === "multi_select" ? "checkbox" : "radio";
       body = `<div class="choices" data-item="${item.id}">` + (item.choices || []).map((c) => `
@@ -318,7 +329,7 @@ function renderItemSet(category1Id, targetStage, items, timeLimit) {
       const ta = root.querySelector(`[data-item="${item.id}"]`);
       return !!(ta && ta.value.trim().length > 0);
     }
-    if (item.type === "multi_select") {
+    if (item.type === "multi_select" || item.type === "survey_multi_select") {
       return root.querySelectorAll(`input[name="q_${item.id}"]:checked`).length > 0;
     }
     return !!root.querySelector(`input[name="q_${item.id}"]:checked`);
@@ -410,7 +421,7 @@ function renderItemSet(category1Id, targetStage, items, timeLimit) {
       } else if (item.type === "fill_blank") {
         const input = root.querySelector(`input[data-item="${item.id}"]`);
         answers[item.id] = input ? input.value.trim() : "";
-      } else if (item.type === "multi_select") {
+      } else if (item.type === "multi_select" || item.type === "survey_multi_select") {
         const checked = Array.from(root.querySelectorAll(`input[name="q_${item.id}"]:checked`)).map((c) => c.value);
         answers[item.id] = checked;
       } else if (item.type === "sentence_completion") {
@@ -420,8 +431,14 @@ function renderItemSet(category1Id, targetStage, items, timeLimit) {
         const checked = root.querySelector(`input[name="q_${item.id}"]:checked`);
         answers[item.id] = checked ? checked.value : "";
       } else {
+        // choice, survey_choice など単一選択（またはそれに準ずる形式）
         const checked = root.querySelector(`input[name="q_${item.id}"]:checked`);
         answers[item.id] = checked ? checked.value : "";
+      }
+      if (item.type === "survey_choice" || item.type === "survey_multi_select") {
+        // アンケート形式は選択肢とは別に自由記述欄を持つため、選択肢と分けて保持する
+        const freeTa = root.querySelector(`[data-freetext="${item.id}"]`);
+        answers[item.id + "__freeText"] = freeTa ? freeTa.value.trim() : "";
       }
     });
 
@@ -466,6 +483,15 @@ function renderItemSet(category1Id, targetStage, items, timeLimit) {
           const score = value || 0;
           totalScore += score;
           return { itemId: item.id, type: item.type, subcategory: item.subcategory || "", value, score };
+        }
+        if (item.type === "survey_choice" || item.type === "survey_multi_select") {
+          // アンケート形式：正解の概念が無いため採点しない。選択済み値と自由記述を両方保持する。
+          return {
+            itemId: item.id, type: item.type, subcategory: item.subcategory || "",
+            questionText: item.questionText,
+            selected: answers[item.id],
+            freeText: answers[item.id + "__freeText"] || "",
+          };
         }
         if (!isScoreableType(item.type)) {
           return { itemId: item.id, type: item.type, subcategory: item.subcategory || "", questionText: item.questionText, freeText: answers[item.id] };
@@ -582,7 +608,8 @@ async function submitExam() {
   try {
     // 各カテゴリー1のscoreは、正誤判定のある問題（choice/multi_select/fill_blank。正解時にitem.score点）
     // に加えて、タイピング（誤り数に応じた0〜10点）・5段階評価（選択値1〜5がそのまま点数）も
-    // 合算済み（自由記述のみスコアに加算されない）ため、全カテゴリー1のscoreを単純に合算すればよい。
+    // 合算済み（自由記述・アンケート形式[survey_choice/survey_multi_select]はスコアに加算されない）
+    // ため、全カテゴリー1のscoreを単純に合算すればよい。
     const totalScore = Object.values(results).reduce((sum, r) => {
       if (r && typeof r.score === "number") return sum + r.score;
       return sum;

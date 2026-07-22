@@ -47,7 +47,9 @@ export const CATEGORY1_TYPES = {};
 // 運営・企業が新しく追加するカテゴリー1では、出題形式を固定せず
 // 以下の全形式から自由に選べるようにする。
 // likert: 5段階評価（行動特性・性格アセスメント用）。正解の概念がなく、選んだ度合い（1〜5）をそのまま記録する。
-export const ALL_TYPES = ["typing_passage", "choice", "multi_select", "fill_blank", "sentence_completion", "likert"];
+// survey_choice / survey_multi_select: アンケート形式（択一選択／複数選択）。選択肢は最大10個まで登録でき、
+// 選択肢とは別に自由記述欄が自動的に付く。likert・sentence_completionと同様、正解の概念はない。
+export const ALL_TYPES = ["typing_passage", "choice", "multi_select", "fill_blank", "sentence_completion", "likert", "survey_choice", "survey_multi_select"];
 
 // likert（5段階評価）の固定選択肢。左から順に値1〜5として記録する。
 export const LIKERT_LABELS = [

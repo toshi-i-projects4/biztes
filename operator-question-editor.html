@@ -50,6 +50,11 @@ th{color:var(--muted);font-weight:800;font-size:11.5px}
 .modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
 .choice-row{display:grid;grid-template-columns:36px 1fr;gap:8px;align-items:center;margin-bottom:8px}
 .choice-row span{font-weight:800;color:var(--blue-dark)}
+.survey-choice-row{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+.survey-choice-row span{font-weight:800;color:var(--blue-dark);width:20px;flex:none}
+.survey-choice-row input{flex:1}
+.survey-choice-row button{flex:none;background:none;border:none;color:#dc2626;font-size:15px;font-weight:800;cursor:pointer;padding:2px 6px;line-height:1}
+button.ghost:disabled{opacity:.5;cursor:not-allowed}
 .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px}
 .hint{font-size:11.5px;color:var(--muted);margin-top:3px}
 .copy-templates{margin-top:8px}
@@ -145,6 +150,14 @@ th{color:var(--muted);font-weight:800;font-size:11.5px}
       <div class="choice-row"><span>D</span><input id="fChoiceD"></div>
     </div>
 
+    <div class="hint" id="surveyHint" style="display:none;margin-bottom:14px">この形式は正解の概念がなく、選択肢とは別に「自由記述欄」が自動的に追加されます。</div>
+    <div id="surveyChoicesBlock" style="display:none;margin-bottom:14px">
+      <label style="display:block;font-size:12px;font-weight:800;color:#0f172a;margin-bottom:8px">選択肢（最大10個）</label>
+      <div id="surveyChoiceRows"></div>
+      <button class="ghost" type="button" id="addSurveyChoiceBtn">＋ 選択肢を追加</button>
+      <div class="hint" id="surveyChoiceLimitHint" style="display:none">選択肢は最大10個まで登録できます。</div>
+    </div>
+
     <div class="modal-grid">
       <div class="form-row" id="fAnswerRow">
         <label id="fAnswerLabel">正解</label>
@@ -213,7 +226,44 @@ const TYPE_LABELS = {
   fill_blank: "空欄補充（記入式）",
   sentence_completion: "文章完成（自由記述）",
   likert: "5段階評価（性格・行動特性）",
+  survey_choice: "アンケート（択一選択）",
+  survey_multi_select: "アンケート（複数選択）",
 };
+
+// アンケート形式（survey_choice/survey_multi_select）の選択肢キー。最大10個（A〜J）まで。
+const SURVEY_CHOICE_KEYS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"];
+let surveyChoiceValues = []; // モーダル編集中の選択肢テキスト配列（インデックス=SURVEY_CHOICE_KEYSの位置）
+
+function renderSurveyChoiceRows() {
+  const wrap = document.getElementById("surveyChoiceRows");
+  wrap.innerHTML = "";
+  surveyChoiceValues.forEach((val, idx) => {
+    const row = document.createElement("div");
+    row.className = "survey-choice-row";
+    const keySpan = document.createElement("span");
+    keySpan.textContent = SURVEY_CHOICE_KEYS[idx];
+    const input = document.createElement("input");
+    input.value = val;
+    input.addEventListener("input", (e) => { surveyChoiceValues[idx] = e.target.value; });
+    const delBtn = document.createElement("button");
+    delBtn.type = "button";
+    delBtn.title = "この選択肢を削除";
+    delBtn.textContent = "✕";
+    delBtn.addEventListener("click", () => { surveyChoiceValues.splice(idx, 1); renderSurveyChoiceRows(); });
+    row.appendChild(keySpan);
+    row.appendChild(input);
+    row.appendChild(delBtn);
+    wrap.appendChild(row);
+  });
+  document.getElementById("addSurveyChoiceBtn").disabled = surveyChoiceValues.length >= 10;
+  document.getElementById("surveyChoiceLimitHint").style.display = surveyChoiceValues.length >= 10 ? "block" : "none";
+}
+
+document.getElementById("addSurveyChoiceBtn").addEventListener("click", () => {
+  if (surveyChoiceValues.length >= 10) return;
+  surveyChoiceValues.push("");
+  renderSurveyChoiceRows();
+});
 
 onAuthStateChanged(auth, async (user) => {
   if (!user) { location.href = "login.html"; return; }
@@ -412,9 +462,11 @@ function typeOptionsForCurrentCategory1() {
 
 function updateFormVisibility() {
   const type = document.getElementById("fType").value;
-  const showChoices = type === "choice" || type === "multi_select";
-  document.getElementById("choicesBlock").style.display = showChoices ? "block" : "none";
-  document.getElementById("fAnswerRow").style.display = (type === "typing_passage" || type === "sentence_completion" || type === "likert") ? "none" : "block";
+  const isSurveyType = type === "survey_choice" || type === "survey_multi_select";
+  document.getElementById("choicesBlock").style.display = (type === "choice" || type === "multi_select") ? "block" : "none";
+  document.getElementById("surveyChoicesBlock").style.display = isSurveyType ? "block" : "none";
+  document.getElementById("surveyHint").style.display = isSurveyType ? "block" : "none";
+  document.getElementById("fAnswerRow").style.display = (type === "typing_passage" || type === "sentence_completion" || type === "likert" || isSurveyType) ? "none" : "block";
   document.getElementById("likertHint").style.display = type === "likert" ? "block" : "none";
   document.getElementById("fAnswerHint").textContent =
     type === "multi_select" ? "複数正解の場合はカンマ区切りで入力（例：1,2,3）" :
@@ -424,6 +476,9 @@ function updateFormVisibility() {
     type === "typing_passage" ? "お手本テキスト" :
     type === "sentence_completion" ? "文章完成の項目文（空欄を含む形で記載）" :
     type === "likert" ? "質問文" : "問題文";
+  // アンケート形式で選択肢が1つも無い場合（新規追加時など）は、まず2個分の入力欄を用意しておく
+  if (isSurveyType && !surveyChoiceValues.length) surveyChoiceValues = ["", ""];
+  if (isSurveyType) renderSurveyChoiceRows();
 }
 
 function openModal(item) {
@@ -451,6 +506,9 @@ function openModal(item) {
   document.getElementById("fChoiceB").value = byKey("B");
   document.getElementById("fChoiceC").value = byKey("C");
   document.getElementById("fChoiceD").value = byKey("D");
+  surveyChoiceValues = (item?.type === "survey_choice" || item?.type === "survey_multi_select")
+    ? choices.map((c) => c.text || "")
+    : [];
   document.getElementById("fAnswer").value = Array.isArray(item?.correctAnswer) ? item.correctAnswer.join(",") : (item?.correctAnswer || "");
   document.getElementById("fImageUrl").value = item?.imageUrl || "";
   document.getElementById("fExplanation").value = item?.explanation || "";
@@ -467,15 +525,22 @@ document.getElementById("cancelModalBtn").addEventListener("click", () => overla
 
 document.getElementById("saveItemBtn").addEventListener("click", async () => {
   const type = document.getElementById("fType").value;
+  const isSurveyType = type === "survey_choice" || type === "survey_multi_select";
   const choices = [];
   if (type === "choice" || type === "multi_select") {
     [["A", "fChoiceA"], ["B", "fChoiceB"], ["C", "fChoiceC"], ["D", "fChoiceD"]].forEach(([key, id]) => {
       const text = document.getElementById(id).value.trim();
       if (text) choices.push({ key, text });
     });
+  } else if (isSurveyType) {
+    surveyChoiceValues.forEach((text, idx) => {
+      const trimmed = (text || "").trim();
+      if (trimmed) choices.push({ key: SURVEY_CHOICE_KEYS[idx], text: trimmed });
+    });
   }
   const rawAnswer = document.getElementById("fAnswer").value.trim();
-  const correctAnswer = type === "multi_select"
+  // アンケート形式（survey_choice/survey_multi_select）は正解の概念が無いため、正解は保存しない
+  const correctAnswer = isSurveyType ? "" : type === "multi_select"
     ? rawAnswer.split(",").map((s) => s.trim()).filter(Boolean)
     : rawAnswer;
 

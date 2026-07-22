@@ -191,6 +191,24 @@ export async function createGlobalCategory1Def(label) {
   return category1Id;
 }
 
+// 運営が追加した全社共通カテゴリーを削除する（初期から用意されている固定カテゴリー[builtin:true]は対象外）。
+// 登録済みのデフォルト問題（templates/{category1Id}/items）・カテゴリー設定（templates/{category1Id}）・
+// カテゴリー定義（partDefinitions/{category1Id}）をすべて削除する。Firestoreクライアントには再帰削除が
+// 無いため、items を1件ずつ削除してから親ドキュメントを削除する。
+// なお、既にこのカテゴリーの問題を自社にコピー済みの企業がある場合、そのコピー済みデータ
+// （companies/{companyId}/questionSets/{category1Id} 以下）自体は削除されない。ただし
+// partDefinitionsから削除されるため、削除後はどの企業の受験フローにもこのカテゴリーは
+// 表示されなくなる（loadEffectiveCategory1List が partDefinitions を参照しているため）。
+export async function deleteGlobalCategory1Def(category1Id) {
+  const itemsRef = collection(db, "templates", category1Id, "items");
+  const itemsSnap = await getDocs(itemsRef);
+  for (const itemDoc of itemsSnap.docs) {
+    await deleteDoc(doc(db, "templates", category1Id, "items", itemDoc.id));
+  }
+  await deleteDoc(doc(db, "templates", category1Id)).catch(() => {});
+  await deleteDoc(doc(db, "partDefinitions", category1Id));
+}
+
 // 企業が自社限定の新しいカテゴリーを追加する
 export async function createCompanyCustomCategory1(companyId, label) {
   const existing = await loadCompanyCustomCategory1s(companyId);
