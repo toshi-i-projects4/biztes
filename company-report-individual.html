@@ -9,7 +9,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 :root{
-  --blue:#2563eb;--blue-dark:#1d4ed8;--navy:#0f172a;--line:#e5e7eb;--bg:#f5f7fb;--muted:#64748b;--orange:#f97316;
+  --blue:#0369a1;--blue-dark:#075985;--navy:#0f172a;--line:#e5e7eb;--bg:#f5f7fb;--muted:#64748b;--orange:#f97316;
   /* dataviz固定パレット（references/palette.md） */
   --cat-1:#2a78d6;/* blue */ --cat-2:#008300;/* green */ --cat-3:#e87ba4;/* magenta */ --cat-4:#eda100;/* yellow */
   --seq-100:#cde2fb;--seq-200:#9ec5f4;--seq-300:#6da7ec;--seq-400:#3987e5;--seq-500:#256abf;--seq-600:#184f95;--seq-700:#0d366b;
@@ -19,7 +19,7 @@
 body{margin:0;font-family:"Hiragino Maru Gothic ProN","BIZ UDPGothic","Yu Gothic UI","Meiryo",sans-serif;background:var(--bg);color:#111827;overflow-anchor:none;padding:24px;box-sizing:border-box}
 .header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;margin-bottom:18px}
 .header h1{font-size:28px;margin:0;color:#111827}
-.top-link,.bottom-link{color:#2563eb;text-decoration:none;font-weight:bold;font-size:14px}
+.top-link,.bottom-link{color:#0369a1;text-decoration:none;font-weight:bold;font-size:14px}
 .bottom-link{display:inline-block;margin-top:22px}
 .wrap{max-width:1300px;margin:24px auto;background:#fff;border-radius:18px;box-shadow:0 4px 12px rgba(0,0,0,.08);padding:28px;box-sizing:border-box}
 .status{display:none;background:#fee2e2;border:1px solid #fca5a5;color:#991b1b;border-radius:10px;padding:14px 16px;margin-bottom:16px;line-height:1.7;white-space:pre-wrap}
@@ -94,13 +94,13 @@ th{background:#f8fafc;color:var(--navy);font-weight:800;font-size:11px;position:
 .search-result-item:hover{background:#f3f4f6}
 .search-result-item .sr-name{font-weight:800;color:var(--navy)}
 .search-result-item .sr-meta{color:var(--muted);font-size:11.5px}
-.selected-chip{display:inline-flex;align-items:center;gap:10px;background:#eff6ff;border:1px solid #93c5fd;color:#1e40af;border-radius:999px;padding:8px 14px;font-size:13px;font-weight:800;margin-top:12px}
+.selected-chip{display:inline-flex;align-items:center;gap:10px;background:#f0f9ff;border:1px solid #7dd3fc;color:#075985;border-radius:999px;padding:8px 14px;font-size:13px;font-weight:800;margin-top:12px}
 .selected-chip.hidden{display:none}
-.selected-chip button{background:none;border:1px solid #93c5fd;border-radius:999px;color:#1e40af;font-weight:800;cursor:pointer;font-size:12px;padding:3px 10px}
+.selected-chip button{background:none;border:1px solid #7dd3fc;border-radius:999px;color:#075985;font-weight:800;cursor:pointer;font-size:12px;padding:3px 10px}
 .page-loading{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:var(--bg);color:var(--blue-dark);font-weight:bold}
 .page-loading.hidden{display:none!important}
 .loading-box{display:flex;flex-direction:column;align-items:center;gap:12px;background:#fff;border:1px solid var(--line);border-radius:16px;padding:24px 28px;box-shadow:0 4px 12px rgba(0,0,0,.08)}
-.loading-spinner{width:42px;height:42px;border:5px solid #dbeafe;border-top-color:var(--blue);border-radius:50%;animation:spin .9s linear infinite}
+.loading-spinner{width:42px;height:42px;border:5px solid #e0f2fe;border-top-color:var(--blue);border-radius:50%;animation:spin .9s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 @media(max-width:640px){body{padding:14px}.wrap{padding:20px}.btn-row{display:grid}}
 </style>

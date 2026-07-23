@@ -6,7 +6,7 @@
 <title>企業管理者ホーム｜ビズてす</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <style>
-:root{--blue:#2563eb;--blue-dark:#1d4ed8;--navy:#0f172a;--line:#e5e7eb;--bg:#f5f7fb;--muted:#64748b;--orange:#f97316;--orange-deep:#c2410c}
+:root{--blue:#0369a1;--blue-dark:#075985;--navy:#0f172a;--line:#e5e7eb;--bg:#f5f7fb;--muted:#64748b;--orange:#f97316;--orange-deep:#c2410c}
 *{box-sizing:border-box}
 body{margin:0;font-family:"Hiragino Maru Gothic ProN","BIZ UDPGothic","Yu Gothic UI","Meiryo",sans-serif;background:var(--bg);color:#111827}
 .top-bar{max-width:1400px;margin:0 auto;padding:8px 20px 2px;display:grid;grid-template-columns:240px 1fr;align-items:center;gap:24px;box-sizing:border-box}
@@ -66,7 +66,7 @@ th{background:#f8fafc;color:var(--navy);font-weight:800;font-size:11.5px;positio
 .hidden{display:none!important}
 .notice-box{background:#fffbeb;border:1px solid #fde68a;color:#92400e;border-radius:12px;padding:14px 16px;font-size:14px;line-height:1.7;white-space:pre-wrap}
 .notice-box a{color:#92400e;font-weight:800}
-.page-loading{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:var(--bg);color:#1d4ed8;font-weight:bold}
+.page-loading{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:var(--bg);color:#075985;font-weight:bold}
 .page-loading.hidden{display:none!important}
 .loading-box{display:flex;flex-direction:column;align-items:center;gap:12px}
 .loading-spinner{width:42px;height:42px;border:5px solid var(--line);border-top-color:var(--blue);border-radius:50%;animation:spin .9s linear infinite}
@@ -426,9 +426,9 @@ function renderMiniRadar(values, hasData) {
       datasets: [{
         label: "全社平均",
         data: values,
-        borderColor: "#2563eb",
-        backgroundColor: "rgba(37,99,235,.18)",
-        pointBackgroundColor: "#2563eb",
+        borderColor: "#0369a1",
+        backgroundColor: "rgba(3,105,161,.18)",
+        pointBackgroundColor: "#0369a1",
       }],
     },
     options: {
@@ -455,7 +455,7 @@ function renderMiniScatter(points) {
       datasets: [{
         label: "受験者",
         data: points,
-        backgroundColor: "rgba(37,99,235,.55)",
+        backgroundColor: "rgba(3,105,161,.55)",
       }],
     },
     options: {

@@ -9,17 +9,17 @@
   .page { max-width: 920px; margin: 0 auto; }
   .header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
   h1 { margin: 0; font-size: 28px; color: #111827; }
-  .back-link { color: #2563eb; text-decoration: none; font-weight: bold; font-size: 14px; }
-  .bottom-back-link { display: inline-block; margin-top: 20px; color: #2563eb; text-decoration: none; font-weight: bold; font-size: 14px; }
+  .back-link { color: #0369a1; text-decoration: none; font-weight: bold; font-size: 14px; }
+  .bottom-back-link { display: inline-block; margin-top: 20px; color: #0369a1; text-decoration: none; font-weight: bold; font-size: 14px; }
   .card { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 18px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); padding: 28px; box-sizing: border-box; margin-bottom: 18px; }
   .section-title { font-size: 18px; font-weight: bold; margin: 0 0 14px; color: #111827; }
   .description { font-size: 14px; line-height: 1.7; color: #6b7280; margin: 0 0 18px; }
-  .info-box { background: #eff6ff; border-left: 4px solid #2563eb; border-radius: 10px; padding: 14px 16px; color: #1e3a8a; font-size: 14px; line-height: 1.7; margin-bottom: 18px; white-space: pre-wrap; }
+  .info-box { background: #f0f9ff; border-left: 4px solid #0369a1; border-radius: 10px; padding: 14px 16px; color: #0c4a6e; font-size: 14px; line-height: 1.7; margin-bottom: 18px; white-space: pre-wrap; }
   .warning-box { background: #fffbeb; border-left: 4px solid #f59e0b; border-radius: 10px; padding: 14px 16px; color: #92400e; font-size: 14px; line-height: 1.7; margin-top: 16px; }
   .form-grid { display: grid; grid-template-columns: 220px 1fr; gap: 16px 18px; align-items: center; }
   .label { font-size: 14px; font-weight: bold; color: #374151; }
   input { width: 100%; border: 1px solid #d1d5db; border-radius: 10px; padding: 11px 12px; font-size: 15px; box-sizing: border-box; background: #ffffff; color: #111827; }
-  input:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.15); }
+  input:focus { outline: none; border-color: #0369a1; box-shadow: 0 0 0 3px rgba(3,105,161,0.15); }
   input[readonly] { background: #f9fafb; color: #6b7280; }
   .password-wrap { position: relative; }
   .password-wrap input { padding-right: 48px; }
@@ -28,8 +28,8 @@
   .eye-btn svg { width: 21px; height: 21px; }
   .button-row { display: flex; justify-content: flex-end; gap: 12px; margin-top: 22px; }
   .primary-btn, .secondary-btn { border: none; border-radius: 12px; padding: 12px 22px; font-size: 15px; font-weight: bold; cursor: pointer; }
-  .primary-btn { background: #2563eb; color: #ffffff; }
-  .primary-btn:hover { background: #1d4ed8; }
+  .primary-btn { background: #0369a1; color: #ffffff; }
+  .primary-btn:hover { background: #075985; }
   .primary-btn:disabled { opacity: .65; cursor: not-allowed; }
   .secondary-btn { background: #f3f4f6; color: #111827; }
   .status { min-height: 24px; margin-top: 16px; font-size: 14px; line-height: 1.6; white-space: pre-wrap; }
@@ -38,10 +38,10 @@
   .status.warn { color: #92400e; }
   .small-note { font-size: 13px; color: #6b7280; line-height: 1.6; margin-top: 6px; }
   .password-count { font-size: 13px; color: #6b7280; line-height: 1.6; margin-top: 6px; }
-  .page-loading { position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center; justify-content: center; background: #f5f7fb; color: #1d4ed8; font-weight: bold; }
+  .page-loading { position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center; justify-content: center; background: #f5f7fb; color: #075985; font-weight: bold; }
   .page-loading.hidden { display: none !important; }
   .loading-box { display: flex; flex-direction: column; align-items: center; gap: 12px; }
-  .loading-spinner { width: 42px; height: 42px; border: 5px solid #e5e7eb; border-top-color: #2563eb; border-radius: 50%; animation: spin .9s linear infinite; }
+  .loading-spinner { width: 42px; height: 42px; border: 5px solid #e5e7eb; border-top-color: #0369a1; border-radius: 50%; animation: spin .9s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
   @media (max-width: 720px) { body { padding: 18px; } .header { flex-direction: column; align-items: flex-start; } .form-grid { grid-template-columns: 1fr; gap: 8px 0; } .button-row { flex-direction: column; } .primary-btn, .secondary-btn { width: 100%; } }
 </style>
