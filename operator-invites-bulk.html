@@ -65,14 +65,14 @@ textarea#bulkText{min-height:180px;font-family:ui-monospace,Consolas,monospace;f
   <div class="card hidden" id="resultPanel">
     <p class="section-title">発行結果</p>
     <div id="resultSummary" class="status"></div>
-    <div class="warning-box">注意：受験リンクは対象者ごとに異なります。案内メールは下の一覧の「招待メール作成」から、1件ずつ作成・送信してください。</div>
+    <div class="warning-box">注意：受験リンクは対象者ごとに異なります。案内メールは下の一覧の「招待メール作成（個別）」から、1件ずつ作成・送信してください。</div>
     <div class="table-wrap">
       <table class="data-table">
         <thead><tr><th>操作</th><th>対象者</th><th>社員コード</th><th>部署</th><th>役職</th><th>備考</th><th>受験リンク</th></tr></thead>
         <tbody id="resultRows"></tbody>
       </table>
     </div>
-    <div class="button-row"><button class="secondary-btn" id="createMailBtn" type="button">招待メール作成（一括）</button><button class="secondary-btn" id="downloadCsvBtn" type="button">結果をCSVでダウンロード</button><a class="secondary-btn" href="operator-invites.html" id="toIndividualLink" style="text-decoration:none;display:inline-flex;align-items:center">個別招待・一覧を見る →</a></div>
+    <div class="button-row"><button class="primary-btn" id="createMailBtn" type="button">招待メール作成（一括）</button><button class="secondary-btn" id="downloadCsvBtn" type="button">結果をCSVでダウンロード</button><a class="secondary-btn" href="operator-invites.html" id="toIndividualLink" style="text-decoration:none;display:inline-flex;align-items:center">個別招待・一覧を見る →</a></div>
   </div>
 
   <div class="card hidden" id="bulkInviteMailCard">
@@ -104,7 +104,7 @@ textarea#bulkText{min-height:180px;font-family:ui-monospace,Consolas,monospace;f
     </div>
     <div class="table-wrap">
       <table class="data-table">
-        <thead><tr><th>操作</th><th>リンクのコピー</th><th>招待メール作成</th><th>状態</th><th>発行日</th><th>社員コード</th><th>氏名</th><th>部署</th><th>役職</th><th>メールアドレス</th><th>備考</th><th>受験開始日時</th><th>受験完了日時</th><th>受験リンク</th></tr></thead>
+        <thead><tr><th>操作</th><th>リンクのコピー</th><th>招待メール作成（個別）</th><th>状態</th><th>発行日</th><th>社員コード</th><th>氏名</th><th>部署</th><th>役職</th><th>メールアドレス</th><th>備考</th><th>受験開始日時</th><th>受験完了日時</th><th>受験リンク</th></tr></thead>
         <tbody id="inviteRows"></tbody>
       </table>
     </div>
@@ -457,13 +457,13 @@ document.getElementById("confirmBulkBtn").addEventListener("click", async () => 
     }));
 
     const resultSummaryEl = document.getElementById("resultSummary");
-    resultSummaryEl.textContent = `${lastResults.length} 件の受験招待を発行しました。下の一覧の「招待メール作成」から、対象者ごとに案内メールを作成してください。`;
+    resultSummaryEl.textContent = `${lastResults.length} 件の受験招待を発行しました。下の一覧の「招待メール作成（個別）」から、対象者ごとに案内メールを作成してください。`;
     resultSummaryEl.className = "status ok";
     document.getElementById("resultRows").innerHTML = lastResults.map((r) => `
       <tr>
         <td>
           <button class="table-action-btn secondary" type="button" data-action="copy" data-link="${escapeHtml(r.link)}">リンクのコピー</button>
-          <button class="table-action-btn" type="button" data-action="mail" data-name="${escapeHtml(r.name)}" data-email="${escapeHtml(r.email)}" data-link="${escapeHtml(r.link)}">招待メール作成</button>
+          <button class="table-action-btn" type="button" data-action="mail" data-name="${escapeHtml(r.name)}" data-email="${escapeHtml(r.email)}" data-link="${escapeHtml(r.link)}">招待メール作成（個別）</button>
         </td>
         <td>${escapeHtml(r.name)}<br><span class="muted">${escapeHtml(r.email || "")}</span></td>
         <td>${escapeHtml(r.employeeCode)}</td>
@@ -605,7 +605,7 @@ function renderInvites() {
     tr.innerHTML = `
       <td>${actionCell}</td>
       <td><button class="table-action-btn secondary" type="button" data-action="copy" data-link="${escapeHtml(link)}">リンクのコピー</button></td>
-      <td><button class="table-action-btn" type="button" data-action="mail" data-name="${escapeHtml(invite.applicantName || "")}" data-email="${escapeHtml(invite.applicantEmail || "")}" data-link="${escapeHtml(link)}">招待メール作成</button></td>
+      <td><button class="table-action-btn" type="button" data-action="mail" data-name="${escapeHtml(invite.applicantName || "")}" data-email="${escapeHtml(invite.applicantEmail || "")}" data-link="${escapeHtml(link)}">招待メール作成（個別）</button></td>
       <td><span class="badge ${invite.status}">${statusLabel(invite.status)}</span></td>
       <td>${created}</td>
       <td>${escapeHtml(invite.employeeCode || "")}</td>
