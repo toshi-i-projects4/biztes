@@ -91,6 +91,7 @@ th{background:#f8fafc;color:var(--navy);font-weight:800;font-size:11.5px;positio
         <a class="side-menu-link" id="questionEditorLink" href="operator-question-editor.html">問題管理</a>
         <button type="button" class="side-menu-link toggle" id="inviteMenuToggle" aria-expanded="false">受験者・管理者招待<span class="caret">▾</span></button>
         <div id="inviteSubMenu" class="side-submenu hidden">
+          <a class="side-menu-link side-submenu-link" id="inviteMailTemplateLink" href="operator-invite-mail.html">受験招待メール作成</a>
           <a class="side-menu-link side-submenu-link" id="inviteSingleLink" href="operator-invites.html">受験招待（個別）</a>
           <a class="side-menu-link side-submenu-link" id="inviteBulkLink" href="operator-invites-bulk.html">受験招待（一括）</a>
           <a class="side-menu-link side-submenu-link" href="company-admin-invite.html">企業管理者招待</a>
@@ -192,6 +193,7 @@ onAuthStateChanged(auth, async (user) => {
     document.getElementById("termsMenuLink").classList.toggle("hidden", !myIsApplicant);
 
     document.getElementById("questionEditorLink").href = "operator-question-editor.html?company=" + encodeURIComponent(myCompanyId);
+    document.getElementById("inviteMailTemplateLink").href = "operator-invite-mail.html?company=" + encodeURIComponent(myCompanyId);
     document.getElementById("inviteSingleLink").href = "operator-invites.html?company=" + encodeURIComponent(myCompanyId);
     document.getElementById("inviteBulkLink").href = "operator-invites-bulk.html?company=" + encodeURIComponent(myCompanyId);
     document.getElementById("examineeManageLinkStats").href = "operator-examinees.html?company=" + encodeURIComponent(myCompanyId);

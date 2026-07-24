@@ -1,6 +1,7 @@
 /* operator-mode.js
  * ビズてす：オペレーターが特定の企業を指定して、企業管理者向けの操作画面
- * （operator-question-editor.html／operator-invites.html／company-admin-invite.html）
+ * （operator-question-editor.html／operator-invite-mail.html／operator-invites.html／
+ * operator-invites-bulk.html／company-admin-invite.html）
  * を代理操作していることを画面上に示すための共通ヘルパー。
  *
  * 使い方：

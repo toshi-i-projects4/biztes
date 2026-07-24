@@ -139,7 +139,7 @@ textarea#bulkText{min-height:180px;font-family:ui-monospace,Consolas,monospace;f
 
   <div class="card hidden" id="inviteMailCard">
     <p class="section-title">招待メール案内</p>
-    <p class="description">一覧の「メール作成」を押した対象者について、案内メールを作成できます。宛先・件名・本文はこの画面で直接編集できます。内容をご確認のうえ、必要であれば編集してから送信してください。</p>
+    <p class="description">一覧の「メール作成」を押した対象者について、案内メールを作成できます。件名・本文は「受験招待メール作成」で企業ごとに登録した文面がもとになります（未登録の場合はビズてすの初期文面が使われます）。宛先・件名・本文はこの画面でも直接編集できます。内容をご確認のうえ、必要であれば編集してから送信してください。</p>
     <div class="warning-box">注意：メールソフトが起動したら、宛先・件名・本文をあらためて確認してから送信してください。</div>
     <div class="form-grid">
       <div class="label">送信先</div><input id="inviteTo">
@@ -184,7 +184,7 @@ import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/
 import {
   doc, getDoc, collection, getDocs, onSnapshot, query, orderBy, writeBatch, updateDoc, serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { escapeHtml, loadEffectiveCategory1List, loadEffectiveQuestionSet } from "./operator-shared.js";
+import { escapeHtml, buildInviteMailContent } from "./operator-shared.js";
 
 let companyId = "";
 let isOperatorUser = false;
@@ -210,71 +210,6 @@ function getInviteLink(token) {
   return `${location.origin}${location.pathname.replace("operator-invites-bulk.html", "")}exam-entry.html?company=${companyId}&token=${token}`;
 }
 
-// 実際に受験フローへ組み込まれる各カテゴリーの制限時間・出題形式から、
-// 案内メールに載せる「所要時間の目安」と「タイピング問題の有無」を求める。
-// exam-entry.html が受験者に表示する内容と同じ実効設定（企業が自社で問題を
-// 差し替えている場合はそちらを優先）を参照するため、表示される時間と齟齬が出ない。
-async function loadExamSummary(companyId) {
-  const category1Order = await loadEffectiveCategory1List(companyId);
-  let totalSec = 0;
-  let hasTyping = false;
-  for (const category1 of category1Order) {
-    const eff = await loadEffectiveQuestionSet(companyId, category1);
-    totalSec += eff.settings ? (eff.settings.realTimeLimitSec || 0) : 0;
-    if (eff.items && eff.items.some((it) => it.type === "typing_passage")) hasTyping = true;
-  }
-  return { totalSec, hasTyping };
-}
-
-async function buildInviteMail(data, link) {
-  const subject = "【ビズてす】受験のご案内";
-  const { hasTyping } = await loadExamSummary(companyId);
-
-  const zenkakuNum = ["０", "１", "２", "３", "４", "５", "６", "７", "８", "９"];
-  const toZenkakuNumber = (n) => String(n).split("").map((d) => zenkakuNum[Number(d)]).join("");
-
-  const noteBlocks = [
-    [
-      "受験を開始すると、途中で中断・やり直しはできません。",
-      "通信環境の良い場所で、時間に余裕をもってご受験ください。",
-    ],
-    ["静かで集中できる環境でのご受験をお願いいたします。"],
-  ];
-  if (hasTyping) {
-    noteBlocks.push([
-      "タイピング形式の問題が含まれます。",
-      "パソコン（PC）でのご受験を推奨します。",
-    ]);
-  }
-  noteBlocks.push(["Google Chrome または Microsoft Edge の最新版を推奨します。"]);
-
-  const lines = [
-    `${data.applicantName || "対象者"} 様`,
-    "",
-    "ビズてすの受験のご案内です。",
-    "",
-    "以下のURLを開き、内容をご確認のうえ受験を開始してください。",
-    "",
-    link,
-    "",
-    "所要時間の目安：【　　】",
-    "実施期限：【　　】",
-    "",
-  ];
-  noteBlocks.forEach((block, i) => {
-    lines.push(`※${toZenkakuNumber(i + 1)}`, ...block, "");
-  });
-  lines.push(
-    "ご不明な点がございましたら、下記の担当者までご連絡ください。",
-    "担当者：【　　】",
-    "連絡先：【　　】",
-    "",
-    "ビズてす"
-  );
-
-  return { email: data.applicantEmail || "", subject, body: lines.join("\n") };
-}
-
 function setInviteMailStatus(msg, type) {
   const el = document.getElementById("inviteMailStatus");
   el.textContent = msg || "";
@@ -289,7 +224,7 @@ async function showInviteMail(data, link) {
   setInviteMailStatus("メール文面を作成しています…", "warn");
   document.getElementById("inviteMailCard").scrollIntoView({ behavior: "smooth", block: "start" });
 
-  lastInvite = await buildInviteMail(data, link);
+  lastInvite = await buildInviteMailContent(companyId, data, link);
   document.getElementById("inviteTo").value = lastInvite.email;
   document.getElementById("inviteSubject").value = lastInvite.subject;
   document.getElementById("inviteBody").value = lastInvite.body;

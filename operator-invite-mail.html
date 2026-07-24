@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>受験招待メール作成｜ビズてす</title>
+<style>
+body{margin:0;font-family:"Hiragino Maru Gothic ProN","BIZ UDPGothic","Yu Gothic UI","Meiryo",sans-serif;background:#eef2f7;color:#111827;padding:24px;box-sizing:border-box;line-height:1.7}
+.page{max-width:980px;margin:30px auto;background:#fff;border-radius:16px;box-shadow:0 4px 12px rgba(0,0,0,.08);padding:32px;box-sizing:border-box}
+.header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px}h1{margin:0;font-size:28px}.back-link,.bottom-back-link{color:#0369a1;text-decoration:none;font-weight:bold;font-size:14px}.bottom-back-link{display:inline-block;margin-top:22px}.section-title{font-size:18px;font-weight:bold;margin:0 0 14px}.description{font-size:14px;line-height:1.7;color:#6b7280;margin:0 0 18px}
+.card{background:transparent;border:none;border-radius:0;box-shadow:none;padding:0;box-sizing:border-box;margin:0 0 28px}.card+.card{border-top:1px solid #e5e7eb;padding-top:24px}
+.info-box,.warning-box,.preview-box{background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:14px 16px;margin-bottom:14px;line-height:1.7;white-space:pre-wrap;font-size:14px;color:#111827}.warning-box{background:#fffbeb;border-color:#fde68a;color:#92400e;margin-top:16px}.info-box{background:#e0f2fe;border-color:#7dd3fc;color:#075985}
+.form-grid{display:grid;grid-template-columns:180px 1fr;gap:14px 16px;align-items:center}.label{font-size:14px;font-weight:bold;color:#374151}.required{color:#dc2626;font-size:12px;margin-left:4px}input,select,textarea{width:100%;border:1px solid #d1d5db;border-radius:10px;padding:11px 12px;font-size:15px;box-sizing:border-box;background:#fff;color:#111827}input[readonly],textarea[readonly]{background:#f9fafb;color:#6b7280}textarea{resize:vertical;line-height:1.6}
+.invite-textarea{min-height:320px;font-family:"BIZ UDPGothic","Yu Gothic UI","Meiryo",sans-serif;background:#fff}
+.button-row,.invite-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px;flex-wrap:wrap}.primary-btn,.secondary-btn,.danger-btn{border:none;border-radius:10px;padding:12px 16px;font-size:15px;font-weight:bold;cursor:pointer}.primary-btn{background:#0369a1;color:#fff}.primary-btn:hover{background:#075985}.secondary-btn{background:#64748b;color:#fff}.secondary-btn:hover{background:#475569}.primary-btn:disabled,.secondary-btn:disabled{opacity:.6;cursor:not-allowed}
+.status{border-radius:10px;padding:14px 16px;margin-top:14px;margin-bottom:14px;line-height:1.7;white-space:pre-wrap;font-size:14px;font-weight:bold;display:none}.status.ok{display:block;background:#dcfce7;border:1px solid #86efac;color:#166534}.status.error{display:block;background:#fee2e2;border:1px solid #fca5a5;color:#991b1b}.status.note{display:block;background:#e0f2fe;border:1px solid #7dd3fc;color:#075985}.status.warn{display:block;background:#fef3c7;border:1px solid #fbbf24;color:#92400e}
+.hidden{display:none!important}.small{font-size:13px;color:#6b7280;line-height:1.7}.muted{color:#6b7280}
+.placeholder-list{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 0}
+.placeholder-chip{display:inline-block;background:#fff;border:1px solid #7dd3fc;border-radius:999px;padding:4px 10px;font-size:12.5px;font-family:ui-monospace,Consolas,monospace;color:#075985}
+.page-loading{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:#eef2f7;color:#1f2937;font-weight:bold}.page-loading.hidden{display:none!important}.loading-box{display:flex;flex-direction:column;align-items:center;gap:12px;background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:24px 28px;box-shadow:0 4px 12px rgba(0,0,0,.08)}.loading-spinner{width:42px;height:42px;border:5px solid #e0f2fe;border-top-color:#0369a1;border-radius:50%;animation:spin .9s linear infinite}.loading-text{font-size:14px;color:#374151}@keyframes spin{to{transform:rotate(360deg)}}
+@media(max-width:640px){body{padding:16px}.header{flex-direction:column;align-items:flex-start}.page{padding:24px}.button-row,.invite-actions{flex-direction:column}.primary-btn,.secondary-btn{width:100%}.form-grid{grid-template-columns:1fr;gap:8px 0}}
+</style>
+</head>
+<body>
+<div id="pageLoading" class="page-loading"><div class="loading-box"><div class="loading-spinner"></div><div id="loadingText" class="loading-text">受験招待メール作成を読み込み中...</div></div></div>
+<script>
+(function(){function h(){var l=document.getElementById('pageLoading');if(l){l.classList.add('hidden');l.style.display='none'}}function s(t){var l=document.getElementById('pageLoading'),x=document.getElementById('loadingText');if(x&&t)x.textContent=t;if(l){l.classList.remove('hidden');l.style.display='flex'}}window.bizTestHideMailTemplateLoading=h;window.bizTestShowMailTemplateLoading=s;setTimeout(function(){var l=document.getElementById('pageLoading');if(l&&!l.classList.contains('hidden'))h()},8000);window.addEventListener('error',h);window.addEventListener('unhandledrejection',h)})();
+</script>
+<div class="page">
+  <div class="header"><h1>受験招待メール作成</h1><a class="back-link" href="operator-home.html" id="backHomeLink">← 運営ホームへ戻る</a></div>
+
+  <div class="card" id="companySelectPanel">
+    <p class="section-title">企業を選択</p>
+    <div class="form-grid"><div class="label">対象企業<span class="required">必須</span></div><select id="companySelect"><option value="">選択してください</option></select></div>
+  </div>
+
+  <div class="card" id="templateCard">
+    <p class="description">ここで登録した件名・本文が、「受験招待（個別）」「受験招待（一括）」で対象者ごとにメールを作成するときの、あらかじめ決まった文面（ひな形）として使われます。登録後も、実際にメールを作成する画面側で1件ごとに内容を修正できます。</p>
+    <div class="info-box">
+      本文・件名には、以下のプレースホルダーを使えます。メール作成時に、対象者ごとの実際の値に自動的に置き換わります。
+      <div class="placeholder-list">
+        <span class="placeholder-chip">{{氏名}}</span>
+        <span class="placeholder-chip">{{受験リンク}}</span>
+        <span class="placeholder-chip">{{社員コード}}</span>
+        <span class="placeholder-chip">{{部署}}</span>
+        <span class="placeholder-chip">{{役職}}</span>
+        <span class="placeholder-chip">{{備考}}</span>
+      </div>
+    </div>
+    <div id="loadStatus" class="status"></div>
+    <div class="form-grid">
+      <div class="label">件名</div><input id="templateSubject" placeholder="例：【ビズてす】受験のご案内">
+      <div class="label">本文</div><textarea id="templateBody" class="invite-textarea" placeholder="{{氏名}} 様&#10;&#10;以下のURLから受験してください。&#10;&#10;{{受験リンク}}"></textarea>
+    </div>
+    <div class="warning-box">注意：本文に <code>{{受験リンク}}</code> が含まれていないと、対象者が受験リンクを受け取れなくなります。保存前に必ず含まれているか確認してください。</div>
+    <div id="saveStatus" class="status"></div>
+    <div class="button-row">
+      <button class="secondary-btn" id="loadDefaultBtn" type="button">初期文面を読み込む</button>
+      <button class="secondary-btn" id="previewBtn" type="button">プレビュー</button>
+      <button class="primary-btn" id="saveBtn" type="button">保存する</button>
+    </div>
+  </div>
+
+  <div class="card hidden" id="previewCard">
+    <p class="section-title">プレビュー（サンプルデータで表示）</p>
+    <p class="description">氏名「山田 太郎」・受験リンクはサンプルの値で置き換えた場合の見え方です。実際の対象者ではこの部分が対象者ごとの実際の値になります。</p>
+    <div class="form-grid">
+      <div class="label">件名</div><input id="previewSubject" readonly>
+      <div class="label">本文</div><textarea id="previewBody" class="invite-textarea" readonly></textarea>
+    </div>
+  </div>
+
+  <a class="bottom-back-link" href="operator-home.html" id="backHomeLinkBottom">← 運営ホームへ戻る</a>
+</div>
+
+<script src="operator-mode.js"></script>
+<script type="module">
+import { auth, db } from "./firebase-config.js";
+import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { doc, getDoc, collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { buildDefaultInviteMailTemplate, loadInviteMailTemplate, saveInviteMailTemplate, fillInviteMailPlaceholders } from "./operator-shared.js";
+
+let companyId = "";
+let isOperatorUser = false;
+let currentUser = null;
+
+function showPage() {
+  if (window.bizTestHideMailTemplateLoading) window.bizTestHideMailTemplateLoading();
+}
+
+function setBackHomeLink(href, text) {
+  ["backHomeLink", "backHomeLinkBottom"].forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) { el.href = href; el.textContent = text; }
+  });
+}
+
+function setLoadStatus(msg, type) {
+  const el = document.getElementById("loadStatus");
+  el.textContent = msg || "";
+  el.className = "status " + (msg ? (type || "") : "");
+}
+
+function setSaveStatus(msg, type) {
+  const el = document.getElementById("saveStatus");
+  el.textContent = msg || "";
+  el.className = "status " + (msg ? (type || "") : "");
+}
+
+onAuthStateChanged(auth, async (user) => {
+  if (!user) { location.href = "login.html"; return; }
+  currentUser = user;
+
+  const urlCompanyParam = new URLSearchParams(location.search).get("company");
+  const caSnap = await getDoc(doc(db, "companyAdmins", user.uid));
+  const isActiveCompanyAdmin = caSnap.exists() && caSnap.data().status === "active";
+  const ownCompanyId = isActiveCompanyAdmin ? caSnap.data().companyId : "";
+
+  // 他の企業管理画面（operator-invites.html等）と同じ考え方：
+  // 自社の画面として開いた場合は企業管理者としてとどまり、運営が他社を操作する
+  // 目的で開いた場合（?opEnter=1、または自社と異なる?companyを指定）のみ運営者判定に進む。
+  const forceOperatorEntry = !!(window.BizTestOperatorMode && window.BizTestOperatorMode.isExplicitEntry());
+  if (isActiveCompanyAdmin && !forceOperatorEntry && (!urlCompanyParam || urlCompanyParam === ownCompanyId)) {
+    companyId = ownCompanyId;
+    document.getElementById("companySelectPanel").classList.add("hidden");
+    setBackHomeLink("company-admin-home.html", "← 企業管理者ホームへ戻る");
+
+    await loadTemplateForCompany();
+    showPage();
+    return;
+  }
+
+  const opSnap = await getDoc(doc(db, "operators", user.uid));
+  if (opSnap.exists()) {
+    isOperatorUser = true;
+    await loadCompaniesForOperator();
+    showPage();
+    return;
+  }
+
+  await signOut(auth); location.href = "login.html";
+});
+
+async function loadCompaniesForOperator() {
+  const snap = await getDocs(query(collection(db, "companies"), orderBy("createdAt", "desc")));
+  const select = document.getElementById("companySelect");
+  snap.forEach((d) => {
+    const opt = document.createElement("option");
+    opt.value = d.id;
+    opt.textContent = d.data().companyName;
+    opt.dataset.companyName = d.data().companyName;
+    select.appendChild(opt);
+  });
+  const preselect = new URLSearchParams(location.search).get("company");
+  if (preselect) select.value = preselect;
+  select.addEventListener("change", async () => {
+    companyId = select.value;
+    updateOperatorBanner();
+    document.getElementById("previewCard").classList.add("hidden");
+    await loadTemplateForCompany();
+  });
+  if (select.value) { companyId = select.value; updateOperatorBanner(); await loadTemplateForCompany(); }
+}
+
+function updateOperatorBanner() {
+  if (!isOperatorUser || !companyId) return;
+  const select = document.getElementById("companySelect");
+  const opt = select.options[select.selectedIndex];
+  const companyName = opt ? (opt.dataset.companyName || opt.textContent) : "";
+  window.BizTestOperatorMode && window.BizTestOperatorMode.renderBanner({ companyId, companyName });
+}
+
+async function loadTemplateForCompany() {
+  if (!companyId) return;
+  setLoadStatus("読み込んでいます...", "warn");
+  setSaveStatus("", "");
+  try {
+    const saved = await loadInviteMailTemplate(companyId);
+    if (saved && (saved.subject || saved.body)) {
+      document.getElementById("templateSubject").value = saved.subject || "";
+      document.getElementById("templateBody").value = saved.body || "";
+      setLoadStatus("保存済みの文面を表示しています。", "note");
+    } else {
+      const def = await buildDefaultInviteMailTemplate(companyId);
+      document.getElementById("templateSubject").value = def.subject;
+      document.getElementById("templateBody").value = def.body;
+      setLoadStatus("まだ保存されていないため、ビズてすの初期文面を表示しています。内容を確認・修正のうえ「保存する」を押してください。", "warn");
+    }
+  } catch (e) {
+    console.error(e);
+    setLoadStatus("読み込みに失敗しました：" + (e.message || e), "error");
+  }
+}
+
+document.getElementById("loadDefaultBtn").addEventListener("click", async () => {
+  if (!companyId) { setSaveStatus("先に企業を選択してください。", "error"); return; }
+  const ok = confirm("現在編集中の件名・本文を、ビズてすの初期文面で置き換えます。よろしいですか？\n（この時点ではまだ保存されません。保存するには「保存する」を押してください。）");
+  if (!ok) return;
+  setSaveStatus("初期文面を読み込んでいます...", "warn");
+  try {
+    const def = await buildDefaultInviteMailTemplate(companyId);
+    document.getElementById("templateSubject").value = def.subject;
+    document.getElementById("templateBody").value = def.body;
+    setSaveStatus("初期文面を読み込みました。内容を確認し、必要であれば編集してから「保存する」を押してください。", "note");
+  } catch (e) {
+    console.error(e);
+    setSaveStatus("初期文面の読み込みに失敗しました：" + (e.message || e), "error");
+  }
+});
+
+function samplePreviewData() {
+  const sampleLink = `${location.origin}${location.pathname.replace("operator-invite-mail.html", "")}exam-entry.html?company=${encodeURIComponent(companyId || "C001")}&token=preview0000sample`;
+  return {
+    applicantName: "山田 太郎",
+    employeeCode: "B0002",
+    department: "営業部",
+    position: "主任",
+    note: "サンプル表示用",
+    link: sampleLink,
+  };
+}
+
+document.getElementById("previewBtn").addEventListener("click", () => {
+  const subject = document.getElementById("templateSubject").value;
+  const body = document.getElementById("templateBody").value;
+  const data = samplePreviewData();
+  document.getElementById("previewSubject").value = fillInviteMailPlaceholders(subject, data);
+  document.getElementById("previewBody").value = fillInviteMailPlaceholders(body, data);
+  document.getElementById("previewCard").classList.remove("hidden");
+  document.getElementById("previewCard").scrollIntoView({ behavior: "smooth", block: "start" });
+});
+
+document.getElementById("saveBtn").addEventListener("click", async () => {
+  if (!companyId) { setSaveStatus("先に企業を選択してください。", "error"); return; }
+  const subject = document.getElementById("templateSubject").value.trim();
+  const body = document.getElementById("templateBody").value;
+  if (!subject) { setSaveStatus("件名を入力してください。", "error"); return; }
+  if (!body.trim()) { setSaveStatus("本文を入力してください。", "error"); return; }
+  if (!body.includes("{{受験リンク}}")) {
+    setSaveStatus("本文に {{受験リンク}} が含まれていません。対象者が受験リンクを受け取れなくなるため、本文に {{受験リンク}} を含めてから保存してください。", "error");
+    return;
+  }
+
+  const btn = document.getElementById("saveBtn");
+  btn.disabled = true;
+  setSaveStatus("保存しています...", "warn");
+  try {
+    await saveInviteMailTemplate(companyId, { subject, body }, currentUser);
+    setSaveStatus("保存しました。以後、「受験招待（個別）」「受験招待（一括）」でメールを作成すると、この文面がもとになります。", "ok");
+  } catch (e) {
+    console.error(e);
+    setSaveStatus("保存に失敗しました：" + (e.code || "") + " " + (e.message || e), "error");
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+document.getElementById("logoutBtn") && document.getElementById("logoutBtn").addEventListener("click", async () => {
+  await signOut(auth);
+  location.href = "login.html";
+});
+</script>
+</body>
+</html>

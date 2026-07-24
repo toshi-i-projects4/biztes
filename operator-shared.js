@@ -357,3 +357,135 @@ export async function loadEffectiveQuestionSet(companyId, category1) {
   cacheWrite(cacheKey, result);
   return result;
 }
+
+// =====================================================================
+// 招待メール（v8で追加）
+//
+// 「受験招待メール作成」（operator-invite-mail.html）で、企業ごとに件名・本文の
+// ひな形を1つ保存できるようにする（companies/{companyId}/mailTemplates/inviteMail）。
+// 個別招待（operator-invites.html）・一括招待（operator-invites-bulk.html）どちらも、
+// 招待メール案内を表示するときにこのテンプレートを読み込んで使う。企業がまだ一度も
+// 保存していない場合は、これまで通りの自動生成文面（buildDefaultInviteMailTemplate）に
+// フォールバックする。
+//
+// テンプレート中のプレースホルダーは {{氏名}} / {{受験リンク}} / {{社員コード}} /
+// {{部署}} / {{役職}} / {{備考}} の二重中かっこ形式。差し込み印刷用CSVの列名や、
+// 一括招待の「まとめてメールを送るには」で案内している書式とそろえている。
+// =====================================================================
+
+const ZENKAKU_NUM = ["０", "１", "２", "３", "４", "５", "６", "７", "８", "９"];
+function toZenkakuNumber(n) {
+  return String(n).split("").map((d) => ZENKAKU_NUM[Number(d)]).join("");
+}
+
+// 実際に受験フローへ組み込まれる各カテゴリーの制限時間・出題形式から、
+// 案内メールに載せる「所要時間の目安」と「タイピング問題の有無」を求める。
+// exam-entry.html が受験者に表示する内容と同じ実効設定（企業が自社で問題を
+// 差し替えている場合はそちらを優先）を参照するため、表示される時間と齟齬が出ない。
+export async function loadExamSummary(companyId) {
+  const category1Order = await loadEffectiveCategory1List(companyId);
+  let totalSec = 0;
+  let hasTyping = false;
+  for (const category1 of category1Order) {
+    const eff = await loadEffectiveQuestionSet(companyId, category1);
+    totalSec += eff.settings ? (eff.settings.realTimeLimitSec || 0) : 0;
+    if (eff.items && eff.items.some((it) => it.type === "typing_passage")) hasTyping = true;
+  }
+  return { totalSec, hasTyping };
+}
+
+// 企業が「受験招待メール作成」で文面を保存する前・保存をリセットしたい場合に使う初期文面。
+// これまで個別招待・一括招待にべた書きしていた自動生成ロジックをそのまま移設したもの。
+export async function buildDefaultInviteMailTemplate(companyId) {
+  const { hasTyping } = await loadExamSummary(companyId);
+
+  const noteBlocks = [
+    [
+      "受験を開始すると、途中で中断・やり直しはできません。",
+      "通信環境の良い場所で、時間に余裕をもってご受験ください。",
+    ],
+    ["静かで集中できる環境でのご受験をお願いいたします。"],
+  ];
+  if (hasTyping) {
+    noteBlocks.push([
+      "タイピング形式の問題が含まれます。",
+      "パソコン（PC）でのご受験を推奨します。",
+    ]);
+  }
+  noteBlocks.push(["Google Chrome または Microsoft Edge の最新版を推奨します。"]);
+
+  const lines = [
+    "{{氏名}} 様",
+    "",
+    "ビズてすの受験のご案内です。",
+    "",
+    "以下のURLを開き、内容をご確認のうえ受験を開始してください。",
+    "",
+    "{{受験リンク}}",
+    "",
+    "所要時間の目安：【　　】",
+    "実施期限：【　　】",
+    "",
+  ];
+  noteBlocks.forEach((block, i) => {
+    lines.push(`※${toZenkakuNumber(i + 1)}`, ...block, "");
+  });
+  lines.push(
+    "ご不明な点がございましたら、下記の担当者までご連絡ください。",
+    "担当者：【　　】",
+    "連絡先：【　　】",
+    "",
+    "ビズてす"
+  );
+
+  return { subject: "【ビズてす】受験のご案内", body: lines.join("\n") };
+}
+
+// 企業が保存済みの招待メールテンプレートを読み込む（未保存ならnull）
+export async function loadInviteMailTemplate(companyId) {
+  const snap = await getDoc(doc(db, "companies", companyId, "mailTemplates", "inviteMail"));
+  return snap.exists() ? snap.data() : null;
+}
+
+// 招待メールテンプレートを保存する（operator-invite-mail.html から呼ぶ）
+export async function saveInviteMailTemplate(companyId, template, user) {
+  await setDoc(doc(db, "companies", companyId, "mailTemplates", "inviteMail"), {
+    subject: (template && template.subject) || "",
+    body: (template && template.body) || "",
+    updatedAt: serverTimestamp(),
+    updatedBy: user ? user.uid : "",
+    updatedByEmail: user ? (user.email || "") : "",
+  });
+}
+
+// テンプレート中の {{氏名}} 等のプレースホルダーを、実際の対象者データに置き換える
+export function fillInviteMailPlaceholders(text, data) {
+  data = data || {};
+  const map = {
+    "{{氏名}}": data.applicantName || "対象者",
+    "{{受験リンク}}": data.link || "",
+    "{{社員コード}}": data.employeeCode || "",
+    "{{部署}}": data.department || "",
+    "{{役職}}": data.position || "",
+    "{{備考}}": data.note || "",
+  };
+  let result = String(text || "");
+  Object.keys(map).forEach((key) => {
+    result = result.split(key).join(map[key]);
+  });
+  return result;
+}
+
+// 個別招待・一括招待の「招待メール案内」が呼ぶ、実際に表示する件名・本文の組み立て。
+// 企業が「受験招待メール作成」で文面を保存済みならそれを、未保存ならこれまで通りの
+// 自動生成文面（buildDefaultInviteMailTemplate）にフォールバックして使う。
+export async function buildInviteMailContent(companyId, data, link) {
+  const saved = await loadInviteMailTemplate(companyId);
+  const template = saved && (saved.subject || saved.body) ? saved : await buildDefaultInviteMailTemplate(companyId);
+  const filled = { ...data, link };
+  return {
+    email: data.applicantEmail || "",
+    subject: fillInviteMailPlaceholders(template.subject, filled),
+    body: fillInviteMailPlaceholders(template.body, filled),
+  };
+}

@@ -424,6 +424,15 @@ service cloud.firestore {
         allow write: if isOperator() || sameCompany(companyId);
       }
 
+      // ---- 招待メールのテンプレート（企業ごとに保存する件名・本文のひな形。v8で追加） ----
+      // operator-invite-mail.html（受験招待メール作成）で編集する。応募者の受験導線には
+      // 一切関与しないため、questionSets/customPartsと異なり読み取りもオペレーター・
+      // 自社の企業管理者のみに限定する（応募者・他社の管理者には読ませない）。
+      match /mailTemplates/{docId} {
+        allow get, list: if isOperator() || sameCompany(companyId);
+        allow write: if isOperator() || sameCompany(companyId);
+      }
+
       // ---- 受験招待 ----
       match /examInvites/{token} {
         // オペレーター・自社の企業管理者は全件、応募者は「自分が開始した招待」
