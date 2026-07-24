@@ -191,11 +191,16 @@ async function showRawInviteMailTemplate() {
 
   const saved = await loadInviteMailTemplate(companyId);
   const template = saved && (saved.subject || saved.body) ? saved : await buildDefaultInviteMailTemplate(companyId);
-  lastBulkInviteMail = { email: "{{メール}}", subject: template.subject || "", body: template.body || "" };
+  // Thunderbird「Mail Merge」アドオンは、差し込み先の列名とプレースホルダー名が完全一致している
+  // 必要がある。「結果をCSVでダウンロード」のCSVの列名は「氏名」「メールアドレス」なので、
+  // それに合わせる。また宛先は素の {{メールアドレス}} だけだと、Thunderbirdの宛先欄が
+  // 有効なメールアドレスとして認識できず表示が崩れることがあるため、Mail Merge公式の
+  // 「表示名 <メールアドレス>」形式（{{氏名}} <{{メールアドレス}}>）にしておく。
+  lastBulkInviteMail = { email: "{{氏名}} <{{メールアドレス}}>", subject: template.subject || "", body: template.body || "" };
   document.getElementById("bulkInviteTo").value = lastBulkInviteMail.email;
   document.getElementById("bulkInviteSubject").value = lastBulkInviteMail.subject;
   document.getElementById("bulkInviteBody").value = lastBulkInviteMail.body;
-  setBulkInviteMailStatus("「受験招待メール作成」で保存されている文面です（{{氏名}}・{{受験リンク}}などはそのまま表示しています）。宛先も「{{メール}}」のプレースホルダーのままにしています。一括送信ツール（Mail Mergeなど）で差し込む場合はそのまま、この画面から直接送信する場合は実際の宛先に書き換えてから送信してください。", "note");
+  setBulkInviteMailStatus("「受験招待メール作成」で保存されている文面です（{{氏名}}・{{受験リンク}}などはそのまま表示しています）。宛先も「{{氏名}} <{{メールアドレス}}>」のプレースホルダーのままにしています（「結果をCSVでダウンロード」のCSVの列名「氏名」「メールアドレス」に対応しています）。Thunderbirdの「Mail Merge」機能で、このCSVを差し込みデータに指定して送信してください。この画面から直接1件だけ送信する場合は、宛先を実際のメールアドレスに書き換えてから送信してください。", "note");
 }
 
 function downloadText(filename, text, type) {
