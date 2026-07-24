@@ -68,11 +68,24 @@ textarea#bulkText{min-height:180px;font-family:ui-monospace,Consolas,monospace;f
     <div class="warning-box">注意：受験リンクは対象者ごとに異なります。案内メールは下の一覧の「メール作成」から、1件ずつ作成・送信してください。</div>
     <div class="table-wrap">
       <table class="data-table">
-        <thead><tr><th>対象者</th><th>社員コード</th><th>部署</th><th>役職</th><th>備考</th><th>受験リンク</th><th>操作</th></tr></thead>
+        <thead><tr><th>操作</th><th>対象者</th><th>社員コード</th><th>部署</th><th>役職</th><th>備考</th><th>受験リンク</th></tr></thead>
         <tbody id="resultRows"></tbody>
       </table>
     </div>
-    <div class="button-row"><button class="secondary-btn" id="downloadCsvBtn" type="button">結果をCSVでダウンロード</button><a class="secondary-btn" href="operator-invites.html" id="toIndividualLink" style="text-decoration:none;display:inline-flex;align-items:center">個別招待・一覧を見る →</a></div>
+    <div class="button-row"><button class="secondary-btn" id="createMailBtn" type="button">招待メール作成</button><button class="secondary-btn" id="downloadCsvBtn" type="button">結果をCSVでダウンロード</button><a class="secondary-btn" href="operator-invites.html" id="toIndividualLink" style="text-decoration:none;display:inline-flex;align-items:center">個別招待・一覧を見る →</a></div>
+  </div>
+
+  <div class="card hidden" id="bulkInviteMailCard">
+    <p class="section-title">招待メール案内</p>
+    <p class="description">発行した受験招待について、対象者への案内メールを作成できます。件名・本文は「受験招待メール作成」で企業ごとに登録した文面がもとになります（未登録の場合はビズてすの初期文面が使われます）。宛先・件名・本文はこの画面でも直接編集できます。内容をご確認のうえ、必要であれば編集してから送信してください。</p>
+    <div class="warning-box">注意：メールソフトが起動したら、宛先・件名・本文をあらためて確認してから送信してください。</div>
+    <div class="form-grid">
+      <div class="label">送信先</div><input id="bulkInviteTo">
+      <div class="label">件名</div><input id="bulkInviteSubject">
+      <div class="label">本文</div><textarea id="bulkInviteBody" class="invite-textarea"></textarea>
+    </div>
+    <div id="bulkInviteMailStatus" class="status"></div>
+    <div class="invite-actions"><button class="secondary-btn" type="button" id="bulkCopyInviteBtn">本文をコピー</button><button class="secondary-btn" type="button" id="bulkMailtoBtn">メールを作成</button></div>
   </div>
 
   <div class="card">
@@ -108,7 +121,7 @@ import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/
 import {
   doc, getDoc, collection, getDocs, onSnapshot, query, orderBy, writeBatch, updateDoc, serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { escapeHtml } from "./operator-shared.js";
+import { escapeHtml, buildInviteMailContent } from "./operator-shared.js";
 
 let companyId = "";
 let isOperatorUser = false;
@@ -133,30 +146,40 @@ function getInviteLink(token) {
   return `${location.origin}${location.pathname.replace("operator-invites-bulk.html", "")}exam-entry.html?company=${companyId}&token=${token}`;
 }
 
-function buildInviteMail(data, link) {
-  const subject = "【ビズてす】受験のご案内";
-  const body = `${data.applicantName || "対象者"} 様
+let lastBulkInviteMail = { email: "", subject: "", body: "" };
 
-ビズてすの受験のご案内です。
-
-以下のURLを開き、内容をご確認のうえ受験を開始してください。
-
-${link}
-
-※受験を開始すると、途中で中断・やり直しはできません。
-　通信環境の良い場所で、時間に余裕をもってご受験ください。
-
-ご不明な点がございましたら、担当者までご連絡ください。
-
-ビズてす`;
-  return { email: data.applicantEmail || "", subject, body };
+function setBulkInviteMailStatus(msg, type) {
+  const el = document.getElementById("bulkInviteMailStatus");
+  el.textContent = msg || "";
+  el.className = "status " + (msg ? (type || "") : "");
 }
 
-function openMailtoForRow(applicantName, applicantEmail, link) {
+// 個別招待（operator-invites.html）と同じく、「受験招待メール作成」で企業ごとに
+// 保存された文面（未保存ならビズてすの初期文面）を読み込んでカードに表示する。
+async function showBulkInviteMail(data, link, statusPrefix) {
+  document.getElementById("bulkInviteMailCard").classList.remove("hidden");
+  document.getElementById("bulkInviteTo").value = data.applicantEmail || "";
+  document.getElementById("bulkInviteSubject").value = "";
+  document.getElementById("bulkInviteBody").value = "";
+  setBulkInviteMailStatus("メール文面を作成しています…", "warn");
+  document.getElementById("bulkInviteMailCard").scrollIntoView({ behavior: "smooth", block: "start" });
+
+  lastBulkInviteMail = await buildInviteMailContent(companyId, data, link);
+  document.getElementById("bulkInviteTo").value = lastBulkInviteMail.email;
+  document.getElementById("bulkInviteSubject").value = lastBulkInviteMail.subject;
+  document.getElementById("bulkInviteBody").value = lastBulkInviteMail.body;
+  setBulkInviteMailStatus((statusPrefix || "") + "内容をご確認のうえ、必要であれば編集してから送信してください。", "note");
+}
+
+async function openMailtoForRow(applicantName, applicantEmail, link) {
   if (!applicantEmail) { alert("この対象者にはメールアドレスが登録されていません。"); return; }
-  const built = buildInviteMail({ applicantName, applicantEmail }, link);
-  const url = "mailto:" + encodeURIComponent(built.email) + "?subject=" + encodeURIComponent(built.subject) + "&body=" + encodeURIComponent(built.body);
+  await showBulkInviteMail({ applicantName, applicantEmail }, link);
+  const to = document.getElementById("bulkInviteTo").value.trim();
+  const subject = document.getElementById("bulkInviteSubject").value;
+  const body = document.getElementById("bulkInviteBody").value;
+  const url = "mailto:" + encodeURIComponent(to) + "?subject=" + encodeURIComponent(subject) + "&body=" + encodeURIComponent(body);
   location.href = url;
+  setBulkInviteMailStatus("メールソフトを起動しました。送信前に内容を確認してください。", "ok");
 }
 
 function downloadText(filename, text, type) {
@@ -423,16 +446,16 @@ document.getElementById("confirmBulkBtn").addEventListener("click", async () => 
     resultSummaryEl.className = "status ok";
     document.getElementById("resultRows").innerHTML = lastResults.map((r) => `
       <tr>
+        <td>
+          <button class="table-action-btn secondary" type="button" data-action="copy" data-link="${escapeHtml(r.link)}">リンクのコピー</button>
+          <button class="table-action-btn" type="button" data-action="mail" data-name="${escapeHtml(r.name)}" data-email="${escapeHtml(r.email)}" data-link="${escapeHtml(r.link)}">メール作成</button>
+        </td>
         <td>${escapeHtml(r.name)}<br><span class="muted">${escapeHtml(r.email || "")}</span></td>
         <td>${escapeHtml(r.employeeCode)}</td>
         <td>${escapeHtml(r.department)}</td>
         <td>${escapeHtml(r.position)}</td>
         <td>${escapeHtml(r.note)}</td>
         <td class="link-cell">${escapeHtml(r.link)}</td>
-        <td>
-          <button class="table-action-btn secondary" type="button" data-action="copy" data-link="${escapeHtml(r.link)}">リンクのコピー</button>
-          <button class="table-action-btn" type="button" data-action="mail" data-name="${escapeHtml(r.name)}" data-email="${escapeHtml(r.email)}" data-link="${escapeHtml(r.link)}">メール作成</button>
-        </td>
       </tr>
     `).join("");
     document.querySelectorAll('#resultRows button[data-action="copy"]').forEach((b) => {
@@ -474,6 +497,44 @@ document.getElementById("downloadCsvBtn").addEventListener("click", () => {
   const header = "社員コード,氏名,メールアドレス,部署,役職,備考,受験リンク\n";
   const rows = lastResults.map((r) => [r.employeeCode, r.name, r.email, r.department, r.position, r.note, r.link].map((v) => `"${String(v || "").replace(/"/g, '""')}"`).join(",")).join("\n");
   downloadText("受験招待_一括発行結果.csv", "﻿" + header + rows, "text/csv;charset=utf-8;");
+});
+
+// 発行結果の先頭の対象者を使って、招待メール案内カードを表示する。
+// 他の対象者に送る場合は、宛先を書き換えるか、下の一覧の「メール作成」を使う。
+document.getElementById("createMailBtn").addEventListener("click", async () => {
+  if (!lastResults.length) {
+    document.getElementById("bulkInviteMailCard").classList.remove("hidden");
+    setBulkInviteMailStatus("メールを作成する対象がありません。先に一括で受験招待を発行してください。", "error");
+    document.getElementById("bulkInviteMailCard").scrollIntoView({ behavior: "smooth", block: "start" });
+    return;
+  }
+  const first = lastResults[0];
+  await showBulkInviteMail(
+    { applicantName: first.name, applicantEmail: first.email },
+    first.link,
+    `先頭の対象者（${first.name} 様）の内容を表示しています。他の対象者へは、下の一覧の「メール作成」をご利用ください。\n`
+  );
+});
+
+document.getElementById("bulkCopyInviteBtn").addEventListener("click", async () => {
+  try {
+    await navigator.clipboard.writeText(document.getElementById("bulkInviteBody").value);
+    setBulkInviteMailStatus("招待メール本文をコピーしました。", "ok");
+  } catch (e) {
+    document.getElementById("bulkInviteBody").focus();
+    document.getElementById("bulkInviteBody").select();
+    setBulkInviteMailStatus("自動コピーできませんでした。本文欄を選択しましたので、手動でコピーしてください。", "error");
+  }
+});
+
+document.getElementById("bulkMailtoBtn").addEventListener("click", () => {
+  const to = document.getElementById("bulkInviteTo").value.trim();
+  const subject = document.getElementById("bulkInviteSubject").value;
+  const body = document.getElementById("bulkInviteBody").value;
+  if (!to) { setBulkInviteMailStatus("送信先メールアドレスがありません。メールアドレスを確認してください。", "error"); return; }
+  const url = "mailto:" + encodeURIComponent(to) + "?subject=" + encodeURIComponent(subject) + "&body=" + encodeURIComponent(body);
+  location.href = url;
+  setBulkInviteMailStatus("メールソフトを起動しました。送信前に内容を確認してください。", "ok");
 });
 
 function statusLabel(status) {
