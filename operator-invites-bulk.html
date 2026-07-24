@@ -21,6 +21,12 @@ textarea#bulkText{min-height:180px;font-family:ui-monospace,Consolas,monospace;f
 .hidden{display:none!important}.small{font-size:13px;color:#6b7280;line-height:1.7}.muted{color:#6b7280}.scoped-label{font-size:15px;color:#111827;font-weight:bold}
 .page-loading{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:#eef2f7;color:#1f2937;font-weight:bold}.page-loading.hidden{display:none!important}.loading-box{display:flex;flex-direction:column;align-items:center;gap:12px;background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:24px 28px;box-shadow:0 4px 12px rgba(0,0,0,.08)}.loading-spinner{width:42px;height:42px;border:5px solid #e0f2fe;border-top-color:#0369a1;border-radius:50%;animation:spin .9s linear infinite}.loading-text{font-size:14px;color:#374151}@keyframes spin{to{transform:rotate(360deg)}}
 @media(max-width:640px){body{padding:16px}.header{flex-direction:column;align-items:flex-start}.page{padding:24px}.button-row,.invite-actions{flex-direction:column}.primary-btn,.secondary-btn,.danger-btn{width:100%}.form-grid{grid-template-columns:1fr;gap:8px 0}.toolbar input,.toolbar select{max-width:none;width:100%}}
+.howto{border:1px solid #e5e7eb;border-radius:10px;padding:12px 16px;margin-bottom:10px;background:#f9fafb}
+.howto summary{cursor:pointer;font-weight:bold;color:#0369a1;font-size:14px}
+.howto[open] summary{margin-bottom:8px}
+.howto ol{margin:8px 0 6px;padding-left:22px;font-size:14px;line-height:1.8}
+.howto .small{margin-top:8px}
+.howto code{background:#eef2f7;border-radius:4px;padding:1px 5px;font-size:13px}
 </style>
 </head>
 <body>
@@ -37,7 +43,7 @@ textarea#bulkText{min-height:180px;font-family:ui-monospace,Consolas,monospace;f
   </div>
 
   <div class="card">
-    <p class="description">1. 企業ご担当者がCSVファイルまたはテキスト貼り付けで対象者を一括登録します。<br>2. 登録すると、対象者ごとに固有の受験リンクが自動的に発行されます。<br>3. 下の「招待・受験状況一覧」から、対象者ごとに案内メールを作成・送信できます。</p>
+    <p class="description">1. 企業ご担当者がCSVファイルまたはテキスト貼り付けで対象者を一括登録します。<br>2. 登録すると、対象者ごとに固有の受験リンクが自動的に発行されます。<br>3. 下の「招待・受験状況一覧」から、対象者ごとに案内メールを作成・送信できます。人数が多い場合は、CSVをダウンロードしてお使いのメールソフトの「差し込み印刷」でまとめて送ることもできます（下の「まとめてメールを送るには」を参照）。</p>
     <div class="file-box">
       <input type="file" id="csvFile" accept=".csv,text/csv">
       <div id="fileName" class="file-name">CSVファイルを選択してください。</div>
@@ -65,14 +71,70 @@ textarea#bulkText{min-height:180px;font-family:ui-monospace,Consolas,monospace;f
   <div class="card hidden" id="resultPanel">
     <p class="section-title">発行結果</p>
     <div id="resultSummary" class="status"></div>
-    <div class="warning-box">注意：受験リンクは対象者ごとに異なります。案内メールは下の一覧の「メール作成」から、1件ずつ作成・送信してください。</div>
+    <div class="warning-box">注意：受験リンクは対象者ごとに異なります。案内メールは下の一覧の「メール作成」から1件ずつ作成・送信するか、CSVをダウンロードして「差し込み印刷」でまとめて送信してください。</div>
     <div class="table-wrap">
       <table class="data-table">
         <thead><tr><th>対象者</th><th>社員コード</th><th>部署</th><th>役職</th><th>備考</th><th>受験リンク</th><th>操作</th></tr></thead>
         <tbody id="resultRows"></tbody>
       </table>
     </div>
-    <div class="button-row"><button class="secondary-btn" id="downloadCsvBtn" type="button">結果をCSVでダウンロード</button><a class="secondary-btn" href="operator-invites.html" id="toIndividualLink" style="text-decoration:none;display:inline-flex;align-items:center">個別招待・一覧を見る →</a></div>
+    <div class="button-row"><button class="secondary-btn" id="downloadCsvBtn" type="button">結果をCSVでダウンロード（メール送信用）</button><a class="secondary-btn" href="operator-invites.html" id="toIndividualLink" style="text-decoration:none;display:inline-flex;align-items:center">個別招待・一覧を見る →</a></div>
+  </div>
+
+  <div class="card">
+    <p class="section-title">まとめてメールを送るには（差し込み印刷）</p>
+    <p class="description">「メール作成」を人数分クリックするのが大変な場合は、CSVをダウンロードして、お使いのメールソフトの「差し込み印刷（メールマージ）」機能でまとめて送信できます。差し込み印刷とは、1つのメールのひな形に、CSVの氏名や受験リンクなど人ごとに違う部分を自動で当てはめて、全員に個別内容のメールを一度の操作で送る機能です。ダウンロードしたCSVの列は「氏名・メールアドレス・受験リンク・社員コード・部署・役職・備考・状態」です。お使いのメールソフトに合わせて、下から手順を開いてください。</p>
+
+    <details class="howto">
+      <summary>Outlookをお使いの方（Wordの差し込み印刷）</summary>
+      <ol>
+        <li>ダウンロードしたCSVを一度Excelで開き、「名前を付けて保存」で.xlsx形式（Excelブック）として保存します（文字化け防止のため）。</li>
+        <li>Wordを新規作成し、リボンの「差し込み文書」タブ→「差し込み印刷の開始」→「Eメールメッセージ」を選びます。</li>
+        <li>「宛先の選択」→「既存のリストを使用」→保存したExcelファイルを選びます。</li>
+        <li>本文を入力し、「差し込みフィールドの挿入」から「氏名」「受験リンク」などの項目をカーソル位置に挿入します。</li>
+        <li>「結果のプレビュー」で、実際の氏名・受験リンクに正しく置き換わっているか必ず確認します。</li>
+        <li>「完了と差し込み」→「電子メールメッセージの送信」を選び、宛先の列に「メールアドレス」を指定、件名を入力して送信します（Outlookが起動している必要があります）。</li>
+      </ol>
+      <div class="warning-box">※重要：この方法は従来の「デスクトップ版（クラシック）Outlook」＋「デスクトップ版Word」の組み合わせが必要です。Windows標準搭載の「新しいOutlook」や、ブラウザで開くWeb版Outlookでは、差し込み印刷（Wordとの連携）に正式対応しておらず、実行してもメールが送信トレイに溜まったまま送信されない不具合が報告されています。ご自身の環境がどちらか分からない場合は、情報システム担当にご確認いただくか、下の一覧の「メール作成」から1件ずつ送る方法をご利用ください。</div>
+      <p class="small">参考：<a href="https://support.microsoft.com/ja-jp/office/word%E3%81%A7%E5%B7%AE%E3%81%97%E8%BE%BC%E3%81%BF%E5%8D%B0%E5%88%B7%E3%82%92%E4%BD%BF%E7%94%A8%E3%81%97%E3%81%A6%E4%B8%80%E6%8B%AC%E3%83%A1%E3%83%BC%E3%83%AB-%E3%83%A1%E3%83%83%E3%82%BB%E3%83%BC%E3%82%B8%E3%82%92%E9%80%81%E4%BF%A1%E3%81%99%E3%82%8B-0f123521-20ce-4aa8-8b62-ac211dedefa4" target="_blank" rel="noopener">Microsoft公式サポート：Wordで差し込み印刷を使用して一括メールメッセージを送信する</a></p>
+    </details>
+
+    <details class="howto">
+      <summary>Gmailをお使いの方（Yet Another Mail Merge）</summary>
+      <ol>
+        <li>Googleスプレッドシートを新規作成し、ダウンロードしたCSVの内容を貼り付けます（1行目の見出し行はそのまま残します）。</li>
+        <li>Google Workspace Marketplaceから無料アドオン「Yet Another Mail Merge（YAMM）」をインストールします。</li>
+        <li>Gmailで下書きメールを作成します。差し込みたい箇所に、スプレッドシートの見出し名をそのまま二重の中かっこ（<code>{{ }}</code>）で囲んで入力します（例：<code>{{氏名}}</code> 様、<code>{{受験リンク}}</code>）。見出し名はスプレッドシートの列名と完全に一致させてください。</li>
+        <li>スプレッドシートに戻り、メニューの「拡張機能」→「Yet Another Mail Merge」→「Start Mail Merge」を実行します。</li>
+        <li>送信者名を確認し、作成した下書きテンプレートを選んで「Send emails」で送信します。</li>
+      </ol>
+      <p class="small">無料プランは1日に送信できる件数に上限があります。人数が多い場合は事前にYAMM側の上限をご確認ください。参考：<a href="https://yamm.com/help/getting-started/first-mail-merge/" target="_blank" rel="noopener">YAMM公式ヘルプ：Your first mail merge</a></p>
+      <p class="small">別の選択肢：Gmailの拡張機能「GMass」を使うと、スプレッドシートを別途用意せずGmailの作成画面から直接CSVを取り込んで一斉送信できます。ただしGMassの差し込みタグは一重の中かっこ（<code>{列名}</code>、例：<code>{氏名}</code>）で、YAMMの二重の中かっこ（<code>{{ }}</code>）とは書き方が異なるため、どちらか一方の書式に統一してご利用ください。</p>
+    </details>
+
+    <details class="howto">
+      <summary>Thunderbirdをお使いの方（Mail Mergeアドオン）</summary>
+      <ol>
+        <li>Thunderbirdのアドオンマネージャーから「Mail Merge」アドオンをインストールします。</li>
+        <li>新規メッセージを作成し、件名・本文の差し込みたい箇所に、CSVの見出し名を二重の中かっこ（<code>{{ }}</code>）で囲んで入力します（例：<code>{{氏名}}</code> 様、<code>{{受験リンク}}</code>）。</li>
+        <li>メニューの「ツール」→「Mail Merge」を選びます。</li>
+        <li>データソースに「CSV」を選び、ダウンロードしたCSVファイルを指定します。文字コードは「UTF-8」、区切り文字は「カンマ」を選んでください。</li>
+        <li>内容をプレビューで確認し、送信します（初期設定では一度「送信トレイ」に入るので、最終確認してから送信してください）。</li>
+      </ol>
+      <p class="small">参考：<a href="https://services.addons.thunderbird.net/en-us/thunderbird/addon/mail-merge/" target="_blank" rel="noopener">Thunderbird公式アドオンページ：Mail Merge</a></p>
+    </details>
+
+    <details class="howto">
+      <summary>Mac（Apple Mail）をお使いの方</summary>
+      <p class="small">標準のApple Mailには差し込み印刷の機能が用意されていないため、他の方法を組み合わせる必要があります。</p>
+      <ol>
+        <li>人数が少ない場合は、下の一覧の「メール作成」からApple Mailを1件ずつ開いて送るのが最も確実です。</li>
+        <li>件数が多い場合は、Mac App Storeの有料アプリ（例：「Mail Merge: Bulk Email Sender」など）を使うと、CSVを取り込んでの一斉パーソナライズ送信に対応できます。ただしApple Mail自体を経由せず、そのアプリからGmail・Outlook・iCloudメールなどのアカウント経由で直接送信する仕組みのものが多いため、導入前に対応メールアカウントや料金プランを確認してください。</li>
+        <li>Google WorkspaceやGmailのアカウントをお持ちであれば、上のGmail（YAMM／GMass）の方法に沿って進めるほうが、無料で仕組みも確立されているためおすすめです。</li>
+      </ol>
+    </details>
+
+    <div class="warning-box">注意：受験リンクは対象者ごとに異なる個人専用のリンクです。差し込みを使わず全員に同じ文面をBCCなどでまとめて送ると、他の人のリンクを誤って送ってしまう事故につながります。送信前は必ずプレビュー機能で、氏名・受験リンクが一人ひとり正しく差し込まれているか確認してください。</div>
   </div>
 
   <div class="card">
@@ -88,6 +150,7 @@ textarea#bulkText{min-height:180px;font-family:ui-monospace,Consolas,monospace;f
         <option value="cancelled">対象外</option>
       </select>
       <button class="secondary-btn" id="reloadBtn" type="button">再読み込み</button>
+      <button class="secondary-btn" id="exportMailCsvBtn" type="button">表示中の一覧をCSVでダウンロード（メール送信用）</button>
     </div>
     <div class="table-wrap">
       <table class="data-table">
@@ -577,6 +640,20 @@ async function excludeInvite(token) {
     alert("対象外への変更に失敗しました。\n" + (e.code || "") + "\n" + (e.message || e));
   }
 }
+
+document.getElementById("exportMailCsvBtn").addEventListener("click", () => {
+  const list = filteredInvites();
+  if (!list.length) { alert("ダウンロードできる対象者がいません。検索・絞り込み条件を確認してください。"); return; }
+  const header = "氏名,メールアドレス,受験リンク,社員コード,部署,役職,備考,状態\n";
+  const rows = list.map((invite) => {
+    const link = getInviteLink(invite.token);
+    return [
+      invite.applicantName, invite.applicantEmail, link, invite.employeeCode,
+      invite.department, invite.position, invite.note, statusLabel(invite.status),
+    ].map((v) => `"${String(v || "").replace(/"/g, '""')}"`).join(",");
+  }).join("\n");
+  downloadText("受験招待_メール送信用.csv", "﻿" + header + rows, "text/csv;charset=utf-8;");
+});
 
 document.getElementById("search").addEventListener("input", renderInvites);
 document.getElementById("filterStatus").addEventListener("change", renderInvites);
