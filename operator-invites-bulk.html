@@ -72,7 +72,7 @@ textarea#bulkText{min-height:180px;font-family:ui-monospace,Consolas,monospace;f
         <tbody id="resultRows"></tbody>
       </table>
     </div>
-    <div class="button-row"><button class="primary-btn" id="createMailBtn" type="button">招待メール作成（一括）</button><button class="secondary-btn" id="downloadCsvBtn" type="button">結果をCSVでダウンロード</button><a class="secondary-btn" href="operator-invites.html" id="toIndividualLink" style="text-decoration:none;display:inline-flex;align-items:center">個別招待・一覧を見る →</a></div>
+    <div class="button-row"><button class="primary-btn" id="createMailBtn" type="button">招待メール作成（一括）</button><button class="secondary-btn" id="downloadCsvBtn" type="button">結果をCSVでダウンロード</button></div>
   </div>
 
   <div class="card hidden" id="bulkInviteMailCard">
@@ -239,7 +239,6 @@ onAuthStateChanged(auth, async (user) => {
     companyId = ownCompanyId;
     document.getElementById("companySelectPanel").classList.add("hidden");
     setBackHomeLink("company-admin-home.html", "← 企業管理者ホームへ戻る");
-    document.getElementById("toIndividualLink").href = "operator-invites.html?company=" + encodeURIComponent(companyId);
 
     watchInvites();
     showPage();
