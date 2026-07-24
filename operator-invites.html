@@ -78,7 +78,7 @@ body{margin:0;font-family:"Hiragino Maru Gothic ProN","BIZ UDPGothic","Yu Gothic
     </div>
     <div class="table-wrap">
       <table class="data-table">
-        <thead><tr><th>操作</th><th>リンクのコピー</th><th>メール作成</th><th>状態</th><th>発行日</th><th>社員コード</th><th>氏名</th><th>部署</th><th>役職</th><th>メールアドレス</th><th>備考</th><th>受験開始日時</th><th>受験完了日時</th><th>受験リンク</th></tr></thead>
+        <thead><tr><th>操作</th><th>リンクのコピー</th><th>招待メール作成（個別）</th><th>状態</th><th>発行日</th><th>社員コード</th><th>氏名</th><th>部署</th><th>役職</th><th>メールアドレス</th><th>備考</th><th>受験開始日時</th><th>受験完了日時</th><th>受験リンク</th></tr></thead>
         <tbody id="inviteRows"></tbody>
       </table>
     </div>
@@ -160,15 +160,11 @@ function openMailto() {
   setInviteMailStatus("メールソフトを起動しました。送信前に内容を確認してください。", "ok");
 }
 
-async function openMailtoForRow(applicantName, applicantEmail, link) {
-  if (!applicantEmail) { alert("この対象者にはメールアドレスが登録されていません。"); return; }
+// 招待・受験状況一覧の行ごとの「招待メール作成（個別）」ボタン用。受験招待（一括）と同じく、
+// その行の氏名・受験リンクを差し込んだ内容をカードに表示するだけで、メーラーは起動しない。
+// 内容を確認・編集したうえで、カード側の「メールを作成」を押した時にはじめてメーラーが起動する。
+async function showMailPreviewForRow(applicantName, applicantEmail, link) {
   await showInviteMail({ applicantName, applicantEmail }, link);
-  const to = document.getElementById("inviteTo").value.trim();
-  const subject = document.getElementById("inviteSubject").value;
-  const body = document.getElementById("inviteBody").value;
-  const url = "mailto:" + encodeURIComponent(to) + "?subject=" + encodeURIComponent(subject) + "&body=" + encodeURIComponent(body);
-  location.href = url;
-  setInviteMailStatus("メールソフトを起動しました。送信前に内容を確認してください。", "ok");
 }
 
 onAuthStateChanged(auth, async (user) => {
@@ -291,7 +287,7 @@ function renderInvites() {
     tr.innerHTML = `
       <td>${actionCell}</td>
       <td><button class="table-action-btn secondary" type="button" data-action="copy" data-link="${escapeHtml(link)}">リンクのコピー</button></td>
-      <td><button class="table-action-btn" type="button" data-action="mail" data-name="${escapeHtml(invite.applicantName || "")}" data-email="${escapeHtml(invite.applicantEmail || "")}" data-link="${escapeHtml(link)}">メール作成</button></td>
+      <td><button class="table-action-btn" type="button" data-action="mail" data-name="${escapeHtml(invite.applicantName || "")}" data-email="${escapeHtml(invite.applicantEmail || "")}" data-link="${escapeHtml(link)}">招待メール作成（個別）</button></td>
       <td><span class="badge ${invite.status}">${statusLabel(invite.status)}</span></td>
       <td>${created}</td>
       <td>${escapeHtml(invite.employeeCode || "")}</td>
@@ -312,7 +308,7 @@ function renderInvites() {
       setTimeout(() => { e.target.textContent = "リンクのコピー"; }, 1500);
     });
     tr.querySelector('button[data-action="mail"]').addEventListener("click", (e) => {
-      openMailtoForRow(e.target.dataset.name, e.target.dataset.email, e.target.dataset.link);
+      showMailPreviewForRow(e.target.dataset.name, e.target.dataset.email, e.target.dataset.link);
     });
     rows.appendChild(tr);
   }
