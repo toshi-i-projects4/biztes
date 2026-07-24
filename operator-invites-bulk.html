@@ -191,10 +191,11 @@ async function showRawInviteMailTemplate() {
 
   const saved = await loadInviteMailTemplate(companyId);
   const template = saved && (saved.subject || saved.body) ? saved : await buildDefaultInviteMailTemplate(companyId);
-  lastBulkInviteMail = { email: "", subject: template.subject || "", body: template.body || "" };
+  lastBulkInviteMail = { email: "{{メール}}", subject: template.subject || "", body: template.body || "" };
+  document.getElementById("bulkInviteTo").value = lastBulkInviteMail.email;
   document.getElementById("bulkInviteSubject").value = lastBulkInviteMail.subject;
   document.getElementById("bulkInviteBody").value = lastBulkInviteMail.body;
-  setBulkInviteMailStatus("「受験招待メール作成」で保存されている文面です（{{氏名}}・{{受験リンク}}などはそのまま表示しています）。宛先を入力し、必要であれば編集してから送信してください。", "note");
+  setBulkInviteMailStatus("「受験招待メール作成」で保存されている文面です（{{氏名}}・{{受験リンク}}などはそのまま表示しています）。宛先も「{{メール}}」のプレースホルダーのままにしています。一括送信ツール（Mail Mergeなど）で差し込む場合はそのまま、この画面から直接送信する場合は実際の宛先に書き換えてから送信してください。", "note");
 }
 
 function downloadText(filename, text, type) {
