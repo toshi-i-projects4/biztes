@@ -180,6 +180,11 @@ function buildInviteMail(data) {
 }
 function showInviteMail(data) {
   lastInvite = buildInviteMail(data);
+  // 宛先は実際の氏名・メールアドレスを使い、「表示名 <メールアドレス>」の形式で表示する
+  // （例：山田 太郎 <yamada@example.com>）。
+  if (lastInvite.email) {
+    lastInvite.email = `${data.name || "対象者"} <${lastInvite.email}>`;
+  }
   $("inviteTo").value = lastInvite.email;
   $("inviteSubject").value = lastInvite.subject;
   $("inviteBody").value = lastInvite.body;

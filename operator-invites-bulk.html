@@ -165,6 +165,11 @@ async function showBulkInviteMail(data, link, statusPrefix) {
   document.getElementById("bulkInviteMailCard").scrollIntoView({ behavior: "smooth", block: "start" });
 
   lastBulkInviteMail = await buildInviteMailContent(companyId, data, link);
+  // 宛先は実際の氏名・メールアドレスを使い、「表示名 <メールアドレス>」の形式で表示する
+  // （例：山田 太郎 <yamada@example.com>）。
+  if (lastBulkInviteMail.email) {
+    lastBulkInviteMail.email = `${data.applicantName || "対象者"} <${lastBulkInviteMail.email}>`;
+  }
   document.getElementById("bulkInviteTo").value = lastBulkInviteMail.email;
   document.getElementById("bulkInviteSubject").value = lastBulkInviteMail.subject;
   document.getElementById("bulkInviteBody").value = lastBulkInviteMail.body;
@@ -176,11 +181,6 @@ async function showBulkInviteMail(data, link, statusPrefix) {
 // 内容を確認・編集したうえで、カード側の「メールを作成」を押した時にはじめてメーラーが起動する。
 async function showMailPreviewForRow(applicantName, applicantEmail, link) {
   await showBulkInviteMail({ applicantName, applicantEmail }, link);
-  // 件名・本文はこの対象者の内容で差し込み済みだが、宛先は実際のメールアドレスではなく、
-  // 「招待メール作成（一括）」と同じ「{{氏名}} <{{メールアドレス}}>」のプレースホルダー表記にする。
-  lastBulkInviteMail.email = "{{氏名}} <{{メールアドレス}}>";
-  document.getElementById("bulkInviteTo").value = lastBulkInviteMail.email;
-  setBulkInviteMailStatus("件名・本文はこの対象者の内容で表示しています。宛先は「{{氏名}} <{{メールアドレス}}>」のプレースホルダーにしています。実際に送信する場合は、宛先を実際のメールアドレスに書き換えてから送信してください。", "note");
 }
 
 // 「結果をCSVでダウンロード」の左の「招待メール作成」ボタン用。特定の対象者に紐づかないため、

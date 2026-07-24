@@ -133,6 +133,11 @@ async function showInviteMail(data, link) {
   document.getElementById("inviteMailCard").scrollIntoView({ behavior: "smooth", block: "start" });
 
   lastInvite = await buildInviteMailContent(companyId, data, link);
+  // 宛先は実際の氏名・メールアドレスを使い、「表示名 <メールアドレス>」の形式で表示する
+  // （例：山田 太郎 <yamada@example.com>）。
+  if (lastInvite.email) {
+    lastInvite.email = `${data.applicantName || "対象者"} <${lastInvite.email}>`;
+  }
   document.getElementById("inviteTo").value = lastInvite.email;
   document.getElementById("inviteSubject").value = lastInvite.subject;
   document.getElementById("inviteBody").value = lastInvite.body;
@@ -165,11 +170,6 @@ function openMailto() {
 // 内容を確認・編集したうえで、カード側の「メールを作成」を押した時にはじめてメーラーが起動する。
 async function showMailPreviewForRow(applicantName, applicantEmail, link) {
   await showInviteMail({ applicantName, applicantEmail }, link);
-  // 件名・本文はこの対象者の内容で差し込み済みだが、宛先は実際のメールアドレスではなく、
-  // 受験招待（一括）と同じ「{{氏名}} <{{メールアドレス}}>」のプレースホルダー表記にする。
-  lastInvite.email = "{{氏名}} <{{メールアドレス}}>";
-  document.getElementById("inviteTo").value = lastInvite.email;
-  setInviteMailStatus("件名・本文はこの対象者の内容で表示しています。宛先は「{{氏名}} <{{メールアドレス}}>」のプレースホルダーにしています。実際に送信する場合は、宛先を実際のメールアドレスに書き換えてから送信してください。", "note");
 }
 
 onAuthStateChanged(auth, async (user) => {
