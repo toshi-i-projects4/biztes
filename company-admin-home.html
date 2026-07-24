@@ -95,6 +95,13 @@ th{background:#f8fafc;color:var(--navy);font-weight:800;font-size:11.5px;positio
           <a class="side-menu-link side-submenu-link" id="inviteBulkLink" href="operator-invites-bulk.html">受験招待（一括）</a>
           <a class="side-menu-link side-submenu-link" href="company-admin-invite.html">企業管理者招待</a>
         </div>
+        <a class="side-menu-link" id="examineeManageLinkSidebar" href="operator-examinees.html">受験者管理</a>
+        <a class="side-menu-link" href="company-dashboard.html">ダッシュボード</a>
+        <button type="button" class="side-menu-link toggle" id="reportMenuToggle" aria-expanded="false">レポート<span class="caret">▾</span></button>
+        <div id="reportSubMenu" class="side-submenu hidden">
+          <a class="side-menu-link side-submenu-link" href="company-report.html">レポート（全社）</a>
+          <a class="side-menu-link side-submenu-link" href="company-report-individual.html">レポート（個人）</a>
+        </div>
       </div>
       <a class="side-menu-link" href="account-settings.html">アカウント設定</a>
       <a class="side-menu-link" href="privacy.html">プライバシーポリシー</a>
@@ -188,6 +195,7 @@ onAuthStateChanged(auth, async (user) => {
     document.getElementById("inviteSingleLink").href = "operator-invites.html?company=" + encodeURIComponent(myCompanyId);
     document.getElementById("inviteBulkLink").href = "operator-invites-bulk.html?company=" + encodeURIComponent(myCompanyId);
     document.getElementById("examineeManageLinkStats").href = "operator-examinees.html?company=" + encodeURIComponent(myCompanyId);
+    document.getElementById("examineeManageLinkSidebar").href = "operator-examinees.html?company=" + encodeURIComponent(myCompanyId);
 
     const opSnap = await getDoc(doc(db, "operators", user.uid));
     const hasOperatorPermission = opSnap.exists();
@@ -217,6 +225,14 @@ document.getElementById("logoutBtn").addEventListener("click", async () => {
 document.getElementById("inviteMenuToggle").addEventListener("click", () => {
   const btn = document.getElementById("inviteMenuToggle");
   const sub = document.getElementById("inviteSubMenu");
+  const open = sub.classList.toggle("hidden") === false;
+  btn.classList.toggle("open", open);
+  btn.setAttribute("aria-expanded", open ? "true" : "false");
+});
+
+document.getElementById("reportMenuToggle").addEventListener("click", () => {
+  const btn = document.getElementById("reportMenuToggle");
+  const sub = document.getElementById("reportSubMenu");
   const open = sub.classList.toggle("hidden") === false;
   btn.classList.toggle("open", open);
   btn.setAttribute("aria-expanded", open ? "true" : "false");

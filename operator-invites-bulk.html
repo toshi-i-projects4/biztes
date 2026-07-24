@@ -42,8 +42,8 @@ textarea#bulkText{min-height:180px;font-family:ui-monospace,Consolas,monospace;f
       <input type="file" id="csvFile" accept=".csv,text/csv">
       <div id="fileName" class="file-name">CSVファイルを選択してください。</div>
     </div>
-    <p class="small">Excelやスプレッドシートからのコピー＆ペーストにも対応しています。1行につき1名、「氏名,メールアドレス,社員コード,部署,役職,備考」の順で入力してください（氏名とメールアドレスは必須、社員コード以降は省略できます）。</p>
-    <textarea id="bulkText" placeholder="山田 太郎,yamada@example.com,B0002,営業部,主任,新規招待&#10;佐藤 花子,sato@example.com"></textarea>
+    <p class="small">Excelやスプレッドシートからのコピー＆ペーストにも対応しています。1行につき1名、「社員コード,氏名,メールアドレス,部署,役職,備考」の順で入力してください（氏名とメールアドレスは必須、社員コードと部署・役職・備考は空欄でもかまいません）。</p>
+    <textarea id="bulkText" placeholder="B0002,山田 太郎,yamada@example.com,営業部,主任,新規招待&#10;,佐藤 花子,sato@example.com"></textarea>
     <div class="warning-box">注意：発行後に内容を一括で修正することはできません。発行前に「内容を確認する」で必ずプレビューを確認してください。</div>
     <div id="bulkStatus" class="status"></div>
     <div class="button-row"><button class="secondary-btn" id="templateBtn" type="button">テンプレートCSVをダウンロード</button><button class="primary-btn" id="previewBtn" type="button">内容を確認する</button></div>
@@ -280,11 +280,11 @@ function parseCsvLikeLine(line) {
 }
 
 function parseBulkLine(line) {
-  // 「氏名,メールアドレス,社員コード,部署,役職,備考」の順。氏名・メールアドレスは必須、社員コード以降は省略可。
+  // 「社員コード,氏名,メールアドレス,部署,役職,備考」の順。氏名・メールアドレスは必須、それ以外の項目は空欄可。
   const parts = parseCsvLikeLine(line);
-  const name = (parts[0] || "").trim();
-  const email = (parts[1] || "").trim();
-  const employeeCode = (parts[2] || "").trim();
+  const employeeCode = (parts[0] || "").trim();
+  const name = (parts[1] || "").trim();
+  const email = (parts[2] || "").trim();
   const department = (parts[3] || "").trim();
   const position = (parts[4] || "").trim();
   const note = (parts[5] || "").trim();
@@ -297,18 +297,18 @@ function isValidEmail(v) {
 
 function isHeaderLine(line) {
   const parts = parseCsvLikeLine(line);
-  return (parts[0] || "").trim() === "氏名" && (parts[1] || "").trim() === "メールアドレス";
+  return (parts[0] || "").trim() === "社員コード" && (parts[1] || "").trim() === "氏名";
 }
 
 document.getElementById("templateBtn").addEventListener("click", () => {
   downloadText(
     "受験招待_一括登録テンプレート.csv",
-    "﻿氏名,メールアドレス,社員コード,部署,役職,備考\n" +
+    "﻿社員コード,氏名,メールアドレス,部署,役職,備考\n" +
     "# 1行につき1名を入力してください。\n" +
-    "# 「氏名,メールアドレス,社員コード,部署,役職,備考」の順で入力してください（氏名とメールアドレスは必須、社員コード以降は省略できます）。\n" +
-    "# 入力例：山田 太郎,yamada@example.com,B0002,営業部,主任,新規招待\n" +
+    "# 「社員コード,氏名,メールアドレス,部署,役職,備考」の順で入力してください（氏名とメールアドレスは必須、それ以外の項目は空欄でもかまいません）。\n" +
+    "# 入力例：B0002,山田 太郎,yamada@example.com,営業部,主任,新規招待\n" +
     "# 「#」で始まる行は説明用のコメントです。削除しても、そのままにしても取り込み時は無視されます。\n" +
-    "山田 太郎,yamada@example.com,B0002,営業部,主任,新規招待\n",
+    "B0002,山田 太郎,yamada@example.com,営業部,主任,新規招待\n",
     "text/csv;charset=utf-8"
   );
 });
@@ -471,8 +471,8 @@ document.getElementById("confirmBulkBtn").addEventListener("click", async () => 
 
 document.getElementById("downloadCsvBtn").addEventListener("click", () => {
   if (!lastResults.length) return;
-  const header = "氏名,メールアドレス,社員コード,部署,役職,備考,受験リンク\n";
-  const rows = lastResults.map((r) => [r.name, r.email, r.employeeCode, r.department, r.position, r.note, r.link].map((v) => `"${String(v || "").replace(/"/g, '""')}"`).join(",")).join("\n");
+  const header = "社員コード,氏名,メールアドレス,部署,役職,備考,受験リンク\n";
+  const rows = lastResults.map((r) => [r.employeeCode, r.name, r.email, r.department, r.position, r.note, r.link].map((v) => `"${String(v || "").replace(/"/g, '""')}"`).join(",")).join("\n");
   downloadText("受験招待_一括発行結果.csv", "﻿" + header + rows, "text/csv;charset=utf-8;");
 });
 
