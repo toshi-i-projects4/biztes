@@ -43,7 +43,7 @@ textarea#bulkText{min-height:180px;font-family:ui-monospace,Consolas,monospace;f
   </div>
 
   <div class="card">
-    <p class="description">1. 企業ご担当者がCSVファイルまたはテキスト貼り付けで対象者を一括登録します。<br>2. 登録すると、対象者ごとに固有の受験リンクが自動的に発行されます。<br>3. 下の「招待・受験状況一覧」から、対象者ごとに案内メールを作成・送信できます。人数が多い場合は、CSVをダウンロードしてお使いのメールソフトの「差し込み印刷」でまとめて送ることもできます（下の「まとめてメールを送るには」を参照）。</p>
+    <p class="description">1. 企業ご担当者がCSVファイルまたはテキスト貼り付けで対象者を一括登録します。<br>2. 登録すると、対象者ごとに固有の受験リンクが自動的に発行されます。<br>3. 下の「招待・受験状況一覧」の「メール作成」から、対象者ごとに案内メールを作成できます（「招待メール案内」で宛先・件名・本文を編集してから送信できます）。人数が多い場合は、CSVをダウンロードしてお使いのメールソフトの「差し込み印刷」でまとめて送ることもできます（下の「まとめてメールを送るには」を参照）。</p>
     <div class="file-box">
       <input type="file" id="csvFile" accept=".csv,text/csv">
       <div id="fileName" class="file-name">CSVファイルを選択してください。</div>
@@ -137,6 +137,19 @@ textarea#bulkText{min-height:180px;font-family:ui-monospace,Consolas,monospace;f
     <div class="warning-box">注意：受験リンクは対象者ごとに異なる個人専用のリンクです。差し込みを使わず全員に同じ文面をBCCなどでまとめて送ると、他の人のリンクを誤って送ってしまう事故につながります。送信前は必ずプレビュー機能で、氏名・受験リンクが一人ひとり正しく差し込まれているか確認してください。</div>
   </div>
 
+  <div class="card hidden" id="inviteMailCard">
+    <p class="section-title">招待メール案内</p>
+    <p class="description">一覧の「メール作成」を押した対象者について、案内メールを作成できます。宛先・件名・本文はこの画面で直接編集できます。内容をご確認のうえ、必要であれば編集してから送信してください。</p>
+    <div class="warning-box">注意：メールソフトが起動したら、宛先・件名・本文をあらためて確認してから送信してください。</div>
+    <div class="form-grid">
+      <div class="label">送信先</div><input id="inviteTo">
+      <div class="label">件名</div><input id="inviteSubject">
+      <div class="label">本文</div><textarea id="inviteBody" class="invite-textarea"></textarea>
+    </div>
+    <div id="inviteMailStatus" class="status"></div>
+    <div class="invite-actions"><button class="secondary-btn" type="button" id="copyInviteBtn">本文をコピー</button><button class="secondary-btn" type="button" id="mailtoBtn">メールを作成</button></div>
+  </div>
+
   <div class="card">
     <p class="section-title">招待・受験状況一覧</p>
     <p class="description">発行済みの受験招待の一覧です。招待対象から外した人は「対象外」として管理できます。リンクのコピー、メールの再作成もできます。</p>
@@ -171,7 +184,7 @@ import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/
 import {
   doc, getDoc, collection, getDocs, onSnapshot, query, orderBy, writeBatch, updateDoc, serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { escapeHtml } from "./operator-shared.js";
+import { escapeHtml, loadEffectiveCategory1List, loadEffectiveQuestionSet } from "./operator-shared.js";
 
 let companyId = "";
 let isOperatorUser = false;
@@ -180,6 +193,7 @@ let parsedRows = [];
 let lastResults = [];
 let unsubInvites = null;
 let allInvites = [];
+let lastInvite = { email: "", subject: "", body: "" };
 
 function showPage() {
   if (window.bizTestHideBulkLoading) window.bizTestHideBulkLoading();
@@ -196,30 +210,122 @@ function getInviteLink(token) {
   return `${location.origin}${location.pathname.replace("operator-invites-bulk.html", "")}exam-entry.html?company=${companyId}&token=${token}`;
 }
 
-function buildInviteMail(data, link) {
-  const subject = "【ビズてす】受験のご案内";
-  const body = `${data.applicantName || "対象者"} 様
-
-ビズてすの受験のご案内です。
-
-以下のURLを開き、内容をご確認のうえ受験を開始してください。
-
-${link}
-
-※受験を開始すると、途中で中断・やり直しはできません。
-　通信環境の良い場所で、時間に余裕をもってご受験ください。
-
-ご不明な点がございましたら、担当者までご連絡ください。
-
-ビズてす`;
-  return { email: data.applicantEmail || "", subject, body };
+// 実際に受験フローへ組み込まれる各カテゴリーの制限時間・出題形式から、
+// 案内メールに載せる「所要時間の目安」と「タイピング問題の有無」を求める。
+// exam-entry.html が受験者に表示する内容と同じ実効設定（企業が自社で問題を
+// 差し替えている場合はそちらを優先）を参照するため、表示される時間と齟齬が出ない。
+async function loadExamSummary(companyId) {
+  const category1Order = await loadEffectiveCategory1List(companyId);
+  let totalSec = 0;
+  let hasTyping = false;
+  for (const category1 of category1Order) {
+    const eff = await loadEffectiveQuestionSet(companyId, category1);
+    totalSec += eff.settings ? (eff.settings.realTimeLimitSec || 0) : 0;
+    if (eff.items && eff.items.some((it) => it.type === "typing_passage")) hasTyping = true;
+  }
+  return { totalSec, hasTyping };
 }
 
-function openMailtoForRow(applicantName, applicantEmail, link) {
-  if (!applicantEmail) { alert("この対象者にはメールアドレスが登録されていません。"); return; }
-  const built = buildInviteMail({ applicantName, applicantEmail }, link);
-  const url = "mailto:" + encodeURIComponent(built.email) + "?subject=" + encodeURIComponent(built.subject) + "&body=" + encodeURIComponent(built.body);
+async function buildInviteMail(data, link) {
+  const subject = "【ビズてす】受験のご案内";
+  const { hasTyping } = await loadExamSummary(companyId);
+
+  const zenkakuNum = ["０", "１", "２", "３", "４", "５", "６", "７", "８", "９"];
+  const toZenkakuNumber = (n) => String(n).split("").map((d) => zenkakuNum[Number(d)]).join("");
+
+  const noteBlocks = [
+    [
+      "受験を開始すると、途中で中断・やり直しはできません。",
+      "通信環境の良い場所で、時間に余裕をもってご受験ください。",
+    ],
+    ["静かで集中できる環境でのご受験をお願いいたします。"],
+  ];
+  if (hasTyping) {
+    noteBlocks.push([
+      "タイピング形式の問題が含まれます。",
+      "パソコン（PC）でのご受験を推奨します。",
+    ]);
+  }
+  noteBlocks.push(["Google Chrome または Microsoft Edge の最新版を推奨します。"]);
+
+  const lines = [
+    `${data.applicantName || "対象者"} 様`,
+    "",
+    "ビズてすの受験のご案内です。",
+    "",
+    "以下のURLを開き、内容をご確認のうえ受験を開始してください。",
+    "",
+    link,
+    "",
+    "所要時間の目安：【　　】",
+    "実施期限：【　　】",
+    "",
+  ];
+  noteBlocks.forEach((block, i) => {
+    lines.push(`※${toZenkakuNumber(i + 1)}`, ...block, "");
+  });
+  lines.push(
+    "ご不明な点がございましたら、下記の担当者までご連絡ください。",
+    "担当者：【　　】",
+    "連絡先：【　　】",
+    "",
+    "ビズてす"
+  );
+
+  return { email: data.applicantEmail || "", subject, body: lines.join("\n") };
+}
+
+function setInviteMailStatus(msg, type) {
+  const el = document.getElementById("inviteMailStatus");
+  el.textContent = msg || "";
+  el.className = "status " + (msg ? (type || "") : "");
+}
+
+async function showInviteMail(data, link) {
+  document.getElementById("inviteMailCard").classList.remove("hidden");
+  document.getElementById("inviteTo").value = data.applicantEmail || "";
+  document.getElementById("inviteSubject").value = "";
+  document.getElementById("inviteBody").value = "";
+  setInviteMailStatus("メール文面を作成しています…", "warn");
+  document.getElementById("inviteMailCard").scrollIntoView({ behavior: "smooth", block: "start" });
+
+  lastInvite = await buildInviteMail(data, link);
+  document.getElementById("inviteTo").value = lastInvite.email;
+  document.getElementById("inviteSubject").value = lastInvite.subject;
+  document.getElementById("inviteBody").value = lastInvite.body;
+  setInviteMailStatus("内容をご確認のうえ、必要であれば編集してから送信してください。", "note");
+}
+
+async function copyInviteBody() {
+  try {
+    await navigator.clipboard.writeText(document.getElementById("inviteBody").value);
+    setInviteMailStatus("招待メール本文をコピーしました。", "ok");
+  } catch (e) {
+    document.getElementById("inviteBody").focus();
+    document.getElementById("inviteBody").select();
+    setInviteMailStatus("自動コピーできませんでした。本文欄を選択しましたので、手動でコピーしてください。", "error");
+  }
+}
+
+function openMailto() {
+  const to = document.getElementById("inviteTo").value.trim();
+  const subject = document.getElementById("inviteSubject").value;
+  const body = document.getElementById("inviteBody").value;
+  if (!to) { setInviteMailStatus("送信先メールアドレスがありません。メールアドレスを確認してください。", "error"); return; }
+  const url = "mailto:" + encodeURIComponent(to) + "?subject=" + encodeURIComponent(subject) + "&body=" + encodeURIComponent(body);
   location.href = url;
+  setInviteMailStatus("メールソフトを起動しました。送信前に内容を確認してください。", "ok");
+}
+
+async function openMailtoForRow(applicantName, applicantEmail, link) {
+  if (!applicantEmail) { alert("この対象者にはメールアドレスが登録されていません。"); return; }
+  await showInviteMail({ applicantName, applicantEmail }, link);
+  const to = document.getElementById("inviteTo").value.trim();
+  const subject = document.getElementById("inviteSubject").value;
+  const body = document.getElementById("inviteBody").value;
+  const url = "mailto:" + encodeURIComponent(to) + "?subject=" + encodeURIComponent(subject) + "&body=" + encodeURIComponent(body);
+  location.href = url;
+  setInviteMailStatus("メールソフトを起動しました。送信前に内容を確認してください。", "ok");
 }
 
 function downloadText(filename, text, type) {
@@ -673,6 +779,9 @@ document.getElementById("logoutBtn") && document.getElementById("logoutBtn").add
   await signOut(auth);
   location.href = "login.html";
 });
+
+document.getElementById("copyInviteBtn").addEventListener("click", copyInviteBody);
+document.getElementById("mailtoBtn").addEventListener("click", openMailto);
 </script>
 </body>
 </html>
