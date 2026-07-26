@@ -72,7 +72,7 @@ textarea#bulkText{min-height:180px;font-family:ui-monospace,Consolas,monospace;f
         <tbody id="resultRows"></tbody>
       </table>
     </div>
-    <div class="button-row"><button class="primary-btn" id="createMailBtn" type="button">招待メール作成（一括）</button><button class="secondary-btn" id="downloadCsvBtn" type="button">結果をCSVでダウンロード</button></div>
+    <div class="button-row"><button class="primary-btn" id="createMailBtn" type="button">招待メール作成（一括）</button></div>
   </div>
 
   <div class="card hidden" id="bulkInviteMailCard">
@@ -85,7 +85,7 @@ textarea#bulkText{min-height:180px;font-family:ui-monospace,Consolas,monospace;f
       <div class="label">本文</div><textarea id="bulkInviteBody" class="invite-textarea"></textarea>
     </div>
     <div id="bulkInviteMailStatus" class="status"></div>
-    <div class="invite-actions"><button class="secondary-btn" type="button" id="bulkCopyInviteBtn">本文をコピー</button><button class="secondary-btn" type="button" id="bulkMailtoBtn">メールを作成</button></div>
+    <div class="invite-actions"><button class="secondary-btn" id="downloadCsvBtn" type="button">CSVでダウンロード（メール差し込み用データ）</button><button class="secondary-btn" type="button" id="bulkCopyInviteBtn">本文をコピー</button><button class="secondary-btn" type="button" id="bulkMailtoBtn">メールを作成</button></div>
   </div>
 
   <div class="card">
@@ -183,7 +183,7 @@ async function showMailPreviewForRow(applicantName, applicantEmail, link) {
   await showBulkInviteMail({ applicantName, applicantEmail }, link);
 }
 
-// 「結果をCSVでダウンロード」の左の「招待メール作成」ボタン用。特定の対象者に紐づかないため、
+// 「招待メール作成（一括）」ボタン用。特定の対象者に紐づかないため、
 // 「受験招待メール作成」で保存されている文面（未保存ならビズてすの初期文面）を、
 // {{氏名}}・{{受験リンク}}などのプレースホルダーを差し込まずそのまま表示する。
 async function showRawInviteMailTemplate() {
@@ -197,7 +197,7 @@ async function showRawInviteMailTemplate() {
   const saved = await loadInviteMailTemplate(companyId);
   const template = saved && (saved.subject || saved.body) ? saved : await buildDefaultInviteMailTemplate(companyId);
   // Thunderbird「Mail Merge」アドオンは、差し込み先の列名とプレースホルダー名が完全一致している
-  // 必要がある。「結果をCSVでダウンロード」のCSVの列名は「氏名」「メールアドレス」なので、
+  // 必要がある。「CSVでダウンロード（メール差し込み用データ）」のCSVの列名は「氏名」「メールアドレス」なので、
   // それに合わせる。また宛先は素の {{メールアドレス}} だけだと、Thunderbirdの宛先欄が
   // 有効なメールアドレスとして認識できず表示が崩れることがあるため、Mail Merge公式の
   // 「表示名 <メールアドレス>」形式（{{氏名}} <{{メールアドレス}}>）にしておく。
@@ -205,7 +205,7 @@ async function showRawInviteMailTemplate() {
   document.getElementById("bulkInviteTo").value = lastBulkInviteMail.email;
   document.getElementById("bulkInviteSubject").value = lastBulkInviteMail.subject;
   document.getElementById("bulkInviteBody").value = lastBulkInviteMail.body;
-  setBulkInviteMailStatus("「受験招待メール作成」で保存されている文面です（{{氏名}}・{{受験リンク}}などはそのまま表示しています）。宛先も「{{氏名}} <{{メールアドレス}}>」のプレースホルダーのままにしています（「結果をCSVでダウンロード」のCSVの列名「氏名」「メールアドレス」に対応しています）。Thunderbirdの「Mail Merge」機能で、このCSVを差し込みデータに指定して送信してください。この画面から直接1件だけ送信する場合は、宛先を実際のメールアドレスに書き換えてから送信してください。", "note");
+  setBulkInviteMailStatus("複数の受験者へ一括送信する場合は、各メールサービスの メール差し込み（メールマージ）機能を使い、下記の「CSVでダウンロード（メール差し込み用データ）」ボタンよりファイルをダウンロードして、メール差し込み（メールマージ）データとして指定して送信してください。", "note");
 }
 
 function downloadText(filename, text, type) {
