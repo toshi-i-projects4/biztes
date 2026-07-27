@@ -269,11 +269,14 @@ const SKILL_CONCERN_FALLBACK = "この点にはやや不安が残る";
 function skillStrengthPhrase(name) { return SKILL_STRENGTH_PHRASE[name] || SKILL_STRENGTH_FALLBACK; }
 function skillConcernPhrase(name) { return SKILL_CONCERN_PHRASE[name] || SKILL_CONCERN_FALLBACK; }
 
+// （非公開＝出題対象外の問題は実際の受験では出題されないため、満点の計算からも除外する。exam.htmlの
+// 「(eff.items || []).filter((i) => i.active !== false)」と同じ条件で揃えている）
 function maxBySubcatForCategory1s(category1Ids) {
   const out = {};
   (category1Ids || []).forEach((category1Id) => {
     const items = Array.from((itemsByCategory1[category1Id] || new Map()).values());
     items.forEach((item) => {
+      if (item.active === false) return;
       const sc = item.subcategory || "";
       if (!sc) return;
       let pts = 0;
@@ -395,8 +398,10 @@ function computeResultAggregate(result) {
   }
   return { byCategory1, bySubcat };
 }
+// 非公開＝出題対象外の問題は実際の受験では出題されないため、満点の計算からも除外する
 function maxForCategory1(items) {
   return (items || []).reduce((sum, item) => {
+    if (item.active === false) return sum;
     if (item.type === "typing_passage") return sum + 10;
     if (isScoreableType(item.type)) return sum + (typeof item.score === "number" ? item.score : 1);
     return sum;

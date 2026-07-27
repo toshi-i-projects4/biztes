@@ -359,11 +359,14 @@ function skillStrengthPhrase(name) { return SKILL_STRENGTH_PHRASE[name] || SKILL
 function skillConcernPhrase(name) { return SKILL_CONCERN_PHRASE[name] || SKILL_CONCERN_FALLBACK; }
 
 // カテゴリー1ごとの配点満点を、企業に現在登録されている問題マスタからカテゴリー2単位で計算する
+// （非公開＝出題対象外の問題は実際の受験では出題されないため、満点の計算からも除外する。exam.htmlの
+// 「(eff.items || []).filter((i) => i.active !== false)」と同じ条件で揃えている）
 function maxBySubcatForCategory1s(category1Ids) {
   const out = {};
   (category1Ids || []).forEach((category1Id) => {
     const items = Array.from((itemsByCategory1[category1Id] || new Map()).values());
     items.forEach((item) => {
+      if (item.active === false) return;
       const sc = item.subcategory || "";
       if (!sc) return;
       let pts = 0;
@@ -586,9 +589,11 @@ function renderSurvey() {
 }
 
 // 指定カテゴリー1の配点満点を、現在登録されている問題マスタから計算する
-// （択一・複数選択・空欄補充はitem.score(既定1点)の合計、タイピングは1問あたり10点、5段階評価は対象外）
+// （択一・複数選択・空欄補充はitem.score(既定1点)の合計、タイピングは1問あたり10点、5段階評価は対象外。
+// 非公開＝出題対象外の問題は実際の受験では出題されないため、満点の計算からも除外する）
 function maxForCategory1(items) {
   return (items || []).reduce((sum, item) => {
+    if (item.active === false) return sum;
     if (item.type === "typing_passage") return sum + 10;
     if (isScoreableType(item.type)) return sum + (typeof item.score === "number" ? item.score : 1);
     return sum;
@@ -910,6 +915,7 @@ function renderRadarProfileCard(el, a) {
         skillProfile.sections.map((s) => '<div class="skill-category1"><b>' + esc(RADAR_LABELS[s.category1Id]) + "</b>：" + esc(s.sentence) + "</div>").join("") +
         "</div></div>"
       : '<div class="note" style="margin-top:8px">4能力の得点データが十分でないため、傾向コメントは表示していません。</div>') +
+    '<div class="type-name" style="margin-top:10px">①〜④ 正答率</div>' +
     FOUR_CATEGORY1_IDS.map((category1Id) => {
       const v = a.category1Pct[category1Id];
       return '<div class="bar-row"><div class="label">' + esc(RADAR_LABELS[category1Id]) + '</div><div class="bar-track"><div class="bar-fill" style="width:' + (v == null ? 0 : Math.max(0, v)) + '%"></div></div><div class="val">' + (v == null ? "-" : v + "%") + "</div></div>";
