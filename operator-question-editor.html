@@ -218,6 +218,9 @@ let currentCategory1 = null;
 let editingItemId = null;
 let unsubscribeItems = null;
 let isOperatorUser = false;
+// カテゴリー2列の表示可否。「運営モードとしてこのページに入室しているか」（isOperatorUser）とは別に、
+// アカウントが運営権限を持ってさえいれば（自社の企業管理者として開いている場合も含めて）表示する。
+let showCategory2 = false;
 
 const TYPE_LABELS = {
   typing_passage: "お手本テキスト",
@@ -272,6 +275,12 @@ onAuthStateChanged(auth, async (user) => {
   const isActiveCompanyAdmin = caSnap.exists() && caSnap.data().status === "active";
   const ownCompanyId = isActiveCompanyAdmin ? caSnap.data().companyId : "";
 
+  // 運営権限の有無は、企業管理者として画面にとどまるか運営モードに進むかの判定とは別に、
+  // カテゴリー2列の表示可否のために常に確認しておく（自社の企業管理者として開いている場合も含む）。
+  const opSnap = await getDoc(doc(db, "operators", user.uid));
+  const hasOperatorPermission = opSnap.exists();
+  showCategory2 = hasOperatorPermission;
+
   // 企業管理者ホームから自社の問題管理ページとして開いた場合（URLの企業指定が無い、または自社を指定している場合）は、
   // 運営者権限も併せ持つアカウントであっても、ここでは企業管理者として画面にとどまる。
   // 運営者が他社を操作する目的でこのページを開いた場合のみ、下の運営者判定に進む。
@@ -282,8 +291,7 @@ onAuthStateChanged(auth, async (user) => {
     companyId = ownCompanyId;
     setBackHomeLink("company-admin-home.html", "← 企業管理者ホームへ戻る");
   } else {
-    const opSnap = await getDoc(doc(db, "operators", user.uid));
-    if (opSnap.exists()) {
+    if (hasOperatorPermission) {
       isOperatorUser = true;
       if (!companyId) {
         document.body.innerHTML = "<p style='padding:40px;font-family:sans-serif'>URLに ?company=企業ID が指定されていません。運営ホームから遷移してください。</p>";
@@ -307,8 +315,8 @@ onAuthStateChanged(auth, async (user) => {
     window.BizTestOperatorMode && window.BizTestOperatorMode.renderBanner({ companyId, companyName });
   }
 
-  // カテゴリー2列は運営管理からこのページを開いた場合のみ表示し、企業管理者向けの問題管理画面では表示しない。
-  document.getElementById("cat2Th").style.display = isOperatorUser ? "" : "none";
+  // カテゴリー2列は運営権限を持つアカウントにのみ表示する（自社の企業管理者として開いている場合も含む）。
+  document.getElementById("cat2Th").style.display = showCategory2 ? "" : "none";
 
   await loadCategory1sAndRender();
 });
@@ -422,7 +430,7 @@ function renderItems(snap) {
   const appendGroup = (label, group) => {
     if (!group.length) return;
     const headerRow = document.createElement("tr");
-    headerRow.innerHTML = `<td colspan="${isOperatorUser ? 8 : 7}" class="stage-header">${label}（${group.length}問）</td>`;
+    headerRow.innerHTML = `<td colspan="${showCategory2 ? 8 : 7}" class="stage-header">${label}（${group.length}問）</td>`;
     tbody.appendChild(headerRow);
     group.forEach((item) => tbody.appendChild(itemRow(item)));
   };
@@ -437,7 +445,7 @@ function itemRow(item) {
     <td>${item.order ?? ""}</td>
     <td><span class="badge ${item.stage}">${item.stage === "practice" ? "練習" : "本番"}</span></td>
     <td>${TYPE_LABELS[item.type] || item.type}</td>
-    ${isOperatorUser ? `<td>${escapeHtml(item.subcategory || "-")}</td>` : ""}
+    ${showCategory2 ? `<td>${escapeHtml(item.subcategory || "-")}</td>` : ""}
     <td class="qtext">${escapeHtml(preview)}</td>
     <td>${item.score ?? "-"}</td>
     <td>${item.active === false ? '<span class="badge inactive">非公開</span>' : "公開"}</td>
