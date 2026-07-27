@@ -20,6 +20,11 @@ h1{font-size:20px;color:var(--navy);margin:0 0 10px}
 .card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:20px;margin-bottom:16px;box-shadow:0 4px 14px rgba(15,23,42,.04)}
 .q-index{font-size:12px;font-weight:800;color:var(--muted);margin-bottom:6px}
 .q-text{font-size:14.5px;color:var(--navy);line-height:1.8;white-space:pre-wrap;margin-bottom:12px}
+.q-underline{text-decoration-line:underline;text-decoration-color:var(--blue);text-decoration-thickness:2.5px;text-underline-offset:4px;font-weight:800}
+.option-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.option-card{border:1px solid var(--line);border-radius:10px;padding:9px 11px;font-size:12.5px;line-height:1.6;background:#f8fafc;white-space:pre-wrap}
+.option-card strong{color:var(--blue-dark);margin-right:2px}
+@media(max-width:480px){.option-grid{grid-template-columns:1fr}}
 .q-image{max-width:100%;border-radius:10px;margin-bottom:12px;border:1px solid var(--line)}
 .choices{display:grid;gap:8px}
 .choice-opt{display:flex;align-items:flex-start;gap:10px;border:1.5px solid #bae6fd;border-radius:10px;padding:10px 12px;cursor:pointer;font-size:13.5px}
@@ -29,6 +34,7 @@ h1{font-size:20px;color:var(--navy);margin:0 0 10px}
 .fill-input{width:100%;border:1px solid #d1d5db;border-radius:9px;padding:10px 12px;font-size:14px;font-family:inherit}
 textarea.free-text{width:100%;border:1px solid #d1d5db;border-radius:9px;padding:10px 12px;font-size:14px;font-family:inherit;min-height:70px;resize:vertical}
 .typing-sample{background:#f8fafc;border:1px solid var(--line);border-radius:12px;padding:16px;font-size:14px;line-height:2;color:var(--navy);margin-bottom:14px;white-space:pre-wrap;user-select:none;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;font-family:"BIZ UDGothic","MS Gothic","Osaka-Mono",monospace}
+.underscore-mark{background:#fef08a;color:#78350f;border-radius:3px;padding:0 1px;font-weight:800}
 textarea.typing-input{width:100%;min-height:140px;border:1.5px solid var(--blue);border-radius:12px;padding:14px;font-size:14px;line-height:2;font-family:"BIZ UDGothic","MS Gothic","Osaka-Mono",monospace}
 .footer-actions{position:sticky;bottom:0;background:linear-gradient(0deg,#fff 60%,rgba(255,255,255,0));padding:20px 0 6px;text-align:center}
 button.primary{background:var(--blue);color:#fff;border:none;border-radius:999px;padding:13px 28px;font-size:14px;font-weight:800;cursor:pointer}
@@ -39,8 +45,11 @@ button.primary:disabled{background:#cbd5e1;cursor:not-allowed}
 .feedback.wrong{background:#fee2e2;color:#b91c1c}
 .center-loading{text-align:center;color:var(--muted);padding:80px 20px}
 .q-nav-hint{font-size:11.5px;color:var(--muted);margin:-6px 0 8px}
-.q-nav{position:sticky;background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px;display:flex;gap:6px;overflow-x:auto;margin-bottom:16px;z-index:9}
+.q-nav-outer{position:sticky;display:flex;align-items:center;gap:6px;margin-bottom:16px;z-index:9}
+.q-nav{background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px;display:flex;gap:6px;overflow-x:auto;flex:1;min-width:0;scroll-behavior:smooth}
 .q-nav::-webkit-scrollbar{height:4px}
+.q-nav-arrow{flex:0 0 auto;width:30px;height:30px;border-radius:50%;border:1px solid var(--line);background:#fff;color:var(--blue-dark);font-size:17px;font-weight:900;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 1px 4px rgba(15,23,42,.1);padding:0}
+.q-nav-arrow:disabled{opacity:.25;cursor:default;box-shadow:none}
 .q-chip{flex:0 0 auto;width:32px;height:32px;border-radius:8px;border:1.5px solid #cbd5e1;background:#fff;color:#475569;font-size:12.5px;font-weight:800;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative}
 .q-chip:hover{background:#f8fafc}
 .q-chip.answered{background:#f0f9ff;border-color:var(--blue);color:var(--blue-dark)}
@@ -242,6 +251,40 @@ function isScoreableType(type) {
   return type === "choice" || type === "multi_select" || type === "fill_blank";
 }
 
+// お手本テキスト中のアンダーバー「_」は、フォントによっては行の下のほうに小さく表示され
+// 見落とされやすいため、内容はそのままに目立つハイライト付きで表示する。
+function highlightUnderscores(escapedText) {
+  return escapedText.replace(/_/g, '<span class="underscore-mark">_</span>');
+}
+
+// 問題文・選択肢のテキストで、下線を引きたい語句を「__語句__」のように二重アンダースコアで
+// 囲んでおくと、受験画面では下線付きで表示される（運営管理画面の問題文入力欄で使用可能）。
+function formatRichText(rawText) {
+  const escaped = escapeHtml(rawText || "");
+  return escaped.replace(/__(.+?)__/g, '<u class="q-underline">$1</u>');
+}
+
+// 「A：〜」「B：〜」「C：〜」「D：〜」で始まる行が連続して4行並んでいる問題文
+// （ロジックツリーの選択肢説明などを問題文中に書き出しているタイプ）を検出し、
+// 前後の文章と選択肢部分に分割する。縦一列の長文のままだと4択の比較がしづらいため、
+// 該当する場合は呼び出し側で2列のカード形式にコンパクトに組み替えて表示する。
+// 該当しない場合はnullを返す。
+function splitEmbeddedOptions(text) {
+  const lines = (text || "").split("\n");
+  const optionRe = /^([A-D])[：:]\s*(.*)$/;
+  for (let i = 0; i + 3 < lines.length; i++) {
+    const matches = [lines[i], lines[i + 1], lines[i + 2], lines[i + 3]].map((l) => l.match(optionRe));
+    if (matches.every(Boolean) && matches.map((m) => m[1]).join("") === "ABCD") {
+      return {
+        lead: lines.slice(0, i).join("\n"),
+        trail: lines.slice(i + 4).join("\n"),
+        options: matches.map((m) => ({ key: m[1], text: m[2] })),
+      };
+    }
+  }
+  return null;
+}
+
 function renderItemSet(category1Id, targetStage, items, timeLimit) {
   const isPractice = targetStage === "practice";
   const answers = {}; // itemId -> value
@@ -252,7 +295,7 @@ function renderItemSet(category1Id, targetStage, items, timeLimit) {
     let body = "";
     if (item.type === "typing_passage") {
       body = `
-        <div class="typing-sample">${escapeHtml(item.questionText)}</div>
+        <div class="typing-sample">${highlightUnderscores(escapeHtml(item.questionText))}</div>
         <textarea class="typing-input" data-item="${item.id}" placeholder="ここに入力してください"></textarea>
       `;
     } else if (item.type === "fill_blank") {
@@ -271,7 +314,7 @@ function renderItemSet(category1Id, targetStage, items, timeLimit) {
       const choicesHtml = (item.choices || []).map((c) => `
         <label class="choice-opt">
           <input type="${inputType}" name="q_${item.id}" value="${escapeHtml(c.key)}">
-          <span><strong>${escapeHtml(c.key)}</strong>：${escapeHtml(c.text)}</span>
+          <span><strong>${escapeHtml(c.key)}</strong>：${formatRichText(c.text)}</span>
         </label>`).join("");
       body = `<div class="choices" data-item="${item.id}">${choicesHtml}</div>
         <textarea class="free-text" data-freetext="${item.id}" placeholder="自由にご記入ください（任意）" style="margin-top:10px"></textarea>`;
@@ -280,19 +323,25 @@ function renderItemSet(category1Id, targetStage, items, timeLimit) {
       body = `<div class="choices" data-item="${item.id}">` + (item.choices || []).map((c) => `
         <label class="choice-opt">
           <input type="${inputType}" name="q_${item.id}" value="${escapeHtml(c.key)}">
-          <span><strong>${escapeHtml(c.key)}</strong>：${escapeHtml(c.text)}</span>
+          <span><strong>${escapeHtml(c.key)}</strong>：${formatRichText(c.text)}</span>
         </label>`).join("") + `</div>`;
     }
     const questionText = item.type === "typing_passage"
-      ? "下のお手本と同じ文章を、正確に入力してください。"
+      ? "タイピングの問題です。下のお手本と同じ文章を、正確に入力してください。"
       : item.questionText;
+    const optionSplit = item.type === "typing_passage" ? null : splitEmbeddedOptions(questionText);
+    const qTextHtml = optionSplit
+      ? `<div class="q-text">${formatRichText(optionSplit.lead)}</div>
+        <div class="option-grid">${optionSplit.options.map((o) => `<div class="option-card"><strong>${escapeHtml(o.key)}</strong>：${formatRichText(o.text)}</div>`).join("")}</div>
+        ${optionSplit.trail ? `<div class="q-text">${formatRichText(optionSplit.trail)}</div>` : ""}`
+      : `<div class="q-text">${formatRichText(questionText)}</div>`;
     return `
       <div class="card" data-card="${item.id}" id="card-${item.id}">
         <div class="card-head">
           <div class="q-index">問${idx + 1}</div>
           <button type="button" class="flag-btn" data-flag="${item.id}">🚩 あとで確認</button>
         </div>
-        <div class="q-text">${escapeHtml(questionText)}</div>
+        ${qTextHtml}
         ${img}
         ${body}
         <div class="feedback" data-feedback="${item.id}" style="display:none"></div>
@@ -304,8 +353,12 @@ function renderItemSet(category1Id, targetStage, items, timeLimit) {
 
   root.innerHTML = `
     <div class="stage-badge ${isPractice ? "" : "real"}">${isPractice ? "練習問題" : "本番"}</div>
-    <div class="q-nav-hint">番号をタップでその問題へ移動します。🚩は「あとで確認」マークです。</div>
-    <div class="q-nav" id="qNav">${navChipsHtml}</div>
+    <div class="q-nav-hint">番号をタップでその問題へ移動します。🚩は「あとで確認」マークです。矢印ボタンでも一覧をスクロールできます。</div>
+    <div class="q-nav-outer" id="qNavOuter">
+      <button type="button" class="q-nav-arrow" id="qNavPrev" aria-label="前の問題番号を表示">‹</button>
+      <div class="q-nav" id="qNav">${navChipsHtml}</div>
+      <button type="button" class="q-nav-arrow" id="qNavNext" aria-label="次の問題番号を表示">›</button>
+    </div>
     ${itemsHtml}
     <div class="footer-actions">
       ${isPractice ? '<button class="primary" id="stageNext">解答を確認して本番へ進む</button>' : '<button class="primary" id="stageNext">提出する</button>'}
@@ -313,7 +366,10 @@ function renderItemSet(category1Id, targetStage, items, timeLimit) {
   `;
 
   // ---------- 問題番号ナビ（常時表示・タップでスクロール・未回答/あとで確認の可視化） ----------
+  const qNavOuterEl = document.getElementById("qNavOuter");
   const qNavEl = document.getElementById("qNav");
+  const qNavPrevBtn = document.getElementById("qNavPrev");
+  const qNavNextBtn = document.getElementById("qNavNext");
   const flaggedIds = new Set();
 
   function isAnswered(item) {
@@ -345,11 +401,11 @@ function renderItemSet(category1Id, targetStage, items, timeLimit) {
   }
 
   if (qNavEl) {
-    // topbar（＋qNav自身）の高さぶん、sticky表示の下に隠れないよう調整する
+    // topbar（＋qNavOuter自身）の高さぶん、sticky表示の下に隠れないよう調整する
     const topbarEl = document.querySelector(".topbar");
     const stickyOffset = (topbarEl ? topbarEl.offsetHeight : 0);
-    qNavEl.style.top = stickyOffset + "px";
-    const scrollOffset = stickyOffset + qNavEl.offsetHeight + 12;
+    if (qNavOuterEl) qNavOuterEl.style.top = stickyOffset + "px";
+    const scrollOffset = stickyOffset + (qNavOuterEl ? qNavOuterEl.offsetHeight : qNavEl.offsetHeight) + 12;
     root.querySelectorAll(".card[data-card]").forEach((c) => { c.style.scrollMarginTop = scrollOffset + "px"; });
 
     qNavEl.querySelectorAll("[data-chip]").forEach((chip) => {
@@ -362,6 +418,25 @@ function renderItemSet(category1Id, targetStage, items, timeLimit) {
         target.classList.add("highlight");
       });
     });
+
+    // 問題数が多く番号一覧が画面幅に収まらない場合、横スクロールできることが
+    // 分かりにくいため、左右の矢印ボタンでスクロールできるようにする。
+    // 収まりきっている場合は矢印ボタン自体を非表示にする。
+    const updateNavArrows = () => {
+      if (!qNavPrevBtn || !qNavNextBtn) return;
+      const maxScroll = qNavEl.scrollWidth - qNavEl.clientWidth;
+      const hasOverflow = maxScroll > 2;
+      qNavPrevBtn.style.display = hasOverflow ? "flex" : "none";
+      qNavNextBtn.style.display = hasOverflow ? "flex" : "none";
+      qNavPrevBtn.disabled = qNavEl.scrollLeft <= 1;
+      qNavNextBtn.disabled = qNavEl.scrollLeft >= maxScroll - 1;
+    };
+    const navScrollStep = () => Math.max(qNavEl.clientWidth * 0.7, 120);
+    if (qNavPrevBtn) qNavPrevBtn.addEventListener("click", () => qNavEl.scrollBy({ left: -navScrollStep(), behavior: "smooth" }));
+    if (qNavNextBtn) qNavNextBtn.addEventListener("click", () => qNavEl.scrollBy({ left: navScrollStep(), behavior: "smooth" }));
+    qNavEl.addEventListener("scroll", updateNavArrows);
+    window.addEventListener("resize", updateNavArrows);
+    updateNavArrows();
   }
 
   root.querySelectorAll("[data-flag]").forEach((btn) => {
