@@ -142,7 +142,7 @@ th{background:#f8fafc;color:#0f172a;font-weight:800;font-size:11px}
     <div class="note">
       対象は「受験者管理」で受験完了（状態：受験完了）となっている方のみです。①で会社を選ぶと、その会社の受験完了者から部署の一覧を自動的に作成します。②部署は「すべての部署（全員）」のままにすると、選んだ会社の受験完了者全員が対象になります。<br>
       ダウンロードされるZIPファイルの中は「会社ID_会社名 ＞ 部署名 ＞ 社員コード_氏名_受験完了日.pdf」というフォルダ構成になります（社員コードが未登録の場合はファイル名から省略します）。各PDFの内容は「レポート（個人）」で1名ずつ出力できるものと同じです。<br>
-      対象人数が多いと作成に時間がかかることがあります（1名ごとにグラフを描画してPDF化するため）。作成中はこのタブを閉じずにお待ちください。
+      対象人数が多いと作成に時間がかかることがあります（1名ごとにグラフを描画してPDF化するため）。作成中はこのタブを閉じずにお待ちください。対象が26名以上の場合は、ブラウザのメモリ不足を避けるため25名ごとに複数のZIPファイル（＿1of2、＿2of2…という名前）に分けて順にダウンロードします。
     </div>
   </div>
 
@@ -907,6 +907,44 @@ function setProgress(done, total, label) {
 }
 function hideProgress() { $("progressBox").classList.remove("show"); }
 
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+}
+
+// 1つのZIPにまとめる人数の上限。人数が多いままだと、80名を超えたあたりから
+// 「1名ごとの高解像度キャプチャ画像をすべて同時にメモリ上に保持したままZIP圧縮する」ことで
+// ブラウザのメモリを使い切ってしまい、"Array buffer allocation failed"（メモリ確保失敗）で
+// 処理全体が失敗することがある。そのため、対象人数がこの件数を超える場合はチャンク（回）に
+// 分割し、チャンクごとに個別のZIPファイルとしてダウンロードすることで、ある瞬間に
+// メモリ上に保持するPDFの数を一定以下に抑える（1チャンク分のZIPを作り終えてダウンロードすれば、
+// そのチャンクのデータはガベージコレクションの対象になり解放される）。
+const CHUNK_SIZE = 25;
+
+async function buildPersonPdfBlob(a) {
+  renderApplicantReport(a);
+  await nextFrame();
+  // scale:1.5＋JPEG（PNGよりファイルサイズ・メモリ使用量が大幅に小さい）で、
+  // 大人数を連続で処理してもメモリを圧迫しにくくしている。背景を不透明色にしてあるため
+  // （html2canvasのbackgroundColor指定）JPEG化しても見た目の劣化はほぼない。
+  const canvas = await html2canvas($("pdfExportArea"), { scale: 1.5, backgroundColor: "#f5f7fb", useCORS: true });
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF({
+    orientation: canvas.width >= canvas.height ? "landscape" : "portrait",
+    unit: "px",
+    format: [canvas.width, canvas.height],
+    compress: true,
+  });
+  pdf.addImage(canvas.toDataURL("image/jpeg", 0.85), "JPEG", 0, 0, canvas.width, canvas.height);
+  return pdf.output("blob");
+}
+
 async function exportZip() {
   if (processing) return;
   const deptValue = $("departmentSelect").value;
@@ -917,6 +955,10 @@ async function exportZip() {
     return;
   }
 
+  const chunks = [];
+  for (let i = 0; i < target.length; i += CHUNK_SIZE) chunks.push(target.slice(i, i + CHUNK_SIZE));
+  const multiChunk = chunks.length > 1;
+
   processing = true;
   $("exportZipBtn").disabled = true;
   $("companySelect").disabled = true;
@@ -924,64 +966,73 @@ async function exportZip() {
   setStatus("");
   setProgress(0, target.length, "PDFを作成しています...（" + target.length + "名）");
 
+  const deptLabelForFile = deptValue === "__ALL__" ? "全部署" : sanitizeForPath(deptValue || "部署未登録");
+  const now = new Date();
+  const timestamp = now.getFullYear() + pad2(now.getMonth() + 1) + pad2(now.getDate()) + pad2(now.getHours()) + pad2(now.getMinutes());
+  const zipFileNames = [];
+
   try {
-    const zip = new JSZip();
-    const companyFolder = zip.folder(sanitizeForPath(companyId) + "_" + sanitizeForPath(companyName));
-    const usedNames = {}; // フォルダパス -> 使用済みファイル名の集合（同名衝突を避ける）
-    const { jsPDF } = window.jspdf;
+    for (let c = 0; c < chunks.length; c++) {
+      const chunk = chunks[c];
+      const zip = new JSZip();
+      const companyFolder = zip.folder(sanitizeForPath(companyId) + "_" + sanitizeForPath(companyName));
+      const usedNames = {}; // フォルダパス -> 使用済みファイル名の集合（同名衝突を避ける）
 
-    for (let i = 0; i < target.length; i++) {
-      const a = target[i];
-      renderApplicantReport(a);
-      await nextFrame();
+      for (let i = 0; i < chunk.length; i++) {
+        const a = chunk[i];
+        const overallDone = c * CHUNK_SIZE + i;
+        const pdfBlob = await buildPersonPdfBlob(a);
 
-      const canvas = await html2canvas($("pdfExportArea"), { scale: 2, backgroundColor: "#f5f7fb", useCORS: true });
-      const pdf = new jsPDF({
-        orientation: canvas.width >= canvas.height ? "landscape" : "portrait",
-        unit: "px",
-        format: [canvas.width, canvas.height],
-      });
-      pdf.addImage(canvas.toDataURL("image/png"), "PNG", 0, 0, canvas.width, canvas.height);
-      const pdfBlob = pdf.output("blob");
+        const deptFolderName = sanitizeForPath(a.department || "部署未登録") || "部署未登録";
+        const deptFolder = companyFolder.folder(deptFolderName);
 
-      const deptFolderName = sanitizeForPath(a.department || "部署未登録") || "部署未登録";
-      const deptFolder = companyFolder.folder(deptFolderName);
+        const baseName = buildFileBaseName(a);
+        const key = deptFolderName + "/" + baseName;
+        let finalName = baseName;
+        if (usedNames[key] != null) {
+          usedNames[key]++;
+          finalName = baseName + "_" + usedNames[key];
+        } else {
+          usedNames[key] = 1;
+        }
+        deptFolder.file(finalName + ".pdf", pdfBlob);
 
-      let baseName = buildFileBaseName(a);
-      const key = deptFolderName + "/" + baseName;
-      let finalName = baseName;
-      if (usedNames[key] != null) {
-        usedNames[key]++;
-        finalName = baseName + "_" + usedNames[key];
-      } else {
-        usedNames[key] = 1;
+        setProgress(
+          overallDone + 1, target.length,
+          multiChunk
+            ? "PDFを作成しています...（全" + target.length + "名中、" + (c + 1) + "/" + chunks.length + "個目のZIP分を作成中）"
+            : "PDFを作成しています...（" + target.length + "名）"
+        );
       }
-      deptFolder.file(finalName + ".pdf", pdfBlob);
 
-      setProgress(i + 1, target.length, "PDFを作成しています...（" + target.length + "名）");
+      setProgress(
+        Math.min((c + 1) * CHUNK_SIZE, target.length), target.length,
+        (multiChunk ? "（" + (c + 1) + "/" + chunks.length + "個目）" : "") + "ZIPファイルにまとめています..."
+      );
+      // 圧縮（DEFLATE）はCPU・メモリを余計に使うわりに、中身がすでにJPEG画像入りPDF＝圧縮済みデータの
+      // ため効果が薄いので、ZIP自体の圧縮は行わない（STORE＝無圧縮）。これもメモリ確保失敗を避けるため。
+      const zipBlob = await zip.generateAsync({ type: "blob", compression: "STORE" });
+
+      const zipFileName = "レポート個人PDF_" + sanitizeForPath(companyId) + "_" + deptLabelForFile + "_" + timestamp
+        + (multiChunk ? "_" + (c + 1) + "of" + chunks.length : "") + ".zip";
+      downloadBlob(zipBlob, zipFileName);
+      zipFileNames.push(zipFileName);
+      // 次のチャンクに進む前に、このチャンク分のzip・pdfBlob類への参照を手放し、
+      // ガベージコレクションで解放されやすくしておく。
+      await nextFrame();
     }
 
-    setProgress(target.length, target.length, "ZIPファイルにまとめています...");
-    const zipBlob = await zip.generateAsync({ type: "blob" });
-
-    const deptLabelForFile = deptValue === "__ALL__" ? "全部署" : sanitizeForPath(deptValue || "部署未登録");
-    const now = new Date();
-    const zipFileName = "レポート個人PDF_" + sanitizeForPath(companyId) + "_" + deptLabelForFile + "_"
-      + now.getFullYear() + pad2(now.getMonth() + 1) + pad2(now.getDate()) + pad2(now.getHours()) + pad2(now.getMinutes()) + ".zip";
-
-    const url = URL.createObjectURL(zipBlob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = zipFileName;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 4000);
-
-    setStatus(target.length + "名分のPDFをZIPファイルとしてダウンロードしました（" + zipFileName + "）。", "success");
+    setStatus(
+      target.length + "名分のPDFを" + (multiChunk ? zipFileNames.length + "個のZIPファイルに分けて" : "ZIPファイルとして")
+      + "ダウンロードしました（" + zipFileNames.join("、") + "）。",
+      "success"
+    );
   } catch (e) {
     console.error(e);
-    setStatus("PDFの作成に失敗しました：" + (e.message || e), "error");
+    const memoryHint = /array buffer|allocation|memory/i.test(String(e && e.message || e))
+      ? "\n（メモリ不足の可能性があります。他のタブを閉じる、部署を絞り込んで対象人数を減らす、のいずれかを試してから再度お試しください。）"
+      : "";
+    setStatus("PDFの作成に失敗しました：" + (e.message || e) + memoryHint, "error");
   } finally {
     processing = false;
     hideProgress();
