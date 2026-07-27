@@ -332,7 +332,9 @@ function updateSortHeaderUI() {
     const active = th.dataset.key === sortState.key;
     th.classList.toggle("active", active);
     const arrow = th.querySelector(".sort-arrow");
-    if (arrow) arrow.textContent = active ? (sortState.dir === 1 ? "▲" : "▼") : "";
+    // ソート可能であることが一目でわかるよう、未選択の列にも常に薄い「⇅」を表示しておき、
+    // 実際にソート中の列だけ向き（▲昇順／▼降順）付きの矢印に切り替える。
+    if (arrow) arrow.textContent = active ? (sortState.dir === 1 ? "▲" : "▼") : "⇅";
   });
 }
 document.querySelectorAll(".data-table th.sortable").forEach((th) => {
@@ -344,6 +346,7 @@ document.querySelectorAll(".data-table th.sortable").forEach((th) => {
     renderRows();
   });
 });
+updateSortHeaderUI(); // 初期表示時から「⇅」を出しておく
 
 // ---------------------------------------------------------------------
 // 選択（チェックボックス）と一括削除
