@@ -172,6 +172,12 @@ section[id]{scroll-margin-top:90px}
 .card.option p{font-size:13.5px;color:var(--slate);flex:1}
 .option-price{margin-top:14px;font-weight:900;color:var(--blue-dark);font-size:17px}
 .option-price span{font-size:12px;font-weight:800;color:var(--muted);margin-left:4px}
+.option-price-table{margin-top:14px;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.option-price-row{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 12px;font-size:12.5px;border-bottom:1px solid var(--line)}
+.option-price-row:last-child{border-bottom:none}
+.option-price-row .scale{font-weight:800;color:var(--navy)}
+.option-price-row .amount{font-weight:800;color:var(--blue-dark);white-space:nowrap}
+.option-price-row .amount small{font-size:10px;font-weight:700;color:var(--muted);margin-left:3px}
 
 /* お問い合わせ */
 .contact-wrap{background:#fff;border:1px solid var(--line);border-radius:22px;padding:32px;max-width:720px;margin:0 auto;box-shadow:0 4px 14px rgba(15,23,42,.04)}
@@ -629,6 +635,17 @@ footer.site{border-top:1px solid var(--line);padding:36px 0;background:#fff}
       <h3>教育訓練施策の提案</h3>
       <p>診断結果をもとに、次の教育・研修施策のご提案を継続的に行います。</p>
       <div class="option-price">50,000円<span>〜（応相談）</span></div>
+    </div>
+    <div class="card option">
+      <div class="icon">出力</div>
+      <h3>個人データPDF出力代行サービス</h3>
+      <p>受験者一人ひとりの個人結果データのPDF出力を代行します。ご利用人数に応じた月額料金でご利用いただけます。</p>
+      <div class="option-price-table">
+        <div class="option-price-row"><span class="scale">〜100名</span><span class="amount">月額 10,000円<small>（税別）</small></span></div>
+        <div class="option-price-row"><span class="scale">101〜200名</span><span class="amount">月額 20,000円<small>（税別）</small></span></div>
+        <div class="option-price-row"><span class="scale">201〜300名</span><span class="amount">月額 30,000円<small>（税別）</small></span></div>
+        <div class="option-price-row"><span class="scale">301名〜</span><span class="amount">お問い合わせください</span></div>
+      </div>
     </div>
   </div>
   <p class="center lead" style="margin-top:24px">オプションの詳細やお見積りは、お問い合わせフォームよりお気軽にご相談ください。</p>

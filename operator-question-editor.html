@@ -98,7 +98,7 @@ button.ghost:disabled{opacity:.5;cursor:not-allowed}
       <button class="primary" id="addItemBtn">＋ 問題を追加</button>
     </div>
     <table>
-      <thead><tr><th style="width:50px">順</th><th style="width:70px">区分</th><th style="width:110px">形式</th><th>問題文</th><th style="width:60px">配点</th><th style="width:60px">状態</th><th style="width:110px">操作</th></tr></thead>
+      <thead><tr><th style="width:50px">順</th><th style="width:70px">区分</th><th style="width:110px">形式</th><th style="width:100px">カテゴリー2</th><th>問題文</th><th style="width:60px">配点</th><th style="width:60px">状態</th><th style="width:110px">操作</th></tr></thead>
       <tbody id="itemRows"></tbody>
     </table>
     <div id="emptyItems" class="empty" style="display:none">このカテゴリー1にはまだ問題が登録されていません。</div>
@@ -419,7 +419,7 @@ function renderItems(snap) {
   const appendGroup = (label, group) => {
     if (!group.length) return;
     const headerRow = document.createElement("tr");
-    headerRow.innerHTML = `<td colspan="7" class="stage-header">${label}（${group.length}問）</td>`;
+    headerRow.innerHTML = `<td colspan="8" class="stage-header">${label}（${group.length}問）</td>`;
     tbody.appendChild(headerRow);
     group.forEach((item) => tbody.appendChild(itemRow(item)));
   };
@@ -434,6 +434,7 @@ function itemRow(item) {
     <td>${item.order ?? ""}</td>
     <td><span class="badge ${item.stage}">${item.stage === "practice" ? "練習" : "本番"}</span></td>
     <td>${TYPE_LABELS[item.type] || item.type}</td>
+    <td>${escapeHtml(item.subcategory || "-")}</td>
     <td class="qtext">${escapeHtml(preview)}</td>
     <td>${item.score ?? "-"}</td>
     <td>${item.active === false ? '<span class="badge inactive">非公開</span>' : "公開"}</td>

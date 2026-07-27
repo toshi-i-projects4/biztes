@@ -123,6 +123,13 @@ function showError(title, text) {
   $("errorTitle").textContent = title;
   $("errorText").textContent = text;
   $("errorArea").style.display = "block";
+  $("mainArea").style.display = "none";
+}
+
+function showMain() {
+  $("pageLoading").classList.add("hidden");
+  $("errorArea").style.display = "none";
+  $("mainArea").style.display = "block";
 }
 
 // ---------------------------------------------------------------------
@@ -561,15 +568,24 @@ async function run(user) {
     renderTraitSliders(me);
     renderQuadrant(type);
 
-    $("pageLoading").classList.add("hidden");
-    $("mainArea").style.display = "block";
+    showMain();
   } catch (err) {
     console.error("exam-result load failed", err);
-    showError("結果を確認できません", "読み込み中にエラーが発生しました。時間をおいて改めてお試しください。");
+    showError("結果を確認できません", "受験リンクが無効です。採用ご担当者にご確認ください。");
   }
 }
 
-onAuthStateChanged(auth, (user) => { run(user); });
+// onAuthStateChangedは、ページ読み込み直後にまず未確定状態（またはnull）で1回、
+// 認証状態が確定した後にもう1回…と複数回発火することがある。以前はそのたびに
+// run()を呼んでいたため、先に呼ばれたrun()がshowError()でエラー画面を表示した後、
+// 後から呼ばれたrun()が結果の取得に成功してmainAreaを表示しても、エラー表示が
+// 残ったままになり、エラーと結果が同時に見えてしまう不具合があった。
+// 判定に必要な認証状態は1回確定すれば十分なため、最初の1回だけrun()を実行し、
+// 以降の発火は無視する。
+const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+  unsubscribeAuth();
+  run(user);
+});
 </script>
 </body>
 </html>
