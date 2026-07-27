@@ -34,7 +34,8 @@ h1{font-size:20px;color:var(--navy);margin:0 0 10px}
 .fill-input{width:100%;border:1px solid #d1d5db;border-radius:9px;padding:10px 12px;font-size:14px;font-family:inherit}
 textarea.free-text{width:100%;border:1px solid #d1d5db;border-radius:9px;padding:10px 12px;font-size:14px;font-family:inherit;min-height:70px;resize:vertical}
 .typing-sample{background:#f8fafc;border:1px solid var(--line);border-radius:12px;padding:16px;font-size:14px;line-height:2;color:var(--navy);margin-bottom:14px;white-space:pre-wrap;user-select:none;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;font-family:"BIZ UDGothic","MS Gothic","Osaka-Mono",monospace}
-.underscore-mark{background:#fef08a;color:#78350f;border-radius:3px;padding:0 1px;font-weight:800}
+.underscore-mark{position:relative;display:inline-block;font-weight:900}
+.underscore-mark::after{content:"";position:absolute;left:1px;right:1px;bottom:0.08em;height:3px;background:currentColor;border-radius:1.5px}
 textarea.typing-input{width:100%;min-height:140px;border:1.5px solid var(--blue);border-radius:12px;padding:14px;font-size:14px;line-height:2;font-family:"BIZ UDGothic","MS Gothic","Osaka-Mono",monospace}
 .footer-actions{position:sticky;bottom:0;background:linear-gradient(0deg,#fff 60%,rgba(255,255,255,0));padding:20px 0 6px;text-align:center}
 button.primary{background:var(--blue);color:#fff;border:none;border-radius:999px;padding:13px 28px;font-size:14px;font-weight:800;cursor:pointer}
