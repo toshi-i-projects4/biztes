@@ -34,8 +34,6 @@ h1{font-size:20px;color:var(--navy);margin:0 0 10px}
 .fill-input{width:100%;border:1px solid #d1d5db;border-radius:9px;padding:10px 12px;font-size:14px;font-family:inherit}
 textarea.free-text{width:100%;border:1px solid #d1d5db;border-radius:9px;padding:10px 12px;font-size:14px;font-family:inherit;min-height:70px;resize:vertical}
 .typing-sample{background:#f8fafc;border:1px solid var(--line);border-radius:12px;padding:16px;font-size:14px;line-height:2;color:var(--navy);margin-bottom:14px;white-space:pre-wrap;user-select:none;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;font-family:"BIZ UDGothic","MS Gothic","Osaka-Mono",monospace}
-.underscore-mark{position:relative;display:inline-block;font-weight:900}
-.underscore-mark::after{content:"";position:absolute;left:1px;right:1px;bottom:0.08em;height:3px;background:currentColor;border-radius:1.5px}
 textarea.typing-input{width:100%;min-height:140px;border:1.5px solid var(--blue);border-radius:12px;padding:14px;font-size:14px;line-height:2;font-family:"BIZ UDGothic","MS Gothic","Osaka-Mono",monospace}
 .footer-actions{position:sticky;bottom:0;background:linear-gradient(0deg,#fff 60%,rgba(255,255,255,0));padding:20px 0 6px;text-align:center}
 button.primary{background:var(--blue);color:#fff;border:none;border-radius:999px;padding:13px 28px;font-size:14px;font-weight:800;cursor:pointer}
@@ -252,12 +250,6 @@ function isScoreableType(type) {
   return type === "choice" || type === "multi_select" || type === "fill_blank";
 }
 
-// お手本テキスト中のアンダーバー「_」は、フォントによっては行の下のほうに小さく表示され
-// 見落とされやすいため、内容はそのままに目立つハイライト付きで表示する。
-function highlightUnderscores(escapedText) {
-  return escapedText.replace(/_/g, '<span class="underscore-mark">_</span>');
-}
-
 // 問題文・選択肢のテキストで、下線を引きたい語句を「__語句__」のように二重アンダースコアで
 // 囲んでおくと、受験画面では下線付きで表示される（運営管理画面の問題文入力欄で使用可能）。
 function formatRichText(rawText) {
@@ -296,7 +288,7 @@ function renderItemSet(category1Id, targetStage, items, timeLimit) {
     let body = "";
     if (item.type === "typing_passage") {
       body = `
-        <div class="typing-sample">${highlightUnderscores(escapeHtml(item.questionText))}</div>
+        <div class="typing-sample">${escapeHtml(item.questionText)}</div>
         <textarea class="typing-input" data-item="${item.id}" placeholder="ここに入力してください"></textarea>
       `;
     } else if (item.type === "fill_blank") {
