@@ -61,6 +61,7 @@ button:disabled{opacity:.55;cursor:not-allowed}
 .skill-category1{margin-bottom:6px}
 .skill-category1:last-child{margin-bottom:0}
 .skill-category1 b{color:var(--navy)}
+.bar-section-title{font-weight:800;color:var(--navy);font-size:13px;margin-bottom:6px}
 .bar-row{display:grid;grid-template-columns:88px 1fr 30px;align-items:center;gap:6px;margin-bottom:4px}
 .bar-row .label{font-size:11px;color:var(--ink-2)}
 .bar-track{background:#eef0f4;border-radius:5px;height:8px;overflow:hidden}
@@ -786,6 +787,7 @@ function renderRadarProfileCard(el, a) {
         skillProfile.sections.map((s) => '<div class="skill-category1"><b>' + esc(RADAR_LABELS[s.category1Id]) + "</b>：" + esc(s.sentence) + "</div>").join("") +
         "</div></div>"
       : '<div class="note" style="margin-top:8px">4能力の得点データが十分でないため、傾向コメントは表示していません。</div>') +
+    '<div class="bar-section-title">①〜④ 正答率</div>' +
     FOUR_CATEGORY1_IDS.map((category1Id) => {
       const v = a.category1Pct[category1Id];
       return '<div class="bar-row"><div class="label">' + esc(RADAR_LABELS[category1Id]) + '</div><div class="bar-track"><div class="bar-fill" style="width:' + (v == null ? 0 : Math.max(0, v)) + '%"></div></div><div class="val">' + (v == null ? "-" : v + "%") + "</div></div>";

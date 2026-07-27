@@ -468,7 +468,14 @@ service cloud.firestore {
 
       // ---- 受験結果 ----
       match /examResults/{token} {
-        allow get, list: if isOperator() || sameCompany(companyId);
+        allow list: if isOperator() || sameCompany(companyId);
+        // get は、オペレーター・自社の企業管理者に加えて、応募者本人（この結果に紐づく
+        // examInvitesのanonUidが自分のuidと一致する場合）にも許可する（v9で追加）。
+        // 受験後に本人へ結果を開示する画面（exam-result.html）が、company横断のlistは行わず
+        // 自分のtokenの結果1件だけをgetする用途を想定している。
+        allow get: if isOperator() || sameCompany(companyId) ||
+          (isSignedIn() &&
+            get(/databases/$(database)/documents/companies/$(companyId)/examInvites/$(token)).data.anonUid == request.auth.uid);
         // 応募者は、自分が開始した招待に紐づく結果を「1回だけ」作成できる（更新・削除は不可）
         allow create: if isSignedIn() &&
           get(/databases/$(database)/documents/companies/$(companyId)/examInvites/$(token)).data.anonUid == request.auth.uid;
