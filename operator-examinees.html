@@ -23,6 +23,9 @@ table,.data-table{width:100%;border-collapse:collapse;background:#fff;font-size:
 .table-action-btn{border:none;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:bold;cursor:pointer;background:#0369a1;color:#fff;white-space:nowrap;margin:0 4px 0 0}.table-action-btn:hover{background:#075985}.table-action-btn:disabled{opacity:.55;cursor:not-allowed}.table-action-btn.secondary{background:#64748b}.table-action-btn.secondary:hover{background:#475569}.table-action-btn.danger{background:#fff;border:1px solid #fecaca;color:#dc2626}.table-action-btn.danger:hover{background:#fee2e2}
 .edit-input{width:100%;min-width:100px;border:1px solid #7dd3fc;border-radius:6px;padding:5px 7px;font-size:12.5px;box-sizing:border-box;background:#f0f9ff;color:#111827}
 .toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px}.toolbar input,.toolbar select{max-width:280px;border:1px solid #d1d5db;border-radius:10px;padding:11px 12px;font-size:15px;box-sizing:border-box;background:#fff;color:#111827}
+.secondary-btn.danger-btn{background:#dc2626}.secondary-btn.danger-btn:hover{background:#b91c1c}
+.data-table th.sortable{cursor:pointer;user-select:none}.data-table th.sortable:hover{background:#e5e7eb}.data-table th.sortable .sort-arrow{margin-left:4px;font-size:10px;color:#9aa5b1}.data-table th.sortable.active .sort-arrow{color:#0369a1}
+.data-table th.checkbox-col,.data-table td.checkbox-col{width:34px;text-align:center;white-space:nowrap}
 .hidden{display:none!important}.small{font-size:13px;color:#6b7280;line-height:1.7}.muted{color:#6b7280}
 .page-loading{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:#eef2f7;color:#1f2937;font-weight:bold}.page-loading.hidden{display:none!important}.loading-box{display:flex;flex-direction:column;align-items:center;gap:12px;background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:24px 28px;box-shadow:0 4px 12px rgba(0,0,0,.08)}.loading-spinner{width:42px;height:42px;border:5px solid #e0f2fe;border-top-color:#0369a1;border-radius:50%;animation:spin .9s linear infinite}.loading-text{font-size:14px;color:#374151}@keyframes spin{to{transform:rotate(360deg)}}
 @media(max-width:640px){body{padding:16px}.header{flex-direction:column;align-items:flex-start}.page{padding:24px}.form-grid{grid-template-columns:1fr;gap:8px 0}.toolbar input,.toolbar select{max-width:none;width:100%}}
@@ -51,11 +54,24 @@ table,.data-table{width:100%;border-collapse:collapse;background:#fff;font-size:
         <option value="cancelled">対象外</option>
       </select>
       <button class="secondary-btn" id="reloadBtn" type="button">再読み込み</button>
+      <button class="secondary-btn danger-btn" id="bulkDeleteBtn" type="button" disabled>選択した項目を一括削除</button>
     </div>
     <div id="listStatus" class="status"></div>
     <div class="table-wrap">
       <table class="data-table">
-        <thead><tr><th>操作</th><th>状態</th><th>社員コード</th><th>氏名</th><th>メールアドレス</th><th>部署</th><th>役職</th><th>備考</th><th>発行日</th><th>受験完了日時</th></tr></thead>
+        <thead><tr>
+          <th class="checkbox-col"><input type="checkbox" id="selectAllCheckbox" title="表示中の行をすべて選択/解除"></th>
+          <th>操作</th>
+          <th class="sortable" data-key="status">状態<span class="sort-arrow"></span></th>
+          <th class="sortable" data-key="completedAt">受験完了日時<span class="sort-arrow"></span></th>
+          <th class="sortable" data-key="employeeCode">社員コード<span class="sort-arrow"></span></th>
+          <th class="sortable" data-key="applicantName">氏名<span class="sort-arrow"></span></th>
+          <th class="sortable" data-key="department">部署<span class="sort-arrow"></span></th>
+          <th class="sortable" data-key="position">役職<span class="sort-arrow"></span></th>
+          <th class="sortable" data-key="note">備考<span class="sort-arrow"></span></th>
+          <th class="sortable" data-key="applicantEmail">メールアドレス<span class="sort-arrow"></span></th>
+          <th class="sortable" data-key="createdAt">発行日<span class="sort-arrow"></span></th>
+        </tr></thead>
         <tbody id="rows"></tbody>
       </table>
     </div>
@@ -80,6 +96,8 @@ let currentUser = null;
 let unsubInvites = null;
 let allInvites = [];
 let editingToken = "";
+let selectedTokens = new Set();
+let sortState = { key: "", dir: 1 }; // key:列キー（未指定の間はFirestoreのcreatedAt降順のまま） / dir:1=昇順,-1=降順
 
 function showPage() {
   const l = document.getElementById("pageLoading");
@@ -181,11 +199,15 @@ function fmtDateTime(v) {
 function watchInvites() {
   if (unsubInvites) unsubInvites();
   allInvites = [];
+  selectedTokens = new Set();
   if (!companyId) { renderRows(); return; }
 
   const q = query(collection(db, "companies", companyId, "examInvites"), orderBy("createdAt", "desc"));
   unsubInvites = onSnapshot(q, (snap) => {
     allInvites = snap.docs.map((d) => ({ token: d.id, ...d.data() }));
+    // 表示から消えた（削除された）対象者の選択状態は残さない
+    const liveTokens = new Set(allInvites.map((inv) => inv.token));
+    Array.from(selectedTokens).forEach((t) => { if (!liveTokens.has(t)) selectedTokens.delete(t); });
     renderRows();
   });
 }
@@ -194,51 +216,89 @@ function normalizeSearchText(v) {
   return String(v || "").trim().toLowerCase();
 }
 
+// ソート対象列の値を取り出す（文字列列はそのまま、日時列はミリ秒に変換して比較する）
+function tsMillis(v) {
+  try { return v && typeof v.toDate === "function" ? v.toDate().getTime() : -Infinity; }
+  catch (e) { return -Infinity; }
+}
+function sortValueOf(invite, key) {
+  switch (key) {
+    case "status": return statusLabel(invite.status);
+    case "completedAt": return tsMillis(invite.completedAt);
+    case "createdAt": return tsMillis(invite.createdAt);
+    case "employeeCode": return invite.employeeCode || "";
+    case "applicantName": return invite.applicantName || "";
+    case "department": return invite.department || "";
+    case "position": return invite.position || "";
+    case "note": return invite.note || "";
+    case "applicantEmail": return invite.applicantEmail || "";
+    default: return "";
+  }
+}
+function applySort(list) {
+  if (!sortState.key) return list;
+  const key = sortState.key;
+  const dir = sortState.dir;
+  return list.slice().sort((a, b) => {
+    const va = sortValueOf(a, key);
+    const vb = sortValueOf(b, key);
+    let cmp;
+    if (typeof va === "number" && typeof vb === "number") cmp = va - vb;
+    else cmp = String(va).localeCompare(String(vb), "ja");
+    return cmp * dir;
+  });
+}
+
 function filteredInvites() {
   const q = normalizeSearchText(document.getElementById("search").value);
   const st = document.getElementById("filterStatus").value;
-  return allInvites.filter((invite) => {
+  const list = allInvites.filter((invite) => {
     if (st !== "all" && invite.status !== st) return false;
     if (!q) return true;
     return [invite.employeeCode, invite.applicantName, invite.applicantEmail, invite.department, invite.position, invite.note]
       .some((v) => String(v || "").toLowerCase().includes(q));
   });
+  return applySort(list);
 }
 
 function renderDisplayRow(invite) {
   const created = invite.createdAt && invite.createdAt.toDate ? invite.createdAt.toDate().toLocaleString("ja-JP") : "-";
+  const checked = selectedTokens.has(invite.token) ? "checked" : "";
   return `
+    <td class="checkbox-col"><input type="checkbox" class="row-checkbox" data-token="${escapeHtml(invite.token)}" ${checked}></td>
     <td>
       <button class="table-action-btn" type="button" data-action="edit" data-token="${escapeHtml(invite.token)}">編集</button>
       <button class="table-action-btn danger" type="button" data-action="delete" data-token="${escapeHtml(invite.token)}">削除</button>
     </td>
     <td><span class="badge ${invite.status}">${statusLabel(invite.status)}</span></td>
+    <td>${fmtDateTime(invite.completedAt)}</td>
     <td>${escapeHtml(invite.employeeCode || "")}</td>
     <td>${escapeHtml(invite.applicantName || "")}</td>
-    <td>${escapeHtml(invite.applicantEmail || "")}</td>
     <td>${escapeHtml(invite.department || "")}</td>
     <td>${escapeHtml(invite.position || "")}</td>
     <td>${escapeHtml(invite.note || "")}</td>
+    <td>${escapeHtml(invite.applicantEmail || "")}</td>
     <td>${created}</td>
-    <td>${fmtDateTime(invite.completedAt)}</td>
   `;
 }
 
 function renderEditRow(invite) {
+  const checked = selectedTokens.has(invite.token) ? "checked" : "";
   return `
+    <td class="checkbox-col"><input type="checkbox" class="row-checkbox" data-token="${escapeHtml(invite.token)}" ${checked}></td>
     <td>
       <button class="table-action-btn" type="button" data-action="save" data-token="${escapeHtml(invite.token)}">保存</button>
       <button class="table-action-btn secondary" type="button" data-action="cancel" data-token="${escapeHtml(invite.token)}">キャンセル</button>
     </td>
     <td><span class="badge ${invite.status}">${statusLabel(invite.status)}</span></td>
+    <td>${fmtDateTime(invite.completedAt)}</td>
     <td><input class="edit-input" type="text" id="edit-employeeCode" value="${escapeHtml(invite.employeeCode || "")}"></td>
     <td><input class="edit-input" type="text" id="edit-applicantName" value="${escapeHtml(invite.applicantName || "")}"></td>
-    <td><input class="edit-input" type="email" id="edit-applicantEmail" value="${escapeHtml(invite.applicantEmail || "")}"></td>
     <td><input class="edit-input" type="text" id="edit-department" value="${escapeHtml(invite.department || "")}"></td>
     <td><input class="edit-input" type="text" id="edit-position" value="${escapeHtml(invite.position || "")}"></td>
     <td><input class="edit-input" type="text" id="edit-note" value="${escapeHtml(invite.note || "")}"></td>
+    <td><input class="edit-input" type="email" id="edit-applicantEmail" value="${escapeHtml(invite.applicantEmail || "")}"></td>
     <td>${invite.createdAt && invite.createdAt.toDate ? invite.createdAt.toDate().toLocaleString("ja-JP") : "-"}</td>
-    <td>${fmtDateTime(invite.completedAt)}</td>
   `;
 }
 
@@ -250,6 +310,8 @@ function renderRows() {
   if (!list.length) {
     empty.textContent = allInvites.length ? "条件に一致する受験者がありません。" : "まだ受験招待がありません。";
     empty.classList.remove("hidden");
+    updateBulkDeleteButton();
+    updateSelectAllCheckboxState(list);
     return;
   }
   empty.classList.add("hidden");
@@ -258,7 +320,98 @@ function renderRows() {
     tr.innerHTML = invite.token === editingToken ? renderEditRow(invite) : renderDisplayRow(invite);
     rows.appendChild(tr);
   }
+  updateBulkDeleteButton();
+  updateSelectAllCheckboxState(list);
 }
+
+// ---------------------------------------------------------------------
+// 一覧のソート（列見出しクリック）
+// ---------------------------------------------------------------------
+function updateSortHeaderUI() {
+  document.querySelectorAll(".data-table th.sortable").forEach((th) => {
+    const active = th.dataset.key === sortState.key;
+    th.classList.toggle("active", active);
+    const arrow = th.querySelector(".sort-arrow");
+    if (arrow) arrow.textContent = active ? (sortState.dir === 1 ? "▲" : "▼") : "";
+  });
+}
+document.querySelectorAll(".data-table th.sortable").forEach((th) => {
+  th.addEventListener("click", () => {
+    const key = th.dataset.key;
+    if (sortState.key === key) sortState.dir *= -1;
+    else { sortState.key = key; sortState.dir = 1; }
+    updateSortHeaderUI();
+    renderRows();
+  });
+});
+
+// ---------------------------------------------------------------------
+// 選択（チェックボックス）と一括削除
+// ---------------------------------------------------------------------
+function updateBulkDeleteButton() {
+  const btn = document.getElementById("bulkDeleteBtn");
+  const n = selectedTokens.size;
+  btn.disabled = n === 0;
+  btn.textContent = n > 0 ? `選択した項目を一括削除（${n}件）` : "選択した項目を一括削除";
+}
+function updateSelectAllCheckboxState(currentList) {
+  const all = document.getElementById("selectAllCheckbox");
+  const list = currentList || filteredInvites();
+  if (!list.length) { all.checked = false; all.indeterminate = false; return; }
+  const selectedCount = list.filter((inv) => selectedTokens.has(inv.token)).length;
+  all.checked = selectedCount === list.length;
+  all.indeterminate = selectedCount > 0 && selectedCount < list.length;
+}
+
+document.getElementById("rows").addEventListener("change", (e) => {
+  const cb = e.target.closest("input.row-checkbox");
+  if (!cb) return;
+  const token = cb.dataset.token;
+  if (cb.checked) selectedTokens.add(token); else selectedTokens.delete(token);
+  updateBulkDeleteButton();
+  updateSelectAllCheckboxState();
+});
+
+document.getElementById("selectAllCheckbox").addEventListener("change", (e) => {
+  const checked = e.target.checked;
+  const list = filteredInvites();
+  list.forEach((invite) => { if (checked) selectedTokens.add(invite.token); else selectedTokens.delete(invite.token); });
+  renderRows();
+});
+
+// 選択中の複数件をまとめて削除する（1件ずつのdeleteInviteAndResultと同じくexamInvites・examResultsの
+// 両方を完全に削除する。誤操作防止のため確認ダイアログを2回表示するのは1件削除と同様）。
+async function bulkDeleteSelected() {
+  const tokens = Array.from(selectedTokens).filter((t) => allInvites.some((inv) => inv.token === t));
+  if (!tokens.length) return;
+  if (!confirm(`選択した${tokens.length}件の受験データを削除します。よろしいですか？`)) return;
+  if (!confirm("本当に削除してよろしいですか？\nこの操作は取り消せません。招待情報・受験結果は完全に削除され、復元できません。\n削除すると、レポートやダッシュボードなど他の画面からも同時に消えます。")) return;
+
+  const btn = document.getElementById("bulkDeleteBtn");
+  btn.disabled = true;
+  let done = 0;
+  let failed = 0;
+  setListStatus(`削除しています...（0/${tokens.length}件）`, "warn");
+  for (const token of tokens) {
+    try {
+      await deleteDoc(doc(db, "companies", companyId, "examInvites", token));
+      await deleteDoc(doc(db, "companies", companyId, "examResults", token));
+      selectedTokens.delete(token);
+    } catch (e) {
+      console.error(e);
+      failed++;
+    }
+    done++;
+    setListStatus(`削除しています...（${done}/${tokens.length}件）`, "warn");
+  }
+  setListStatus(
+    failed ? `${done - failed}件を削除しました（${failed}件は失敗しました）。` : `${done}件の受験データを削除しました。`,
+    failed ? "error" : "ok"
+  );
+  // allInvites・表示はonSnapshotの通知で自動更新される
+  updateBulkDeleteButton();
+}
+document.getElementById("bulkDeleteBtn").addEventListener("click", bulkDeleteSelected);
 
 async function saveEdit(token) {
   const applicantName = document.getElementById("edit-applicantName").value.trim();
