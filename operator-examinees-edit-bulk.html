@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>受験者編集（一括）｜ビズてす</title>
+<style>
+body{margin:0;font-family:"Hiragino Maru Gothic ProN","BIZ UDPGothic","Yu Gothic UI","Meiryo",sans-serif;background:#eef2f7;color:#111827;padding:24px;box-sizing:border-box;line-height:1.7}
+.page{max-width:1080px;margin:30px auto;background:#fff;border-radius:16px;box-shadow:0 4px 12px rgba(0,0,0,.08);padding:32px;box-sizing:border-box}
+.header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px}h1{margin:0;font-size:28px}.back-link,.bottom-back-link{color:#0369a1;text-decoration:none;font-weight:bold;font-size:14px}.bottom-back-link{display:inline-block;margin-top:22px}.section-title{font-size:18px;font-weight:bold;margin:0 0 14px}.description{font-size:14px;line-height:1.7;color:#6b7280;margin:0 0 18px}
+.card{background:transparent;border:none;border-radius:0;box-shadow:none;padding:0;box-sizing:border-box;margin:0 0 28px}.card+.card{border-top:1px solid #e5e7eb;padding-top:24px}
+.warning-box,.confirm-box,.preview-box,.info-box{background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:14px 16px;margin-bottom:14px;line-height:1.7;white-space:pre-wrap;font-size:14px;color:#111827}.warning-box{background:#fffbeb;border-color:#fde68a;color:#92400e;margin-top:16px}.confirm-box{background:#fffbeb;border-color:#fde68a;color:#92400e;margin-top:16px}.preview-box{background:#f9fafb;border-color:#e5e7eb;color:#111827;margin-top:0}.preview-box.warn{background:#fef3c7;border-color:#fbbf24;color:#92400e;font-weight:bold}.preview-box.ok{background:#dcfce7;border-color:#86efac;color:#166534;font-weight:bold}.preview-box.error{background:#fee2e2;border-color:#fca5a5;color:#991b1b;font-weight:bold}
+.file-box{background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:16px;margin-top:12px}.file-box input[type="file"]{width:100%;border:1px solid #d1d5db;border-radius:10px;padding:11px 12px;font-size:15px;box-sizing:border-box;background:#fff;color:#111827}.file-name{font-size:13px;color:#6b7280;margin-top:10px;white-space:pre-wrap}
+.form-grid{display:grid;grid-template-columns:180px 1fr;gap:14px 16px;align-items:center}.label{font-size:14px;font-weight:bold;color:#374151}.required{color:#dc2626;font-size:12px;margin-left:4px}select{width:100%;border:1px solid #d1d5db;border-radius:10px;padding:11px 12px;font-size:15px;box-sizing:border-box;background:#fff;color:#111827}
+.button-row{display:flex;justify-content:flex-end;gap:10px;margin-top:18px;flex-wrap:wrap}.primary-btn,.secondary-btn,.danger-btn{border:none;border-radius:10px;padding:12px 16px;font-size:15px;font-weight:bold;cursor:pointer}.primary-btn{background:#0369a1;color:#fff}.primary-btn:hover{background:#075985}.secondary-btn{background:#64748b;color:#fff}.secondary-btn:hover{background:#475569}.danger-btn{background:#dc2626;color:#fff}.danger-btn:hover{background:#b91c1c}.primary-btn:disabled,.danger-btn:disabled,.secondary-btn:disabled{opacity:.6;cursor:not-allowed}
+.status{border-radius:10px;padding:14px 16px;margin-top:14px;margin-bottom:14px;line-height:1.7;white-space:pre-wrap;font-size:14px;font-weight:bold;display:none}.status.ok{display:block;background:#dcfce7;border:1px solid #86efac;color:#166534}.status.error{display:block;background:#fee2e2;border:1px solid #fca5a5;color:#991b1b}.status.note{display:block;background:#e0f2fe;border:1px solid #7dd3fc;color:#075985}.status.warn{display:block;background:#fef3c7;border:1px solid #fbbf24;color:#92400e}
+.table-wrap{overflow-x:auto;overflow-y:scroll;max-height:420px;margin-top:14px;border:1px solid #e5e7eb;border-radius:10px;background:#fff}table,.data-table{width:100%;border-collapse:collapse;background:#fff;font-size:13px;min-width:1400px}.data-table th,.data-table td,th,td{border:1px solid #e5e7eb;padding:8px 10px;text-align:left;vertical-align:top;white-space:nowrap}.data-table th,th{background:#f3f4f6;color:#374151;font-weight:bold;position:sticky;top:0;z-index:1}.data-table tr:hover td{background:#f9fafb}.cell-change{white-space:pre-wrap;min-width:220px;max-width:340px}.cell-msg{white-space:pre-wrap;min-width:180px;max-width:320px}
+.badge{display:inline-block;border-radius:999px;padding:4px 9px;font-size:12px;font-weight:bold}.badge.ok{background:#dcfce7;color:#166534}.badge.error{background:#fee2e2;color:#991b1b}.badge.nochange{background:#f3f4f6;color:#6b7280}
+.hidden{display:none!important}.small{font-size:13px;color:#6b7280;line-height:1.7}.muted{color:#6b7280}.scoped-label{font-size:15px;color:#111827;font-weight:bold}
+.page-loading{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:#eef2f7;color:#1f2937;font-weight:bold}.page-loading.hidden{display:none!important}.loading-box{display:flex;flex-direction:column;align-items:center;gap:12px;background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:24px 28px;box-shadow:0 4px 12px rgba(0,0,0,.08)}.loading-spinner{width:42px;height:42px;border:5px solid #e0f2fe;border-top-color:#0369a1;border-radius:50%;animation:spin .9s linear infinite}.loading-text{font-size:14px;color:#374151}@keyframes spin{to{transform:rotate(360deg)}}
+@media(max-width:640px){body{padding:16px}.header{flex-direction:column;align-items:flex-start}.page{padding:24px}.button-row{flex-direction:column}.primary-btn,.secondary-btn,.danger-btn{width:100%}.form-grid{grid-template-columns:1fr;gap:8px 0}}
+</style>
+</head>
+<body>
+<div id="pageLoading" class="page-loading"><div class="loading-box"><div class="loading-spinner"></div><div id="loadingText" class="loading-text">受験者編集（一括）を読み込み中...</div></div></div>
+<div class="page">
+  <div class="header"><h1>受験者編集（一括）</h1><a class="back-link" href="operator-examinees.html" id="backLink">← 受験者管理へ戻る</a></div>
+
+  <div class="card" id="companySelectPanel">
+    <p class="section-title">企業を選択</p>
+    <div class="form-grid"><div class="label">対象企業<span class="required">必須</span></div><select id="companySelect"><option value="">選択してください</option></select></div>
+  </div>
+
+  <div class="card">
+    <p class="description">1. まず「現在の受験者一覧をCSVダウンロード」を押し、そのCSVをExcel等で編集してください。<br>2. 編集できる項目は、社員コード・氏名・部署・役職・メールアドレス・備考です（組織変更や部署異動があった際にご利用ください）。<br>3. 編集後のCSVをこの画面に読み込ませ、内容を確認してから取り込んでください。<br>4. 対象の受験者の特定にはtoken列を使用します。token列は変更・削除しないでください。<br>5. 状態・発行日・受験開始日時・受験完了日時はこの画面では変更できません（参考表示のみ、取り込み時の値は無視されます）。招待を対象外にする・削除するには「受験者管理」画面をご利用ください。</p>
+    <div class="button-row" style="justify-content:flex-start"><button class="secondary-btn" id="exportBtn" type="button">現在の受験者一覧をCSVダウンロード</button></div>
+    <div class="file-box"><input id="csvFile" type="file" accept=".csv,text/csv"><div id="fileName" class="file-name">CSVファイルを選択してください。</div></div>
+    <div class="warning-box">注意：token列は既存の受験者を特定するための重要な項目です。書き換えると別の受験者を更新してしまう可能性があります。状態・発行日・受験開始日時・受験完了日時の各列は参考表示用で、この画面からは更新されません。</div>
+    <div id="csvStatus" class="status"></div>
+    <div class="button-row"><button class="primary-btn" id="previewBtn" type="button">CSVを読み込んで確認</button></div>
+  </div>
+
+  <div class="card">
+    <p class="section-title">取込内容の確認</p>
+    <div id="summary" class="preview-box hidden"></div>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead><tr><th>判定</th><th>token</th><th>社員コード</th><th>氏名</th><th>部署</th><th>役職</th><th>メールアドレス</th><th>備考</th><th>変更内容</th><th>メッセージ</th></tr></thead>
+        <tbody id="previewTbody"><tr><td colspan="10">先にCSVファイルを読み込んでください。</td></tr></tbody>
+      </table>
+    </div>
+    <div id="confirmBox" class="confirm-box hidden"></div><div id="applyStatus" class="status"></div>
+    <div class="button-row"><button class="danger-btn" id="applyBtn" type="button">取り込む</button></div>
+  </div>
+
+  <a class="bottom-back-link" href="operator-examinees.html" id="backLinkBottom">← 受験者管理へ戻る</a>
+</div>
+
+<script src="operator-mode.js"></script>
+<script type="module">
+import { auth, db } from "./firebase-config.js";
+import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import {
+  doc, getDoc, collection, getDocs, query, orderBy, updateDoc, setDoc, serverTimestamp,
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { escapeHtml } from "./operator-shared.js";
+
+let companyId = "";
+let isOperatorUser = false;
+let currentUser = null;
+let currentUserName = "";
+let currentUserEmployeeCode = "";
+let allInvites = [];
+let previewRows = [];
+let applyConfirm = false;
+
+const $ = (id) => document.getElementById(id);
+
+function showPage() {
+  const l = $("pageLoading");
+  if (l) { l.classList.add("hidden"); l.style.display = "none"; }
+}
+function setBackLink(href, text) {
+  ["backLink", "backLinkBottom"].forEach((id) => {
+    const el = $(id);
+    if (el) { el.href = href; el.textContent = text; }
+  });
+}
+function setBox(id, m, t) { const el = $(id); if (!el) return; el.textContent = m || ""; el.className = "status " + (m ? (t || "note") : ""); }
+function setCsvStatus(m, t) { setBox("csvStatus", m, t); }
+function setApplyStatus(m, t) { setBox("applyStatus", m, t); }
+function setSummary(m, t) { const el = $("summary"); if (!el) return; el.textContent = m || ""; el.className = "preview-box" + (m ? " " + (t || "") : " hidden"); }
+
+function todayStamp() {
+  const d = new Date();
+  return d.getFullYear() + String(d.getMonth() + 1).padStart(2, "0") + String(d.getDate()).padStart(2, "0");
+}
+function csvCell(v) { v = String(v == null ? "" : v); return /[",\n\r]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
+function downloadText(filename, text, type) {
+  const blob = new Blob([text], { type: type || "text/plain;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+}
+function statusLabel(status) {
+  return { not_started: "未受験", in_progress: "受験中", completed: "受験完了", cancelled: "対象外" }[status] || status || "";
+}
+function fmtDateTime(v) { return v && v.toDate ? v.toDate().toLocaleString("ja-JP") : ""; }
+
+onAuthStateChanged(auth, async (user) => {
+  if (!user) { location.href = "login.html"; return; }
+  currentUser = user;
+
+  const urlCompanyParam = new URLSearchParams(location.search).get("company");
+  const caSnap = await getDoc(doc(db, "companyAdmins", user.uid));
+  const isActiveCompanyAdmin = caSnap.exists() && caSnap.data().status === "active";
+  const ownCompanyId = isActiveCompanyAdmin ? caSnap.data().companyId : "";
+
+  // operator-examinees.html等と同じ判定：company-admin-home.htmlなど自社の画面として
+  // 開いた場合は企業管理者としてとどまり、運営者が他社を操作する目的で開いた場合や
+  // 「管理画面へ入る」から明示的に入室した場合（?opEnter=1）のみ運営モードとして扱う。
+  const forceOperatorEntry = !!(window.BizTestOperatorMode && window.BizTestOperatorMode.isExplicitEntry());
+  if (isActiveCompanyAdmin && !forceOperatorEntry && (!urlCompanyParam || urlCompanyParam === ownCompanyId)) {
+    companyId = ownCompanyId;
+    currentUserName = caSnap.data().name || "";
+    currentUserEmployeeCode = caSnap.data().employeeCode || "";
+    $("companySelectPanel").classList.add("hidden");
+    setBackLink("operator-examinees.html?company=" + encodeURIComponent(companyId), "← 受験者管理へ戻る");
+    await loadInvites();
+    setCsvStatus(""); setApplyStatus(""); resetPreview();
+    showPage();
+    return;
+  }
+
+  const opSnap = await getDoc(doc(db, "operators", user.uid));
+  if (opSnap.exists()) {
+    isOperatorUser = true;
+    currentUserName = opSnap.data().name || "";
+    await loadCompaniesForOperator();
+    showPage();
+    return;
+  }
+
+  await signOut(auth); location.href = "login.html";
+});
+
+async function loadCompaniesForOperator() {
+  const snap = await getDocs(query(collection(db, "companies"), orderBy("createdAt", "desc")));
+  const select = $("companySelect");
+  snap.forEach((d) => {
+    const opt = document.createElement("option");
+    opt.value = d.id;
+    opt.textContent = d.data().companyName;
+    opt.dataset.companyName = d.data().companyName;
+    select.appendChild(opt);
+  });
+  const preselect = new URLSearchParams(location.search).get("company");
+  if (preselect) select.value = preselect;
+  select.addEventListener("change", async () => {
+    companyId = select.value;
+    updateOperatorBanner();
+    setBackLink("operator-examinees.html?company=" + encodeURIComponent(companyId) + "&opEnter=1", "← 受験者管理へ戻る");
+    resetPreview();
+    setCsvStatus(""); setApplyStatus("");
+    if (companyId) await loadInvites();
+  });
+  if (select.value) {
+    companyId = select.value;
+    updateOperatorBanner();
+    setBackLink("operator-examinees.html?company=" + encodeURIComponent(companyId) + "&opEnter=1", "← 受験者管理へ戻る");
+    await loadInvites();
+  }
+}
+function updateOperatorBanner() {
+  if (!isOperatorUser || !companyId) return;
+  const select = $("companySelect");
+  const opt = select.options[select.selectedIndex];
+  const companyName = opt ? (opt.dataset.companyName || opt.textContent) : "";
+  window.BizTestOperatorMode && window.BizTestOperatorMode.renderBanner({ companyId, companyName });
+}
+
+async function loadInvites() {
+  const snap = await getDocs(collection(db, "companies", companyId, "examInvites"));
+  allInvites = [];
+  snap.forEach((d) => allInvites.push({ token: d.id, ...(d.data() || {}) }));
+  allInvites.sort((a, b) => String(a.employeeCode || "").localeCompare(String(b.employeeCode || ""), "ja") || String(a.applicantName || "").localeCompare(String(b.applicantName || ""), "ja"));
+}
+
+function invitesToCsv(rows) {
+  const header = ["状態", "発行日", "社員コード", "氏名", "部署", "役職", "メールアドレス", "備考", "受験開始日時", "受験完了日時", "token"];
+  const lines = [header.map(csvCell).join(",")];
+  rows.forEach((r) => {
+    const row = [
+      statusLabel(r.status), fmtDateTime(r.createdAt), r.employeeCode || "", r.applicantName || "",
+      r.department || "", r.position || "", r.applicantEmail || "", r.note || "",
+      fmtDateTime(r.startedAt), fmtDateTime(r.completedAt), r.token,
+    ];
+    lines.push(row.map(csvCell).join(","));
+  });
+  return "﻿" + lines.join("\n");
+}
+
+// ---------------------------------------------------------------------
+// CSVパース（ビズもんのuser-edit-bulk.htmlと同じダブルクォート対応パーサー）
+// ---------------------------------------------------------------------
+function parseCsvLine(line) {
+  const out = [];
+  let cur = "";
+  let q = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') { if (q && line[i + 1] === '"') { cur += '"'; i++; } else q = !q; }
+    else if (ch === "," && !q) { out.push(cur); cur = ""; }
+    else cur += ch;
+  }
+  out.push(cur);
+  return out;
+}
+function parseCsv(text) {
+  if (!text) return { header: [], rows: [] };
+  if (text.charCodeAt(0) === 0xfeff) text = text.slice(1);
+  const lines = text.split(/\r?\n/).filter((l) => l.trim() !== "");
+  if (!lines.length) return { header: [], rows: [] };
+  const header = parseCsvLine(lines[0]).map((h) => h.trim());
+  const rows = lines.slice(1).filter((l) => !l.trim().startsWith("#")).map(parseCsvLine).map((cols) => {
+    const obj = {};
+    header.forEach((h, i) => { obj[h] = cols[i] || ""; });
+    return obj;
+  });
+  return { header, rows };
+}
+function readSelectedCsvFile() {
+  return new Promise((resolve, reject) => {
+    const input = $("csvFile");
+    const file = input.files && input.files[0];
+    if (!file) { reject(new Error("CSVファイルを選択してください。")); return; }
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = () => reject(new Error("CSVファイルの読み込みに失敗しました。"));
+    reader.readAsText(file, "UTF-8");
+  });
+}
+
+function normalizeText(v) { return String(v == null ? "" : v).trim(); }
+function isValidEmail(v) { return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v); }
+
+const EXAMINEE_FIELD_LABELS = {
+  employeeCode: "社員コード", applicantName: "氏名", department: "部署",
+  position: "役職", applicantEmail: "メールアドレス", note: "備考",
+};
+function examineeSnapshot(invite) {
+  return {
+    employeeCode: invite.employeeCode || "", applicantName: invite.applicantName || "",
+    department: invite.department || "", position: invite.position || "",
+    applicantEmail: invite.applicantEmail || "", note: invite.note || "",
+  };
+}
+function diffExaminee(before, after) {
+  const out = [];
+  Object.keys(EXAMINEE_FIELD_LABELS).forEach((k) => {
+    const b = before ? (before[k] || "") : "";
+    const a = after ? (after[k] || "") : "";
+    if (String(b) !== String(a)) out.push({ field: k, label: EXAMINEE_FIELD_LABELS[k], before: b, after: a });
+  });
+  return out;
+}
+function changeText(changes) {
+  if (!changes || !changes.length) return "変更なし";
+  return changes.map((c) => c.label + "：" + (c.before || "－") + " → " + (c.after || "－")).join("\n");
+}
+
+function resetPreview(message) {
+  previewRows = [];
+  applyConfirm = false;
+  $("confirmBox").classList.add("hidden");
+  $("confirmBox").textContent = "";
+  $("previewTbody").innerHTML = '<tr><td colspan="10">' + escapeHtml(message || "先にCSVファイルを読み込んでください。") + "</td></tr>";
+  setSummary("");
+  setApplyStatus("");
+}
+
+function validateRows(rows) {
+  const seenToken = {};
+  return rows.map((r, i) => {
+    const token = normalizeText(r.token || r.UID);
+    const employeeCode = normalizeText(r.employeeCode || r["社員コード"]);
+    const applicantName = normalizeText(r.applicantName || r.name || r["氏名"]);
+    const department = normalizeText(r.department || r["部署"]);
+    const position = normalizeText(r.position || r["役職"]);
+    const applicantEmail = normalizeText(r.applicantEmail || r.email || r["メールアドレス"]);
+    const note = normalizeText(r.note || r["備考"]);
+    const data = { row: i + 2, ok: true, changed: false, msg: "", token, employeeCode, applicantName, department, position, applicantEmail, note };
+    function fail(m) { data.ok = false; data.msg = data.msg ? data.msg + "\n" + m : m; }
+
+    if (!token) { fail("tokenが空です。"); return data; }
+    if (seenToken[token]) fail("CSV内でtokenが重複しています。");
+    seenToken[token] = true;
+
+    const target = allInvites.find((inv) => inv.token === token);
+    if (!target) { fail("対象の受験者が見つかりません（token不一致、または他社のデータです）。"); return data; }
+
+    if (!applicantName) fail("氏名を入力してください。");
+    if (applicantEmail && !isValidEmail(applicantEmail)) fail("メールアドレスの形式が正しくありません。");
+
+    if (data.ok) {
+      const before = examineeSnapshot(target);
+      const after = { employeeCode, applicantName, department, position, applicantEmail, note };
+      const changes = diffExaminee(before, after);
+      data.changed = changes.length > 0;
+      data.changesSummary = changeText(changes);
+      data.before = before;
+      data.after = after;
+    } else {
+      data.changesSummary = "－";
+    }
+    return data;
+  });
+}
+
+function renderPreview(rows) {
+  $("previewTbody").innerHTML = rows.length ? rows.map((r) => {
+    let badgeHtml;
+    if (!r.ok) badgeHtml = '<span class="badge error">エラー</span>';
+    else if (!r.changed) badgeHtml = '<span class="badge nochange">変更なし</span>';
+    else badgeHtml = '<span class="badge ok">OK</span>';
+    return "<tr><td>" + badgeHtml + "</td><td>" + escapeHtml(r.token) + "</td><td>" + escapeHtml(r.employeeCode) + "</td><td>"
+      + escapeHtml(r.applicantName) + "</td><td>" + escapeHtml(r.department) + "</td><td>" + escapeHtml(r.position) + "</td><td>"
+      + escapeHtml(r.applicantEmail) + "</td><td>" + escapeHtml(r.note) + '</td><td class="cell-change">' + escapeHtml(r.changesSummary || "－")
+      + '</td><td class="cell-msg">' + escapeHtml(r.msg) + "</td></tr>";
+  }).join("") : '<tr><td colspan="10">確認対象がありません。</td></tr>';
+}
+
+async function preview() {
+  try {
+    setCsvStatus("CSVファイルを読み込み中...", "note");
+    setApplyStatus(""); setSummary("");
+    await loadInvites();
+    const csvText = await readSelectedCsvFile();
+    const parsed = parseCsv(csvText);
+    const required = ["token", "社員コード", "氏名", "部署", "役職", "メールアドレス", "備考"];
+    const missing = required.filter((h) => !parsed.header.includes(h));
+    if (missing.length) {
+      setCsvStatus("CSV見出しが不足しています：" + missing.join(", "), "error");
+      resetPreview("CSV見出しに不足があります。「現在の受験者一覧をCSVダウンロード」で取得したCSVを利用してください。");
+      return;
+    }
+    previewRows = validateRows(parsed.rows);
+    renderPreview(previewRows);
+    const errCount = previewRows.filter((r) => !r.ok).length;
+    const changeCount = previewRows.filter((r) => r.ok && r.changed).length;
+    const noChangeCount = previewRows.filter((r) => r.ok && !r.changed).length;
+    $("confirmBox").classList.add("hidden");
+    $("confirmBox").textContent = "";
+    if (errCount === 0) {
+      setCsvStatus("CSVファイルを読み込みました。下の取込内容の一覧を確認し、問題なければ『取り込む』を押してください。\n更新対象：" + changeCount + "件\n変更なし：" + noChangeCount + "件", "warn");
+    } else {
+      setCsvStatus("CSVファイルを読み込みましたが、エラーがあります。取込内容の確認一覧を修正してください。\n更新対象：" + changeCount + "件\n変更なし：" + noChangeCount + "件\nエラー：" + errCount + "件", "error");
+    }
+    applyConfirm = false;
+  } catch (e) {
+    console.error(e);
+    setCsvStatus(e.message || "CSVファイルの解析に失敗しました。", "error");
+  }
+}
+
+async function writeChangeLog(token, before, after, action) {
+  const changes = diffExaminee(before, after);
+  if (!changes.length) return;
+  const ref = doc(collection(db, "companies", companyId, "changeLogs"));
+  await setDoc(ref, {
+    companyId: companyId,
+    logType: "examineeEdit",
+    targetToken: token,
+    targetEmployeeCode: after.employeeCode || before.employeeCode || "",
+    targetName: after.applicantName || before.applicantName || "",
+    action: action || "bulkEditExaminee",
+    before: before,
+    after: after,
+    changes: changes,
+    updatedAt: serverTimestamp(),
+    updatedBy: currentUser ? currentUser.uid : "",
+    updatedByEmail: currentUser ? (currentUser.email || "") : "",
+    updatedByName: currentUserName || (currentUser ? currentUser.email : "") || "",
+    updatedByEmployeeCode: currentUserEmployeeCode || "",
+    page: "operator-examinees-edit-bulk.html",
+  });
+}
+
+async function apply() {
+  if (!previewRows.length) { setApplyStatus("先にCSVファイルを選択し、『CSVを読み込んで確認』を押してください。", "error"); return; }
+  if (previewRows.some((r) => !r.ok)) { setApplyStatus("エラーがあるため取り込めません。取込内容の確認一覧を確認してください。", "error"); return; }
+  const targets = previewRows.filter((r) => r.changed);
+  if (!targets.length) { setApplyStatus("変更がある受験者がいません。", "warn"); return; }
+  if (!applyConfirm) {
+    applyConfirm = true;
+    setApplyStatus("確認のため、もう一度『取り込む』を押してください。更新対象：" + targets.length + "件。もう一度押すと更新を実行します。", "warn");
+    return;
+  }
+  let okCount = 0;
+  let ngCount = 0;
+  try {
+    setApplyStatus("取り込み中...", "warn");
+    for (const r of targets) {
+      try {
+        await updateDoc(doc(db, "companies", companyId, "examInvites", r.token), {
+          employeeCode: r.after.employeeCode,
+          applicantName: r.after.applicantName,
+          department: r.after.department,
+          position: r.after.position,
+          applicantEmail: r.after.applicantEmail,
+          note: r.after.note,
+          updatedAt: serverTimestamp(),
+          updatedBy: currentUser ? currentUser.uid : "",
+        });
+        try { await writeChangeLog(r.token, r.before, r.after, "bulkEditExaminee"); } catch (logError) { console.warn("bulk edit change log write skipped", logError); }
+        okCount++;
+      } catch (rowError) {
+        console.error(rowError);
+        ngCount++;
+      }
+    }
+    applyConfirm = false;
+    previewRows = [];
+    $("confirmBox").classList.add("hidden");
+    $("previewTbody").innerHTML = '<tr><td colspan="10">先にCSVファイルを読み込んでください。</td></tr>';
+    $("csvFile").value = "";
+    $("fileName").textContent = "CSVファイルを選択してください。";
+    setCsvStatus(""); setSummary("");
+    await loadInvites();
+    setApplyStatus(
+      "取り込みが完了しました。更新：" + okCount + "件" + (ngCount ? "\n失敗：" + ngCount + "件（対象の受験者が更新中に変更・削除された可能性があります。再読み込みして確認してください）" : ""),
+      ngCount ? "warn" : "ok"
+    );
+  } catch (e) {
+    console.error(e);
+    applyConfirm = false;
+    setApplyStatus("取り込みに失敗しました。\n" + (e.code || "") + "\n" + (e.message || e), "error");
+  }
+}
+
+$("exportBtn").addEventListener("click", async () => {
+  try {
+    setCsvStatus("受験者情報を取得中...", "note");
+    await loadInvites();
+    downloadText("受験者編集_一括_" + (companyId || "company") + "_" + todayStamp() + ".csv", invitesToCsv(allInvites), "text/csv;charset=utf-8");
+    setCsvStatus("受験者一覧（" + allInvites.length + "件）をCSVダウンロードしました。", "ok");
+  } catch (e) {
+    console.error(e);
+    setCsvStatus("CSVダウンロードに失敗しました。\n" + (e.code || "") + "\n" + (e.message || e), "error");
+  }
+});
+$("csvFile").addEventListener("change", () => {
+  const file = $("csvFile").files && $("csvFile").files[0];
+  $("fileName").textContent = file ? "選択中のファイル：" + file.name : "CSVファイルを選択してください。";
+  resetPreview();
+  setCsvStatus("");
+});
+$("previewBtn").addEventListener("click", preview);
+$("applyBtn").addEventListener("click", apply);
+</script>
+</body>
+</html>

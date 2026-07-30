@@ -97,6 +97,7 @@ th{background:#f8fafc;color:var(--navy);font-weight:800;font-size:11.5px;positio
           <a class="side-menu-link side-submenu-link" href="company-admin-invite.html">企業管理者招待</a>
         </div>
         <a class="side-menu-link" id="examineeManageLinkSidebar" href="operator-examinees.html">受験者管理</a>
+        <a class="side-menu-link side-submenu-link" id="examineeEditBulkLinkSidebar" href="operator-examinees-edit-bulk.html">受験者編集（一括）</a>
         <a class="side-menu-link" href="company-dashboard.html">ダッシュボード</a>
         <button type="button" class="side-menu-link toggle" id="reportMenuToggle" aria-expanded="false">レポート<span class="caret">▾</span></button>
         <div id="reportSubMenu" class="side-submenu hidden">
@@ -198,6 +199,7 @@ onAuthStateChanged(auth, async (user) => {
     document.getElementById("inviteBulkLink").href = "operator-invites-bulk.html?company=" + encodeURIComponent(myCompanyId);
     document.getElementById("examineeManageLinkStats").href = "operator-examinees.html?company=" + encodeURIComponent(myCompanyId);
     document.getElementById("examineeManageLinkSidebar").href = "operator-examinees.html?company=" + encodeURIComponent(myCompanyId);
+    document.getElementById("examineeEditBulkLinkSidebar").href = "operator-examinees-edit-bulk.html?company=" + encodeURIComponent(myCompanyId);
 
     const opSnap = await getDoc(doc(db, "operators", user.uid));
     const hasOperatorPermission = opSnap.exists();
