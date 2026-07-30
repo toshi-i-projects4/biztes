@@ -32,7 +32,13 @@ body{margin:0;font-family:"Hiragino Maru Gothic ProN","BIZ UDPGothic","Yu Gothic
   </div>
 
   <div class="card">
-    <p class="description">1. まず「現在の受験者一覧をCSVダウンロード」を押し、そのCSVをExcel等で編集してください。<br>2. 編集できる項目は、社員コード・氏名・部署・役職・メールアドレス・備考です（組織変更や部署異動があった際にご利用ください）。<br>3. 編集後のCSVをこの画面に読み込ませ、内容を確認してから取り込んでください。<br>4. 対象の受験者の特定にはtoken列を使用します。token列は変更・削除しないでください。<br>5. 状態・発行日・受験開始日時・受験完了日時はこの画面では変更できません（参考表示のみ、取り込み時の値は無視されます）。招待を対象外にする・削除するには「受験者編集（個別）」画面をご利用ください。</p>
+    <p class="description">1. まず「現在の受験者一覧をCSVダウンロード」を押し、そのCSVをExcel等で編集してください。<br>2. 編集できる項目は、社員コード・氏名・部署・役職・メールアドレス・備考です（組織変更や部署異動があった際にご利用ください）。<br>3. 編集後のCSVをこの画面に読み込ませ、内容を確認してから取り込んでください。<br>4. 対象の受験者の特定にはtoken列を使用します。token列は変更・削除しないでください。<br>5. 状態・発行日・受験開始日時・受験完了日時はこの画面では変更できません（参考表示のみ、取り込み時の値は無視されます）。新しい受験者の追加は「受験招待（個別／一括）」から行ってください。</p>
+    <p class="description" style="margin-top:-8px">反映方法<span class="required">必須</span></p>
+    <div class="button-row" style="justify-content:flex-start;margin-top:0;flex-direction:column;align-items:flex-start;gap:6px">
+      <label style="font-size:13.5px"><input type="radio" name="editMode" id="editModeUpdate" value="update" checked> 更新のみ反映する（今の受験者は残し、CSVにある対象だけを更新します。削除は行いません）</label>
+      <label style="font-size:13.5px"><input type="radio" name="editMode" id="editModeReplace" value="replace"> 受験者一覧を置き換える（CSVにtokenが含まれない受験者を削除します。組織変更・部署異動などで一覧全体を入れ替えたいときにご利用ください）</label>
+    </div>
+    <div id="editReplaceWarning" class="warning-box hidden">「受験者一覧を置き換える」を選ぶと、CSVにtokenが含まれていない受験者（招待情報・受験結果）はすべて削除されます。この操作は取り消せません。実行前に、下の取込内容の確認一覧をよくご確認ください。</div>
     <div class="button-row" style="justify-content:flex-start"><button class="secondary-btn" id="exportBtn" type="button">現在の受験者一覧をCSVダウンロード</button></div>
     <div class="file-box"><input id="csvFile" type="file" accept=".csv,text/csv"><div id="fileName" class="file-name">CSVファイルを選択してください。</div></div>
     <div class="warning-box">注意：token列は既存の受験者を特定するための重要な項目です。書き換えると別の受験者を更新してしまう可能性があります。状態・発行日・受験開始日時・受験完了日時の各列は参考表示用で、この画面からは更新されません。</div>
@@ -61,7 +67,7 @@ body{margin:0;font-family:"Hiragino Maru Gothic ProN","BIZ UDPGothic","Yu Gothic
 import { auth, db } from "./firebase-config.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import {
-  doc, getDoc, collection, getDocs, query, orderBy, updateDoc, setDoc, serverTimestamp,
+  doc, getDoc, collection, getDocs, query, orderBy, updateDoc, deleteDoc, setDoc, serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { escapeHtml } from "./operator-shared.js";
 
@@ -72,9 +78,12 @@ let currentUserName = "";
 let currentUserEmployeeCode = "";
 let allInvites = [];
 let previewRows = [];
+let toDeleteRows = [];
 let applyConfirm = false;
 
 const $ = (id) => document.getElementById(id);
+
+function currentEditMode() { return $("editModeReplace").checked ? "replace" : "update"; }
 
 function showPage() {
   const l = $("pageLoading");
@@ -273,6 +282,7 @@ function changeText(changes) {
 
 function resetPreview(message) {
   previewRows = [];
+  toDeleteRows = [];
   applyConfirm = false;
   $("confirmBox").classList.add("hidden");
   $("confirmBox").textContent = "";
@@ -281,9 +291,10 @@ function resetPreview(message) {
   setApplyStatus("");
 }
 
-function validateRows(rows) {
+function validateRows(rows, mode) {
   const seenToken = {};
-  return rows.map((r, i) => {
+  const referencedTokens = new Set();
+  const out = rows.map((r, i) => {
     const token = normalizeText(r.token || r.UID);
     const employeeCode = normalizeText(r.employeeCode || r["社員コード"]);
     const applicantName = normalizeText(r.applicantName || r.name || r["氏名"]);
@@ -294,9 +305,10 @@ function validateRows(rows) {
     const data = { row: i + 2, ok: true, changed: false, msg: "", token, employeeCode, applicantName, department, position, applicantEmail, note };
     function fail(m) { data.ok = false; data.msg = data.msg ? data.msg + "\n" + m : m; }
 
-    if (!token) { fail("tokenが空です。"); return data; }
+    if (!token) { fail("tokenが空です。新しい受験者の追加は「受験招待（個別／一括）」からお願いします。"); return data; }
     if (seenToken[token]) fail("CSV内でtokenが重複しています。");
     seenToken[token] = true;
+    referencedTokens.add(token);
 
     const target = allInvites.find((inv) => inv.token === token);
     if (!target) { fail("対象の受験者が見つかりません（token不一致、または他社のデータです）。"); return data; }
@@ -317,10 +329,12 @@ function validateRows(rows) {
     }
     return data;
   });
+  const toDelete = mode === "replace" ? allInvites.filter((inv) => !referencedTokens.has(inv.token)) : [];
+  return { rows: out, toDelete };
 }
 
-function renderPreview(rows) {
-  $("previewTbody").innerHTML = rows.length ? rows.map((r) => {
+function renderPreview(rows, toDelete) {
+  const rowsHtml = rows.map((r) => {
     let badgeHtml;
     if (!r.ok) badgeHtml = '<span class="badge error">エラー</span>';
     else if (!r.changed) badgeHtml = '<span class="badge nochange">変更なし</span>';
@@ -329,7 +343,14 @@ function renderPreview(rows) {
       + escapeHtml(r.applicantName) + "</td><td>" + escapeHtml(r.department) + "</td><td>" + escapeHtml(r.position) + "</td><td>"
       + escapeHtml(r.applicantEmail) + "</td><td>" + escapeHtml(r.note) + '</td><td class="cell-change">' + escapeHtml(r.changesSummary || "－")
       + '</td><td class="cell-msg">' + escapeHtml(r.msg) + "</td></tr>";
-  }).join("") : '<tr><td colspan="10">確認対象がありません。</td></tr>';
+  });
+  const deleteRowsHtml = (toDelete || []).map((inv) => {
+    return '<tr><td><span class="badge error">削除予定</span></td><td>' + escapeHtml(inv.token) + "</td><td>" + escapeHtml(inv.employeeCode || "") + "</td><td>"
+      + escapeHtml(inv.applicantName || "") + "</td><td>" + escapeHtml(inv.department || "") + "</td><td>" + escapeHtml(inv.position || "") + "</td><td>"
+      + escapeHtml(inv.applicantEmail || "") + "</td><td>" + escapeHtml(inv.note || "") + '</td><td class="cell-change">CSVに含まれないため削除</td><td class="cell-msg"></td></tr>';
+  });
+  const all = rowsHtml.concat(deleteRowsHtml);
+  $("previewTbody").innerHTML = all.length ? all.join("") : '<tr><td colspan="10">確認対象がありません。</td></tr>';
 }
 
 async function preview() {
@@ -346,17 +367,21 @@ async function preview() {
       resetPreview("CSV見出しに不足があります。「現在の受験者一覧をCSVダウンロード」で取得したCSVを利用してください。");
       return;
     }
-    previewRows = validateRows(parsed.rows);
-    renderPreview(previewRows);
+    const mode = currentEditMode();
+    const result = validateRows(parsed.rows, mode);
+    previewRows = result.rows;
+    toDeleteRows = result.toDelete;
+    renderPreview(previewRows, toDeleteRows);
     const errCount = previewRows.filter((r) => !r.ok).length;
     const changeCount = previewRows.filter((r) => r.ok && r.changed).length;
     const noChangeCount = previewRows.filter((r) => r.ok && !r.changed).length;
+    const deleteCount = toDeleteRows.length;
     $("confirmBox").classList.add("hidden");
     $("confirmBox").textContent = "";
     if (errCount === 0) {
-      setCsvStatus("CSVファイルを読み込みました。下の取込内容の一覧を確認し、問題なければ『取り込む』を押してください。\n更新対象：" + changeCount + "件\n変更なし：" + noChangeCount + "件", "warn");
+      setCsvStatus("CSVファイルを読み込みました。下の取込内容の一覧を確認し、問題なければ『取り込む』を押してください。\n更新対象：" + changeCount + "件\n変更なし：" + noChangeCount + "件" + (deleteCount ? "\n削除予定：" + deleteCount + "件" : ""), "warn");
     } else {
-      setCsvStatus("CSVファイルを読み込みましたが、エラーがあります。取込内容の確認一覧を修正してください。\n更新対象：" + changeCount + "件\n変更なし：" + noChangeCount + "件\nエラー：" + errCount + "件", "error");
+      setCsvStatus("CSVファイルを読み込みましたが、エラーがあります。取込内容の確認一覧を修正してください。\n更新対象：" + changeCount + "件\n変更なし：" + noChangeCount + "件\nエラー：" + errCount + "件" + (deleteCount ? "\n削除予定：" + deleteCount + "件" : ""), "error");
     }
     applyConfirm = false;
   } catch (e) {
@@ -392,14 +417,32 @@ async function apply() {
   if (!previewRows.length) { setApplyStatus("先にCSVファイルを選択し、『CSVを読み込んで確認』を押してください。", "error"); return; }
   if (previewRows.some((r) => !r.ok)) { setApplyStatus("エラーがあるため取り込めません。取込内容の確認一覧を確認してください。", "error"); return; }
   const targets = previewRows.filter((r) => r.changed);
-  if (!targets.length) { setApplyStatus("変更がある受験者がいません。", "warn"); return; }
+  const deleteTargets = toDeleteRows.slice();
+  if (!targets.length && !deleteTargets.length) { setApplyStatus("変更がある受験者がいません。", "warn"); return; }
   if (!applyConfirm) {
     applyConfirm = true;
-    setApplyStatus("確認のため、もう一度『取り込む』を押してください。更新対象：" + targets.length + "件。もう一度押すと更新を実行します。", "warn");
+    setApplyStatus(
+      "確認のため、もう一度『取り込む』を押してください。更新対象：" + targets.length + "件" + (deleteTargets.length ? "、削除対象：" + deleteTargets.length + "件" : "") + "。もう一度押すと実行します。",
+      "warn"
+    );
     return;
+  }
+  if (deleteTargets.length) {
+    if (!confirm("受験者一覧を置き換えます。CSVにtokenが含まれない" + deleteTargets.length + "件の受験データ（招待情報・受験結果）を削除します。よろしいですか？")) {
+      applyConfirm = false;
+      setApplyStatus("削除が中止されたため、取り込みを中止しました。", "warn");
+      return;
+    }
+    if (!confirm("本当に削除してよろしいですか？\nこの操作は取り消せません。招待情報・受験結果は完全に削除され、復元できません。\n削除すると、レポートやダッシュボードなど他の画面からも同時に消えます。")) {
+      applyConfirm = false;
+      setApplyStatus("削除が中止されたため、取り込みを中止しました。", "warn");
+      return;
+    }
   }
   let okCount = 0;
   let ngCount = 0;
+  let deleteOkCount = 0;
+  let deleteNgCount = 0;
   try {
     setApplyStatus("取り込み中...", "warn");
     for (const r of targets) {
@@ -421,8 +464,19 @@ async function apply() {
         ngCount++;
       }
     }
+    for (const inv of deleteTargets) {
+      try {
+        await deleteDoc(doc(db, "companies", companyId, "examInvites", inv.token));
+        await deleteDoc(doc(db, "companies", companyId, "examResults", inv.token));
+        deleteOkCount++;
+      } catch (delError) {
+        console.error(delError);
+        deleteNgCount++;
+      }
+    }
     applyConfirm = false;
     previewRows = [];
+    toDeleteRows = [];
     $("confirmBox").classList.add("hidden");
     $("previewTbody").innerHTML = '<tr><td colspan="10">先にCSVファイルを読み込んでください。</td></tr>';
     $("csvFile").value = "";
@@ -430,8 +484,9 @@ async function apply() {
     setCsvStatus(""); setSummary("");
     await loadInvites();
     setApplyStatus(
-      "取り込みが完了しました。更新：" + okCount + "件" + (ngCount ? "\n失敗：" + ngCount + "件（対象の受験者が更新中に変更・削除された可能性があります。再読み込みして確認してください）" : ""),
-      ngCount ? "warn" : "ok"
+      "取り込みが完了しました。更新：" + okCount + "件" + (ngCount ? "\n失敗：" + ngCount + "件（対象の受験者が更新中に変更・削除された可能性があります。再読み込みして確認してください）" : "")
+        + (deleteOkCount ? "\n削除：" + deleteOkCount + "件" : "") + (deleteNgCount ? "\n削除失敗：" + deleteNgCount + "件" : ""),
+      (ngCount || deleteNgCount) ? "warn" : "ok"
     );
   } catch (e) {
     console.error(e);
@@ -459,6 +514,13 @@ $("csvFile").addEventListener("change", () => {
 });
 $("previewBtn").addEventListener("click", preview);
 $("applyBtn").addEventListener("click", apply);
+["editModeUpdate", "editModeReplace"].forEach((id) => {
+  $(id).addEventListener("change", () => {
+    $("editReplaceWarning").classList.toggle("hidden", currentEditMode() !== "replace");
+    resetPreview();
+    setCsvStatus("");
+  });
+});
 </script>
 </body>
 </html>
