@@ -24,7 +24,7 @@ body{margin:0;font-family:"Hiragino Maru Gothic ProN","BIZ UDPGothic","Yu Gothic
 <body>
 <div id="pageLoading" class="page-loading"><div class="loading-box"><div class="loading-spinner"></div><div id="loadingText" class="loading-text">受験者編集（一括）を読み込み中...</div></div></div>
 <div class="page">
-  <div class="header"><h1>受験者編集（一括）</h1><a class="back-link" href="operator-examinees.html" id="backLink">← 受験者管理へ戻る</a></div>
+  <div class="header"><h1>受験者編集（一括）</h1><a class="back-link" href="operator-examinees.html" id="backLink">← 受験者編集（個別）へ戻る</a></div>
 
   <div class="card" id="companySelectPanel">
     <p class="section-title">企業を選択</p>
@@ -32,7 +32,7 @@ body{margin:0;font-family:"Hiragino Maru Gothic ProN","BIZ UDPGothic","Yu Gothic
   </div>
 
   <div class="card">
-    <p class="description">1. まず「現在の受験者一覧をCSVダウンロード」を押し、そのCSVをExcel等で編集してください。<br>2. 編集できる項目は、社員コード・氏名・部署・役職・メールアドレス・備考です（組織変更や部署異動があった際にご利用ください）。<br>3. 編集後のCSVをこの画面に読み込ませ、内容を確認してから取り込んでください。<br>4. 対象の受験者の特定にはtoken列を使用します。token列は変更・削除しないでください。<br>5. 状態・発行日・受験開始日時・受験完了日時はこの画面では変更できません（参考表示のみ、取り込み時の値は無視されます）。招待を対象外にする・削除するには「受験者管理」画面をご利用ください。</p>
+    <p class="description">1. まず「現在の受験者一覧をCSVダウンロード」を押し、そのCSVをExcel等で編集してください。<br>2. 編集できる項目は、社員コード・氏名・部署・役職・メールアドレス・備考です（組織変更や部署異動があった際にご利用ください）。<br>3. 編集後のCSVをこの画面に読み込ませ、内容を確認してから取り込んでください。<br>4. 対象の受験者の特定にはtoken列を使用します。token列は変更・削除しないでください。<br>5. 状態・発行日・受験開始日時・受験完了日時はこの画面では変更できません（参考表示のみ、取り込み時の値は無視されます）。招待を対象外にする・削除するには「受験者編集（個別）」画面をご利用ください。</p>
     <div class="button-row" style="justify-content:flex-start"><button class="secondary-btn" id="exportBtn" type="button">現在の受験者一覧をCSVダウンロード</button></div>
     <div class="file-box"><input id="csvFile" type="file" accept=".csv,text/csv"><div id="fileName" class="file-name">CSVファイルを選択してください。</div></div>
     <div class="warning-box">注意：token列は既存の受験者を特定するための重要な項目です。書き換えると別の受験者を更新してしまう可能性があります。状態・発行日・受験開始日時・受験完了日時の各列は参考表示用で、この画面からは更新されません。</div>
@@ -53,7 +53,7 @@ body{margin:0;font-family:"Hiragino Maru Gothic ProN","BIZ UDPGothic","Yu Gothic
     <div class="button-row"><button class="danger-btn" id="applyBtn" type="button">取り込む</button></div>
   </div>
 
-  <a class="bottom-back-link" href="operator-examinees.html" id="backLinkBottom">← 受験者管理へ戻る</a>
+  <a class="bottom-back-link" href="operator-examinees.html" id="backLinkBottom">← 受験者編集（個別）へ戻る</a>
 </div>
 
 <script src="operator-mode.js"></script>
@@ -127,7 +127,7 @@ onAuthStateChanged(auth, async (user) => {
     currentUserName = caSnap.data().name || "";
     currentUserEmployeeCode = caSnap.data().employeeCode || "";
     $("companySelectPanel").classList.add("hidden");
-    setBackLink("operator-examinees.html?company=" + encodeURIComponent(companyId), "← 受験者管理へ戻る");
+    setBackLink("operator-examinees.html?company=" + encodeURIComponent(companyId), "← 受験者編集（個別）へ戻る");
     await loadInvites();
     setCsvStatus(""); setApplyStatus(""); resetPreview();
     showPage();
@@ -161,7 +161,7 @@ async function loadCompaniesForOperator() {
   select.addEventListener("change", async () => {
     companyId = select.value;
     updateOperatorBanner();
-    setBackLink("operator-examinees.html?company=" + encodeURIComponent(companyId) + "&opEnter=1", "← 受験者管理へ戻る");
+    setBackLink("operator-examinees.html?company=" + encodeURIComponent(companyId) + "&opEnter=1", "← 受験者編集（個別）へ戻る");
     resetPreview();
     setCsvStatus(""); setApplyStatus("");
     if (companyId) await loadInvites();
@@ -169,7 +169,7 @@ async function loadCompaniesForOperator() {
   if (select.value) {
     companyId = select.value;
     updateOperatorBanner();
-    setBackLink("operator-examinees.html?company=" + encodeURIComponent(companyId) + "&opEnter=1", "← 受験者管理へ戻る");
+    setBackLink("operator-examinees.html?company=" + encodeURIComponent(companyId) + "&opEnter=1", "← 受験者編集（個別）へ戻る");
     await loadInvites();
   }
 }
