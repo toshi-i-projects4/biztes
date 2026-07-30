@@ -89,15 +89,18 @@ th{background:#f8fafc;color:var(--navy);font-weight:800;font-size:11.5px;positio
     <nav class="side-menu">
       <div id="gatedMenu" class="side-menu hidden" style="margin:0">
         <a class="side-menu-link" id="questionEditorLink" href="operator-question-editor.html">問題管理</a>
-        <button type="button" class="side-menu-link toggle" id="inviteMenuToggle" aria-expanded="false">受験者・管理者招待<span class="caret">▾</span></button>
+        <a class="side-menu-link" id="inviteMailTemplateLink" href="operator-invite-mail.html">受験招待メール作成</a>
+        <button type="button" class="side-menu-link toggle" id="inviteMenuToggle" aria-expanded="false">受験招待<span class="caret">▾</span></button>
         <div id="inviteSubMenu" class="side-submenu hidden">
-          <a class="side-menu-link side-submenu-link" id="inviteMailTemplateLink" href="operator-invite-mail.html">受験招待メール作成</a>
           <a class="side-menu-link side-submenu-link" id="inviteSingleLink" href="operator-invites.html">受験招待（個別）</a>
           <a class="side-menu-link side-submenu-link" id="inviteBulkLink" href="operator-invites-bulk.html">受験招待（一括）</a>
-          <a class="side-menu-link side-submenu-link" href="company-admin-invite.html">企業管理者招待</a>
         </div>
-        <a class="side-menu-link" id="examineeManageLinkSidebar" href="operator-examinees.html">受験者編集（個別）</a>
-        <a class="side-menu-link side-submenu-link" id="examineeEditBulkLinkSidebar" href="operator-examinees-edit-bulk.html">受験者編集（一括）</a>
+        <a class="side-menu-link" href="company-admin-invite.html">企業管理者招待</a>
+        <button type="button" class="side-menu-link toggle" id="examineeMenuToggle" aria-expanded="false">受験者編集<span class="caret">▾</span></button>
+        <div id="examineeSubMenu" class="side-submenu hidden">
+          <a class="side-menu-link side-submenu-link" id="examineeManageLinkSidebar" href="operator-examinees.html">受験者編集（個別）</a>
+          <a class="side-menu-link side-submenu-link" id="examineeEditBulkLinkSidebar" href="operator-examinees-edit-bulk.html">受験者編集（一括）</a>
+        </div>
         <a class="side-menu-link" href="company-dashboard.html">ダッシュボード</a>
         <button type="button" class="side-menu-link toggle" id="reportMenuToggle" aria-expanded="false">レポート<span class="caret">▾</span></button>
         <div id="reportSubMenu" class="side-submenu hidden">
@@ -135,7 +138,7 @@ th{background:#f8fafc;color:var(--navy);font-weight:800;font-size:11.5px;positio
         <div class="card"><div class="card-label">受験完了数</div><div class="card-value" id="statCompleted">-</div></div>
         <div class="card"><div class="card-label">未受験者数</div><div class="card-value" id="statNotDone">-</div></div>
       </div>
-      <div class="chart-link"><a href="operator-examinees.html" id="examineeManageLinkStats">受験者情報の編集・削除や未受験者を確認する（受験者編集（個別）へ）→</a></div>
+      <div class="chart-link"><a href="operator-examinees.html" id="examineeManageLinkStats">受験者情報の編集・削除や未受験者を確認する（受験者管理へ）→</a></div>
     </div>
 
     <div class="panel hidden" id="chartsPanel">
@@ -229,6 +232,14 @@ document.getElementById("logoutBtn").addEventListener("click", async () => {
 document.getElementById("inviteMenuToggle").addEventListener("click", () => {
   const btn = document.getElementById("inviteMenuToggle");
   const sub = document.getElementById("inviteSubMenu");
+  const open = sub.classList.toggle("hidden") === false;
+  btn.classList.toggle("open", open);
+  btn.setAttribute("aria-expanded", open ? "true" : "false");
+});
+
+document.getElementById("examineeMenuToggle").addEventListener("click", () => {
+  const btn = document.getElementById("examineeMenuToggle");
+  const sub = document.getElementById("examineeSubMenu");
   const open = sub.classList.toggle("hidden") === false;
   btn.classList.toggle("open", open);
   btn.setAttribute("aria-expanded", open ? "true" : "false");
