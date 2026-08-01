@@ -200,6 +200,7 @@ onAuthStateChanged(auth, async (user) => {
   const opSnap = await getDoc(doc(db, "operators", user.uid));
   if (opSnap.exists()) {
     isOperatorUser = true;
+    setBackHomeLink("company-admin-home.html", "← 企業管理者ホームへ戻る");
     await loadCompaniesForOperator();
     showPage();
     return;

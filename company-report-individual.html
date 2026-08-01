@@ -1137,6 +1137,7 @@ onAuthStateChanged(auth, async (user) => {
         document.body.innerHTML = "<p style='padding:40px;font-family:sans-serif'>URLに ?company=企業ID が指定されていません。運営ホームから遷移してください。</p>";
         return;
       }
+      setBackHomeLink("company-admin-home.html", "← 企業管理者ホームへ戻る");
     } else {
       await signOut(auth); location.href = "login.html"; return;
     }

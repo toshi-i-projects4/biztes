@@ -167,6 +167,7 @@ onAuthStateChanged(auth, async (user) => {
   if (opSnap.exists()) {
     isOperatorUser = true;
     currentUserName = opSnap.data().name || "";
+    setBackHomeLink("company-admin-home.html", "← 企業管理者ホームへ戻る");
     await loadCompaniesForOperator();
     showPage();
     return;
