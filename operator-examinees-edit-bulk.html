@@ -24,7 +24,7 @@ body{margin:0;font-family:"Hiragino Maru Gothic ProN","BIZ UDPGothic","Yu Gothic
 <body>
 <div id="pageLoading" class="page-loading"><div class="loading-box"><div class="loading-spinner"></div><div id="loadingText" class="loading-text">受験者編集（一括）を読み込み中...</div></div></div>
 <div class="page">
-  <div class="header"><h1>受験者編集（一括）</h1><a class="back-link" href="operator-examinees.html" id="backLink">← 受験者編集（個別）へ戻る</a></div>
+  <div class="header"><h1>受験者編集（一括）</h1><a class="back-link" href="company-admin-home.html" id="backLink">← 企業管理者ホームへ戻る</a></div>
 
   <div class="card" id="companySelectPanel">
     <p class="section-title">企業を選択</p>
@@ -59,7 +59,7 @@ body{margin:0;font-family:"Hiragino Maru Gothic ProN","BIZ UDPGothic","Yu Gothic
     <div class="button-row"><button class="danger-btn" id="applyBtn" type="button">取り込む</button></div>
   </div>
 
-  <a class="bottom-back-link" href="operator-examinees.html" id="backLinkBottom">← 受験者編集（個別）へ戻る</a>
+  <a class="bottom-back-link" href="company-admin-home.html" id="backLinkBottom">← 企業管理者ホームへ戻る</a>
 </div>
 
 <script src="operator-mode.js"></script>
@@ -136,7 +136,7 @@ onAuthStateChanged(auth, async (user) => {
     currentUserName = caSnap.data().name || "";
     currentUserEmployeeCode = caSnap.data().employeeCode || "";
     $("companySelectPanel").classList.add("hidden");
-    setBackLink("operator-examinees.html?company=" + encodeURIComponent(companyId), "← 受験者編集（個別）へ戻る");
+    setBackLink("company-admin-home.html", "← 企業管理者ホームへ戻る");
     await loadInvites();
     setCsvStatus(""); setApplyStatus(""); resetPreview();
     showPage();
