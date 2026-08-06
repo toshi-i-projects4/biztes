@@ -186,7 +186,7 @@ th{background:#f8fafc;color:var(--navy);font-weight:800;font-size:11px;position:
 import { auth, db } from "./firebase-config.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { collection, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { escapeHtml as esc, loadEffectiveCategory1List, loadEffectiveQuestionSet } from "./operator-shared.js";
+import { escapeHtml as esc, loadEffectiveCategory1List, loadEffectiveQuestionSet, resolveAnalysisCategory1Mapping } from "./operator-shared.js";
 
 const $ = (id) => document.getElementById(id);
 function setBackHomeLink(href, text) {
@@ -203,6 +203,9 @@ let itemsByCategory1 = {}; // category1Id -> Map(itemId -> item)
 let category1Max = {};      // category1Id -> 満点（①〜④のみ計算）
 let skillSubcatByCategory1 = {}; // category1Id -> その企業の現在の問題構成から拾ったカテゴリー2名の一覧（出題順）
 let skillSubcatMax = {};    // カテゴリー2名 -> 満点（①〜④の問題のみが対象。企業ごとにカスタマイズされた問題構成から都度計算する）
+// v9で追加：①〜④のスロットID -> 実際にスコアを参照すべきカテゴリー1ID（代替カテゴリーが
+// 設定・有効な場合はそちらのID、なければスロットIDのまま）。resolveAnalysisCategory1Mappingの戻り値。
+let analysisMapping = { cognitive: "cognitive", verbal: "verbal", logical_thinking: "logical_thinking", business_exec: "business_exec" };
 let applicants = [];    // 受験完了データの集計済み配列
 let selectedToken = "";
 
@@ -539,10 +542,16 @@ async function loadAll() {
     (eff.items || []).forEach((item) => map.set(item.id, item));
     itemsByCategory1[p.id] = map;
   }));
+  // v9で追加：①〜④のいずれかが自社カテゴリーで代替されている場合、以降のスコア計算では
+  // スロットID（cognitive等）ではなく代替先のカテゴリーIDから問題・結果を参照する。
+  analysisMapping = await resolveAnalysisCategory1Mapping(companyId);
+  const resolvedFourIds = FOUR_CATEGORY1_IDS.map((category1Id) => analysisMapping[category1Id]);
   category1Max = {};
-  FOUR_CATEGORY1_IDS.forEach((category1Id) => { category1Max[category1Id] = maxForCategory1(Array.from((itemsByCategory1[category1Id] || new Map()).values())); });
-  skillSubcatByCategory1 = subcatNamesByCategory1(FOUR_CATEGORY1_IDS);
-  skillSubcatMax = maxBySubcatForCategory1s(FOUR_CATEGORY1_IDS);
+  FOUR_CATEGORY1_IDS.forEach((category1Id) => { category1Max[category1Id] = maxForCategory1(Array.from((itemsByCategory1[analysisMapping[category1Id]] || new Map()).values())); });
+  const rawSubcatNames = subcatNamesByCategory1(resolvedFourIds); // 代替先IDでキーされる
+  skillSubcatByCategory1 = {};
+  FOUR_CATEGORY1_IDS.forEach((category1Id) => { skillSubcatByCategory1[category1Id] = rawSubcatNames[analysisMapping[category1Id]] || []; });
+  skillSubcatMax = maxBySubcatForCategory1s(resolvedFourIds); // カテゴリー2名でキーされるため代替先IDのままでよい
 
   const [invitesSnap, resultsSnap] = await Promise.all([
     getDocs(collection(db, "companies", companyId, "examInvites")),
@@ -562,7 +571,8 @@ async function loadAll() {
     const category1Pct = {};
     let hasAllFourCategory1s = true;
     FOUR_CATEGORY1_IDS.forEach((category1Id) => {
-      const a = agg.byCategory1[category1Id];
+      // v9より、代替カテゴリーが設定されている場合は結果データもそちらのIDから参照する
+      const a = agg.byCategory1[analysisMapping[category1Id]];
       const max = category1Max[category1Id];
       if (a && a.answeredCount && max > 0) {
         category1Pct[category1Id] = Math.round((a.score / max) * 1000) / 10;

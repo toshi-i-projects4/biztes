@@ -39,6 +39,12 @@ export const DEFAULT_CATEGORY1_SETTINGS = {
   },
 };
 
+// レーダーチャート・帳票で分析対象になる「①〜④」の4カテゴリー1（v9でoperator-shared.jsに集約。
+// 各画面（company-dashboard.html等）は従来通りローカルにも同じ内容の定数を持つが、
+// 代替カテゴリーの解決ロジック（resolveAnalysisCategory1Mapping/loadAdministeredCategory1List）は
+// ここで定義するこのリストを基準にする）。
+export const FOUR_CATEGORY1_IDS = ["cognitive", "verbal", "logical_thinking", "business_exec"];
+
 // 企業作成時に5カテゴリー1分のquestionSets設定ドキュメントを用意する
 export async function ensureCompanyQuestionSets(companyId) {
   for (const category1Id of CATEGORY1_IDS) {
@@ -148,7 +154,9 @@ function cacheClearMatching(predicate) {
 // operator-question-editor.htmlで、自社の問題・カテゴリー1設定を保存/削除/コピーした直後に呼ぶ。
 export function invalidateCompanyQuestionCache(companyId) {
   if (!companyId) return;
-  cacheClearMatching((key) => key === `customCategory1s:${companyId}` || key.startsWith(`questionSet:${companyId}:`));
+  cacheClearMatching((key) => key === `customCategory1s:${companyId}`
+    || key === `qsSettingsMap:${companyId}`
+    || key.startsWith(`questionSet:${companyId}:`));
 }
 
 // 全社共通のテンプレート・カテゴリー定義に関するキャッシュを全て破棄する。
@@ -237,6 +245,91 @@ export async function loadEffectiveCategory1List(companyId) {
   ];
 }
 
+// 指定企業の questionSets コレクション全体（カテゴリー1ごとの設定：実施可否・説明文・制限時間など）を
+// 1回のクエリでまとめて取得する（v9で追加）。「実施する/しない」の判定・代替解決に使う
+// （items本体は含まない。問題内容は別途 loadEffectiveQuestionSet で取得する）。
+async function loadCompanyQuestionSetSettingsMap(companyId) {
+  const cacheKey = `qsSettingsMap:${companyId}`;
+  const cached = cacheRead(cacheKey);
+  if (cached) return cached;
+  const snap = await getDocs(collection(db, "companies", companyId, "questionSets"));
+  const map = {};
+  snap.forEach((d) => { map[d.id] = d.data(); });
+  cacheWrite(cacheKey, map);
+  return map;
+}
+
+// questionSets設定マップ上で、指定カテゴリー1が「実施する」設定になっているかどうか。
+// enabledフィールドが無い（v9より前に作成されたドキュメント・未作成のドキュメント）場合は、
+// 既存企業の受験フローを変えないよう true（実施する）扱いにする。
+function isCategory1Enabled(settingsMap, category1Id) {
+  const s = settingsMap[category1Id];
+  return !s || s.enabled !== false;
+}
+
+// カテゴリー1（全社共通・自社限定いずれも）の「実施する/しない」を切り替える（v9で追加）。
+// 全社共通カテゴリーはFirestoreルール上、自社管理者はこのenabledフィールドしか書き込めない。
+export async function setCategory1Enabled(companyId, category1Id, enabled) {
+  const ref = doc(db, "companies", companyId, "questionSets", category1Id);
+  await setDoc(ref, { enabled: !!enabled, updatedAt: serverTimestamp() }, { merge: true });
+  invalidateCompanyQuestionCache(companyId);
+}
+
+// 自社限定カテゴリーが①〜④のどれかの「代替」かどうかを運営が設定する（v9で追加）。
+// nullish/空文字を渡すと「単なる追加」（代替なし）に戻す。企業管理者はこの値を変更できない
+// （FirestoreルールでcustomParts書き込みは運営限定にしている）。
+export async function setCustomCategory1Substitution(companyId, category1Id, substitutesFor) {
+  const ref = doc(db, "companies", companyId, "customParts", category1Id);
+  await setDoc(ref, { substitutesFor: substitutesFor || null, updatedAt: serverTimestamp() }, { merge: true });
+  invalidateCompanyQuestionCache(companyId);
+}
+
+// 実際に受験フローに出題されるカテゴリー1一覧（v9で追加）。
+// loadEffectiveCategory1List との違い：
+//   - enabled === false のカテゴリーを除外する。
+//   - ①〜④のいずれかについて、有効な代替カテゴリー（自社限定・substitutesFor設定済み・実施ON）が
+//     存在する場合、代替元の標準カテゴリー自体を除外する（同じ能力を二重に出題しないため）。
+// exam.html（実際の出題）はこちらを使う。operator-question-editor.htmlのタブ一覧のように、
+// 無効化中のカテゴリーも含めて全件表示したい画面は、引き続き loadEffectiveCategory1List を使う。
+export async function loadAdministeredCategory1List(companyId) {
+  const [allCategory1s, customCategory1s, settingsMap] = await Promise.all([
+    loadEffectiveCategory1List(companyId),
+    loadCompanyCustomCategory1s(companyId),
+    loadCompanyQuestionSetSettingsMap(companyId),
+  ]);
+  const substitutedSlots = new Set(
+    customCategory1s
+      .filter((c) => c.substitutesFor && FOUR_CATEGORY1_IDS.includes(c.substitutesFor) && isCategory1Enabled(settingsMap, c.id))
+      .map((c) => c.substitutesFor)
+  );
+  return allCategory1s.filter((category1) => {
+    if (substitutedSlots.has(category1.id)) return false;
+    return isCategory1Enabled(settingsMap, category1.id);
+  });
+}
+
+// ①〜④それぞれについて、分析（レーダーチャート・帳票）で実際にスコアを参照すべきカテゴリー1IDを
+// 返す（v9で追加）。有効な代替カテゴリーが設定されていればそちらのID、なければ元のスロットIDのまま。
+// 例: { cognitive: "cognitive", verbal: "custom_abc123", logical_thinking: "logical_thinking",
+//       business_exec: "business_exec" }
+// 呼び出し側（company-dashboard.html等）は、表示ラベル（①認知能力 等）は従来通り固定のスロットID
+// （オブジェクトのキー）に紐づけたまま使い、スコア・問題データの参照だけこのマッピング経由の
+// IDに差し替える。
+export async function resolveAnalysisCategory1Mapping(companyId) {
+  const [customCategory1s, settingsMap] = await Promise.all([
+    loadCompanyCustomCategory1s(companyId),
+    loadCompanyQuestionSetSettingsMap(companyId),
+  ]);
+  const mapping = {};
+  FOUR_CATEGORY1_IDS.forEach((slotId) => { mapping[slotId] = slotId; });
+  customCategory1s.forEach((c) => {
+    if (c.substitutesFor && FOUR_CATEGORY1_IDS.includes(c.substitutesFor) && isCategory1Enabled(settingsMap, c.id)) {
+      mapping[c.substitutesFor] = c.id;
+    }
+  });
+  return mapping;
+}
+
 function generateCategory1Id(prefix) {
   const rand = (crypto.randomUUID ? crypto.randomUUID() : String(Math.random()).slice(2)).replace(/-/g, "").slice(0, 12);
   return `${prefix}_${rand}`;
@@ -285,7 +378,10 @@ export async function deleteGlobalCategory1Def(category1Id) {
   invalidateGlobalQuestionCache();
 }
 
-// 企業が自社限定の新しいカテゴリーを追加する
+// 自社限定の新しいカテゴリーを追加する。
+// v9より、企業側のセルフサービス作成は廃止し、運営が申込対応時に代理作成する運用に変更した
+// （Firestoreルールでも customParts の書き込みを運営限定にしている）。この関数自体はそのまま
+// 残し、operator-question-editor.html の運営モードからのみ呼び出す。
 export async function createCompanyCustomCategory1(companyId, label) {
   const existing = await loadCompanyCustomCategory1s(companyId);
   const nextOrder = existing.length ? Math.max(...existing.map((p) => p.order || 0)) + 1 : 1000;
@@ -307,10 +403,11 @@ export async function createCompanyCustomCategory1(companyId, label) {
   return category1Id;
 }
 
-// 企業が追加した自社限定カテゴリーを削除する（全社共通カテゴリーは対象外）。
+// 自社限定カテゴリーを削除する（全社共通カテゴリーは対象外）。
 // 登録済みの問題（items）・カテゴリー設定（questionSets）・カテゴリー定義（customParts）を
 // すべて削除する。Firestoreクライアントには再帰削除が無いため、items を1件ずつ削除してから
-// 親ドキュメントを削除する。
+// 親ドキュメントを削除する。v9より運営限定の操作（FirestoreルールでcustomParts書き込みを
+// 運営限定にしているため、企業管理者からの呼び出しは権限エラーになる）。
 export async function deleteCompanyCustomCategory1(companyId, category1Id) {
   const itemsRef = collection(db, "companies", companyId, "questionSets", category1Id, "items");
   const itemsSnap = await getDocs(itemsRef);
@@ -382,8 +479,9 @@ function toZenkakuNumber(n) {
 // 案内メールに載せる「所要時間の目安」と「タイピング問題の有無」を求める。
 // exam-entry.html が受験者に表示する内容と同じ実効設定（企業が自社で問題を
 // 差し替えている場合はそちらを優先）を参照するため、表示される時間と齟齬が出ない。
+// v9より、実施OFF・代替により除外されたカテゴリーは所要時間に含めない（loadAdministeredCategory1List）。
 export async function loadExamSummary(companyId) {
-  const category1Order = await loadEffectiveCategory1List(companyId);
+  const category1Order = await loadAdministeredCategory1List(companyId);
   let totalSec = 0;
   let hasTyping = false;
   for (const category1 of category1Order) {

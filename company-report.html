@@ -132,7 +132,7 @@ import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/
 import {
   collection, query, where, getDocs, doc, getDoc,
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { escapeHtml as esc, loadEffectiveCategory1List, loadEffectiveQuestionSet } from "./operator-shared.js";
+import { escapeHtml as esc, loadEffectiveCategory1List, loadEffectiveQuestionSet, resolveAnalysisCategory1Mapping } from "./operator-shared.js";
 
 const $ = (id) => document.getElementById(id);
 function setBackHomeLink(href, text) {
@@ -146,6 +146,9 @@ let companyId = params.get("company");
 let isOperatorUser = false;
 let category1List = []; // [{id,label}]
 let itemsByCategory1 = {}; // category1Id -> Map(itemId -> item)
+// v9で追加：①〜④のスロットID -> 実際にスコアを参照すべきカテゴリー1ID（代替カテゴリーが
+// 設定・有効な場合はそちらのID、なければスロットIDのまま）。resolveAnalysisCategory1Mappingの戻り値。
+let analysisMapping = { cognitive: "cognitive", verbal: "verbal", logical_thinking: "logical_thinking", business_exec: "business_exec" };
 let invites = [];
 let resultMap = {}; // token -> examResult
 let rows = [];
@@ -289,6 +292,17 @@ function computeResultAggregate(result) {
   return { totalScore, byCategory1, bySubcat };
 }
 
+// v9で追加：①〜④のうち代替カテゴリーが設定されているスロットについて、そのスロットIDのキーに
+// 代替先カテゴリーの集計結果を差し替える（呼び出し側は従来通りスロットID＝cognitive等で参照すればよい）。
+function remapAggByCategory1(byCategory1) {
+  const out = { ...(byCategory1 || {}) };
+  FOUR_CATEGORY1_IDS.forEach((slotId) => {
+    const resolvedId = analysisMapping[slotId];
+    if (resolvedId && resolvedId !== slotId) out[slotId] = byCategory1 ? byCategory1[resolvedId] : undefined;
+  });
+  return out;
+}
+
 function hideLoading() { const l = $("pageLoading"); if (l) { l.classList.add("hidden"); l.style.display = "none"; } }
 function setStatus(msg, type) { const e = $("status"); e.textContent = msg || ""; e.className = "status " + (msg ? (type || "") : ""); }
 function pad2(n) { return String(n).padStart(2, "0"); }
@@ -427,7 +441,7 @@ function buildRows() {
       startedAt: inv.startedAt,
       completedAt: inv.completedAt,
       result,
-      aggByCategory1: agg.byCategory1,
+      aggByCategory1: remapAggByCategory1(agg.byCategory1),
       aggBySubcat: agg.bySubcat,
       totalScore: result ? agg.totalScore : null,
     };
@@ -806,6 +820,9 @@ onAuthStateChanged(auth, async (user) => {
       (eff.items || []).forEach((item) => map.set(item.id, item));
       itemsByCategory1[p.id] = map;
     }));
+    // v9で追加：①〜④のいずれかが自社カテゴリーで代替されている場合、以降のスコア表示では
+    // スロットID（cognitive等）ではなく代替先のカテゴリーIDから結果を参照する。
+    analysisMapping = await resolveAnalysisCategory1Mapping(companyId);
     const dr = defaultRange();
     $("startDate").value = dr.start;
     $("endDate").value = dr.end;

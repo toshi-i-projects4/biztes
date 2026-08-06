@@ -132,7 +132,7 @@ import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/
 import {
   collection, collectionGroup, query, where, getDocs, doc, getDoc,
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { escapeHtml as esc, loadEffectiveCategory1List, loadEffectiveQuestionSet } from "./operator-shared.js";
+import { escapeHtml as esc, loadEffectiveCategory1List, loadEffectiveQuestionSet, resolveAnalysisCategory1Mapping } from "./operator-shared.js";
 
 // このページは company-report.html（企業管理のレポート・全社版）と同じ集計・表示ロジックを、
 // 全企業を横断する運営向けレポートとして再利用したもの。company-report.htmlとの主な違いは、
@@ -149,6 +149,10 @@ let allCompanies = []; // [{companyId, companyName}]
 let companyNameMap = {}; // companyId -> companyName
 let category1ListByCompany = {}; // companyId -> [{id,label,scope}]
 let itemsByCompanyCategory1 = {}; // companyId -> { category1Id -> Map(itemId -> item) }
+// v9で追加：companyId -> ①〜④のスロットID -> 実際にスコアを参照すべきカテゴリー1ID
+// （resolveAnalysisCategory1Mappingの戻り値。企業ごとに代替設定が異なりうるためcompanyId単位で保持する）。
+let analysisMappingByCompany = {};
+const DEFAULT_ANALYSIS_MAPPING = { cognitive: "cognitive", verbal: "verbal", logical_thinking: "logical_thinking", business_exec: "business_exec" };
 let invites = []; // 各要素にcompanyIdを含む
 let resultMap = {}; // "companyId/token" -> examResult
 let rows = [];
@@ -277,6 +281,18 @@ function computeResultAggregate(result, itemsByCategory1) {
     });
   }
   return { totalScore, byCategory1, bySubcat };
+}
+
+// v9で追加：①〜④のうち代替カテゴリーが設定されているスロットについて、そのスロットIDのキーに
+// 代替先カテゴリーの集計結果を差し替える（呼び出し側は従来通りスロットID＝cognitive等で参照すればよい）。
+function remapAggByCategory1(byCategory1, mapping) {
+  const out = { ...(byCategory1 || {}) };
+  const m = mapping || DEFAULT_ANALYSIS_MAPPING;
+  FOUR_CATEGORY1_IDS.forEach((slotId) => {
+    const resolvedId = m[slotId];
+    if (resolvedId && resolvedId !== slotId) out[slotId] = byCategory1 ? byCategory1[resolvedId] : undefined;
+  });
+  return out;
 }
 
 function hideLoading() { const l = $("pageLoading"); if (l) { l.classList.add("hidden"); l.style.display = "none"; } }
@@ -423,7 +439,7 @@ function buildRows() {
       startedAt: inv.startedAt,
       completedAt: inv.completedAt,
       result,
-      aggByCategory1: agg.byCategory1,
+      aggByCategory1: remapAggByCategory1(agg.byCategory1, analysisMappingByCompany[inv.companyId]),
       aggBySubcat: agg.bySubcat,
       totalScore: result ? agg.totalScore : null,
     };
@@ -652,6 +668,7 @@ async function ensureCompanyQuestionData(companyId) {
     itemsByCategory1[p.id] = map;
   }));
   itemsByCompanyCategory1[companyId] = itemsByCategory1;
+  analysisMappingByCompany[companyId] = await resolveAnalysisCategory1Mapping(companyId);
 }
 
 async function loadReport() {

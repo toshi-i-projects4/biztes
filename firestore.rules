@@ -68,6 +68,22 @@ service cloud.firestore {
     function sameCompany(companyId) {
       return isCompanyAdmin() && myCompanyId() == companyId;
     }
+    // カテゴリー1のIDが自社限定カテゴリー（customParts経由、"custom_"プレフィックス）かどうか。
+    // 全社共通カテゴリー（①〜⑤・運営追加分）は問題内容・カテゴリー1設定とも運営のみが編集でき、
+    // 自社限定カテゴリーのみカテゴリー1設定（説明文・制限時間等）を引き続き自社管理者が編集できる
+    // （v9で追加：企業側セルフサービス廃止に伴う権限見直し）。
+    function isCustomPartId(partId) {
+      return partId.matches('^custom_.*');
+    }
+    // questionSets/{partId} への企業管理者からの書き込みが、実施可否（enabled）だけを
+    // 変更するものかどうか。全社共通カテゴリーでは、企業管理者はこれ以外のフィールド
+    // （説明文・制限時間・partLabelなど）を書き換えられない。
+    function onlyEnabledFieldChanged() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(["enabled", "updatedAt"]);
+    }
+    function onlyEnabledFieldSet() {
+      return request.resource.data.keys().hasOnly(["enabled", "updatedAt"]);
+    }
     // ビズてす申込者（自社の初回申込みを行った本人）かどうか
     function isApplicantCompanyAdmin() {
       return isCompanyAdmin() && myCompanyAdmin().isApplicant == true;
@@ -386,42 +402,62 @@ service cloud.firestore {
         );
       allow delete: if false;
 
-      // ---- 企業情報の変更履歴（operator-companies.htmlの「編集」から会社名・電話番号・
-      // ご希望プラン・想定従業員数を変更した際の記録。誰が・いつ・何を変更したかを
-      // 一覧の編集画面から確認できるようにするため）。編集はオペレーターのみのため、
-      // 履歴の読み書きもオペレーターのみに限定する。
+      // ---- 変更履歴（v9で受験者編集にも対象を拡張） ----
+      // もともとはoperator-companies.htmlの「編集」から会社名・電話番号・ご希望プラン・
+      // 想定従業員数を変更した際の記録（logType: "companyEdit"）専用で、オペレーターのみに
+      // 限定していた。v9で、operator-examinees.html（受験者管理・個別編集）と
+      // operator-examinees-edit-bulk.html（受験者編集・一括）から、受験者（examInvites）の
+      // 社員コード・氏名・部署・役職・メールアドレス・備考を変更した際の記録
+      // （logType: "examineeEdit"）にも同じコレクションを使うようにしたため、
+      // 自社の企業管理者（sameCompany(companyId)）もこの企業の履歴を読み書きできるように
+      // 拡張した（ビズもんのcompanyQuizSettings/{companyId}/changeLogsと同じ考え方）。
       match /changeLogs/{logId} {
-        allow read: if isOperator();
-        allow create: if isOperator()
+        allow read: if isOperator() || sameCompany(companyId);
+        allow create: if (isOperator() || sameCompany(companyId))
           && request.resource.data.companyId == companyId
           && request.resource.data.updatedBy == request.auth.uid
           && request.resource.data.keys().hasOnly([
-            "companyId", "logType", "targetCompanyId", "targetCompanyName", "action",
+            "companyId", "logType", "targetCompanyId", "targetCompanyName",
+            "targetToken", "targetEmployeeCode", "targetName", "action",
             "before", "after", "changes", "updatedAt", "updatedBy", "updatedByEmail",
-            "updatedByName", "page"
+            "updatedByName", "updatedByEmployeeCode", "page"
           ]);
         allow update: if false;
         allow delete: if false;
       }
 
       // ---- 出題セット（パート単位の設定） ----
+      // questionSets/{partId}（カテゴリー1設定：説明文・制限時間・実施可否）:
+      // - 運営は常にフル書き込み可。
+      // - 自社限定カテゴリー（custom_〜）は、従来通り自社管理者がカテゴリー1設定を
+      //   自由に編集できる（v9でも変更なし）。
+      // - 全社共通カテゴリー（①〜⑤・運営追加分）は、v9より自社管理者は「実施する/しない」
+      //   （enabledフィールド）の切り替えのみ許可し、説明文・制限時間・partLabelなどの
+      //   内容編集は運営のみに限定する。
       match /questionSets/{partId} {
         allow get, list: if isOperator() || isSignedIn();
-        allow write: if isOperator() || sameCompany(companyId);
+        allow create: if isOperator()
+          || (sameCompany(companyId) && (isCustomPartId(partId) || onlyEnabledFieldSet()));
+        allow update: if isOperator()
+          || (sameCompany(companyId) && (isCustomPartId(partId) || onlyEnabledFieldChanged()));
+        allow delete: if isOperator();
 
         // ---- 個別の問題（練習/本番） ----
+        // v9より、問題内容の追加・編集・削除は全社共通・自社限定を問わず運営のみに限定する
+        // （自社限定カテゴリーも、運営が申込対応で追加・更新する運用に変更したため）。
         match /items/{itemId} {
           allow get, list: if isOperator() || isSignedIn();
-          allow write: if isOperator() || sameCompany(companyId);
+          allow write: if isOperator();
         }
       }
 
       // ---- 自社限定カテゴリー（企業が追加する独自パート） ----
       // 一覧はquestionSets同様、受験者が受験フローで参照できるようサインイン済みなら閲覧可。
-      // 追加・編集はオペレーターまたは自社の企業管理者のみ。
+      // v9より、追加（申込対応）・削除・代替設定（substitutesFor）はすべて運営のみに限定する
+      // （企業側のセルフサービス作成は廃止）。
       match /customParts/{partId} {
         allow get, list: if isOperator() || isSignedIn();
-        allow write: if isOperator() || sameCompany(companyId);
+        allow write: if isOperator();
       }
 
       // ---- 招待メールのテンプレート（企業ごとに保存する件名・本文のひな形。v8で追加） ----

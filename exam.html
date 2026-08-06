@@ -81,7 +81,7 @@ import { signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/f
 import {
   doc, getDoc, setDoc, updateDoc, serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { escapeHtml, loadEffectiveCategory1List, loadEffectiveQuestionSet } from "./operator-shared.js";
+import { escapeHtml, loadAdministeredCategory1List, loadEffectiveQuestionSet } from "./operator-shared.js";
 
 const params = new URLSearchParams(location.search);
 const companyId = params.get("company") || sessionStorage.getItem("biztest_company");
@@ -144,7 +144,8 @@ async function loadCategory1Data(category1) {
 }
 
 async function loadAllExamData() {
-  category1Order = await loadEffectiveCategory1List(companyId);
+  // v9より、実施OFFのカテゴリー・代替カテゴリーにより除外された標準カテゴリーは出題しない
+  category1Order = await loadAdministeredCategory1List(companyId);
   examData = {};
   for (const category1 of category1Order) {
     examData[category1.id] = await loadCategory1Data(category1);

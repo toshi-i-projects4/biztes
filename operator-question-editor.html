@@ -79,17 +79,41 @@ button.ghost:disabled{opacity:.5;cursor:not-allowed}
 
   <div class="panel">
     <h2>カテゴリー1設定</h2>
+    <div class="hint" id="lockedCategory1Notice" style="display:none;margin-bottom:12px">
+      このカテゴリーの問題内容・受験画面の説明文・制限時間は運営が管理しており、変更できません。
+      「実施する」のON/OFFのみ、こちらで切り替えられます。
+    </div>
+    <div class="hint" id="lockedCustomItemsNotice" style="display:none;margin-bottom:12px">
+      このカテゴリーの問題内容は運営が追加・更新します。内容の変更をご希望の場合は運営までご連絡ください。
+      説明文・制限時間・実施するかどうかは、こちらで変更できます。
+    </div>
     <div class="settings-grid">
       <div class="form-row"><label>受験画面に表示する説明文</label><textarea id="setInstructions"></textarea></div>
       <div class="form-row"><label>練習の制限時間（秒・0=無制限）</label><input id="setPracticeTime" type="number" min="0"></div>
       <div class="form-row"><label>本番の制限時間（秒）</label><input id="setRealTime" type="number" min="0"></div>
     </div>
-    <div style="margin-top:12px"><button class="primary" id="saveSettingsBtn">カテゴリー1設定を保存</button></div>
+    <div style="margin-top:12px" id="saveSettingsBlock"><button class="primary" id="saveSettingsBtn">カテゴリー1設定を保存</button></div>
     <div class="copy-templates" id="copyTemplateBlock">
       <button class="ghost" id="copyTemplateBtn">テンプレートの初期問題をこのカテゴリー1にコピー</button>
       <div class="hint">既に登録済みの問題がある場合、同じIDのテンプレート問題は上書きされます。1問でも自社の問題を登録すると、以後このカテゴリー1は運営のデフォルト問題より自社の問題が優先されます。あわせて「受験画面に表示する説明文」「練習の制限時間」「本番の制限時間」もテンプレートの内容が上の入力欄に反映されますが、これらは「カテゴリー1設定を保存」を押すまで保存されません。</div>
     </div>
     <div class="hint" id="customCategory1Hint" style="display:none">このカテゴリーは自社限定です（運営のデフォルト問題はありません）。ここで登録した問題がそのまま出題されます。</div>
+
+    <div id="substitutionBlock" style="display:none;margin-top:16px;padding-top:16px;border-top:1px solid var(--line)">
+      <div class="form-row" style="max-width:360px">
+        <label>分析での扱い（運営設定・自社限定カテゴリーのみ）</label>
+        <select id="substitutionSelect">
+          <option value="">単なる追加として実施する</option>
+        </select>
+        <div class="hint">①〜④のいずれかの代替に設定すると、レーダーチャート・帳票ではその標準カテゴリーの代わりにこのカテゴリーの結果が使われ、標準カテゴリー自体は出題されなくなります。</div>
+      </div>
+      <div style="margin-top:10px"><button class="ghost" id="saveSubstitutionBtn">分析での扱いを保存</button></div>
+    </div>
+
+    <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--line)">
+      <label><input type="checkbox" id="setEnabled" style="width:auto;margin-right:6px">このカテゴリーを実施する（オフにすると受験フローに含まれません）</label>
+      <div style="margin-top:10px"><button class="ghost" id="saveEnabledBtn">実施する/しないを保存</button></div>
+    </div>
   </div>
 
   <div class="panel">
@@ -97,8 +121,9 @@ button.ghost:disabled{opacity:.5;cursor:not-allowed}
       <h2>問題一覧</h2>
       <button class="primary" id="addItemBtn">＋ 問題を追加</button>
     </div>
+    <div class="hint" id="readOnlyItemsNotice" style="display:none;margin-bottom:10px">問題内容は運営が管理しています（閲覧のみ）。</div>
     <table>
-      <thead><tr><th style="width:50px">順</th><th style="width:70px">区分</th><th style="width:110px">形式</th><th>問題文</th><th style="width:60px">配点</th><th style="width:60px">状態</th><th style="width:110px">操作</th></tr></thead>
+      <thead><tr><th style="width:50px">順</th><th style="width:70px">区分</th><th style="width:110px">形式</th><th>問題文</th><th style="width:60px">配点</th><th style="width:60px">状態</th><th style="width:110px" id="actionsHeader">操作</th></tr></thead>
       <tbody id="itemRows"></tbody>
     </table>
     <div id="emptyItems" class="empty" style="display:none">このカテゴリー1にはまだ問題が登録されていません。</div>
@@ -194,7 +219,7 @@ button.ghost:disabled{opacity:.5;cursor:not-allowed}
 
 <script src="operator-mode.js"></script>
 <script type="module">
-import { auth, db, CATEGORY1_TYPES, ALL_TYPES } from "./firebase-config.js";
+import { auth, db, CATEGORY1_TYPES, ALL_TYPES, CATEGORY1_LABELS } from "./firebase-config.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import {
   doc, getDoc, setDoc, updateDoc, deleteDoc, collection, onSnapshot,
@@ -204,6 +229,7 @@ import {
   copyTemplateItemsToCompany, escapeHtml,
   loadEffectiveCategory1List, createCompanyCustomCategory1, deleteCompanyCustomCategory1,
   loadTemplateCategory1Settings, invalidateCompanyQuestionCache,
+  FOUR_CATEGORY1_IDS, setCategory1Enabled, setCustomCategory1Substitution,
 } from "./operator-shared.js";
 
 function setBackHomeLink(href, text) {
@@ -337,7 +363,8 @@ function renderTabs() {
     btn.textContent = category1.label || category1.id;
     btn.addEventListener("click", () => switchCategory1(category1.id));
     group.appendChild(btn);
-    if (category1.scope === "custom") {
+    // カテゴリーの追加・削除は v9 より運営のみ（申込対応で運営が代理作成する運用に変更したため）。
+    if (category1.scope === "custom" && isOperatorUser) {
       const delBtn = document.createElement("button");
       delBtn.type = "button";
       delBtn.className = "tab-delete";
@@ -348,12 +375,14 @@ function renderTabs() {
     }
     bar.appendChild(group);
   });
-  const addBtn = document.createElement("button");
-  addBtn.className = "tab-add";
-  addBtn.type = "button";
-  addBtn.textContent = "＋ カテゴリーを追加（自社限定）";
-  addBtn.addEventListener("click", addCustomCategory);
-  bar.appendChild(addBtn);
+  if (isOperatorUser) {
+    const addBtn = document.createElement("button");
+    addBtn.className = "tab-add";
+    addBtn.type = "button";
+    addBtn.textContent = "＋ カテゴリーを追加（自社限定）";
+    addBtn.addEventListener("click", addCustomCategory);
+    bar.appendChild(addBtn);
+  }
 }
 
 async function addCustomCategory() {
@@ -368,6 +397,7 @@ async function addCustomCategory() {
 }
 
 async function deleteCustomCategory(category1) {
+  if (!isOperatorUser) return; // v9よりカテゴリー削除は運営のみ（ボタン自体も企業管理者には表示しない）
   const ok = confirm(`カテゴリー「${category1.label || category1.id}」を削除します。\n\nこのカテゴリーに登録されている問題もすべて削除され、元に戻せません。\nよろしいですか？`);
   if (!ok) return;
   await deleteCompanyCustomCategory1(companyId, category1.id);
@@ -381,24 +411,63 @@ async function switchCategory1(category1Id) {
   await loadCategory1(category1Id);
 }
 
+// v9で追加：問題内容（items）は全カテゴリー共通で運営のみが編集できる。
+let currentCanEditItems = false;
+// v9で追加：カテゴリー1設定（説明文・制限時間）は、運営は常に、企業管理者は自社限定
+// カテゴリーのみ編集できる（全社共通カテゴリーは企業管理者には読み取り専用）。
+let currentCanEditSettings = false;
+
+document.getElementById("substitutionSelect").innerHTML =
+  '<option value="">単なる追加として実施する</option>' +
+  FOUR_CATEGORY1_IDS.map((id) => `<option value="${id}">${escapeHtml(CATEGORY1_LABELS[id] || id)}の代替</option>`).join("");
+
 async function loadCategory1(category1Id) {
   const category1 = currentCategory1Def();
+  const isCustom = !!(category1 && category1.scope === "custom");
+  currentCanEditItems = isOperatorUser;
+  currentCanEditSettings = isOperatorUser || isCustom;
+
   const copyBlock = document.getElementById("copyTemplateBlock");
   const customHint = document.getElementById("customCategory1Hint");
-  if (category1 && category1.scope === "custom") {
-    copyBlock.style.display = "none";
-    customHint.style.display = "block";
-  } else {
+  const lockedNotice = document.getElementById("lockedCategory1Notice");
+  const lockedCustomItemsNotice = document.getElementById("lockedCustomItemsNotice");
+  const substitutionBlock = document.getElementById("substitutionBlock");
+  const readOnlyItemsNotice = document.getElementById("readOnlyItemsNotice");
+  const addItemBtn = document.getElementById("addItemBtn");
+
+  // テンプレートコピーは、問題内容を編集できる運営が全社共通カテゴリーを見ているときのみ意味がある
+  // （企業管理者はどのカテゴリーでも問題内容を編集できないため、常に非表示）。
+  if (isOperatorUser && !isCustom) {
     copyBlock.style.display = "block";
     customHint.style.display = "none";
+  } else {
+    copyBlock.style.display = "none";
+    customHint.style.display = isOperatorUser && isCustom ? "block" : "none";
   }
+  lockedNotice.style.display = (!isOperatorUser && !isCustom) ? "block" : "none";
+  lockedCustomItemsNotice.style.display = (!isOperatorUser && isCustom) ? "block" : "none";
+  substitutionBlock.style.display = (isOperatorUser && isCustom) ? "block" : "none";
+  addItemBtn.style.display = currentCanEditItems ? "inline-block" : "none";
+  readOnlyItemsNotice.style.display = currentCanEditItems ? "none" : "block";
 
   const setRef = doc(db, "companies", companyId, "questionSets", category1Id);
   const setSnap = await getDoc(setRef);
-  const settings = setSnap.exists() ? setSnap.data() : { instructions: "", practiceTimeLimitSec: 0, realTimeLimitSec: 0 };
+  const settings = setSnap.exists() ? setSnap.data() : { instructions: "", practiceTimeLimitSec: 0, realTimeLimitSec: 0, enabled: true };
   document.getElementById("setInstructions").value = settings.instructions || "";
   document.getElementById("setPracticeTime").value = settings.practiceTimeLimitSec || 0;
   document.getElementById("setRealTime").value = settings.realTimeLimitSec || 0;
+  document.getElementById("setEnabled").checked = settings.enabled !== false;
+
+  ["setInstructions", "setPracticeTime", "setRealTime"].forEach((id) => {
+    document.getElementById(id).disabled = !currentCanEditSettings;
+  });
+  document.getElementById("saveSettingsBlock").style.display = currentCanEditSettings ? "block" : "none";
+
+  if (isOperatorUser && isCustom) {
+    const customRef = doc(db, "companies", companyId, "customParts", category1Id);
+    const customSnap = await getDoc(customRef);
+    document.getElementById("substitutionSelect").value = (customSnap.exists() && customSnap.data().substitutesFor) || "";
+  }
 
   if (unsubscribeItems) unsubscribeItems();
   const itemsRef = collection(db, "companies", companyId, "questionSets", category1Id, "items");
@@ -432,6 +501,10 @@ function renderItems(snap) {
 function itemRow(item) {
   const tr = document.createElement("tr");
   const preview = (item.questionText || "").slice(0, 60) + ((item.questionText || "").length > 60 ? "…" : "");
+  // v9より、問題内容の編集・削除は運営のみ（currentCanEditItems）。企業管理者には操作列を表示しない。
+  const actionsCell = currentCanEditItems
+    ? '<td class="row-actions"><button data-action="edit">編集</button><button data-action="delete" class="danger">削除</button></td>'
+    : '<td class="row-actions">-</td>';
   tr.innerHTML = `
     <td>${item.order ?? ""}</td>
     <td><span class="badge ${item.stage}">${item.stage === "practice" ? "練習" : "本番"}</span></td>
@@ -439,17 +512,17 @@ function itemRow(item) {
     <td class="qtext">${escapeHtml(preview)}</td>
     <td>${item.score ?? "-"}</td>
     <td>${item.active === false ? '<span class="badge inactive">非公開</span>' : "公開"}</td>
-    <td class="row-actions">
-      <button data-action="edit">編集</button>
-      <button data-action="delete" class="danger">削除</button>
-    </td>
+    ${actionsCell}
   `;
-  tr.querySelector('[data-action="edit"]').addEventListener("click", () => openModal(item));
-  tr.querySelector('[data-action="delete"]').addEventListener("click", () => deleteItem(item.id));
+  if (currentCanEditItems) {
+    tr.querySelector('[data-action="edit"]').addEventListener("click", () => openModal(item));
+    tr.querySelector('[data-action="delete"]').addEventListener("click", () => deleteItem(item.id));
+  }
   return tr;
 }
 
 async function deleteItem(itemId) {
+  if (!currentCanEditItems) return; // v9より問題削除は運営のみ
   if (!confirm("この問題を削除します。よろしいですか？")) return;
   await deleteDoc(doc(db, "companies", companyId, "questionSets", currentCategory1, "items", itemId));
   invalidateCompanyQuestionCache(companyId);
@@ -524,10 +597,11 @@ function openModal(item) {
 }
 
 document.getElementById("fType").addEventListener("change", updateFormVisibility);
-document.getElementById("addItemBtn").addEventListener("click", () => openModal(null));
+document.getElementById("addItemBtn").addEventListener("click", () => { if (currentCanEditItems) openModal(null); });
 document.getElementById("cancelModalBtn").addEventListener("click", () => overlay.classList.remove("show"));
 
 document.getElementById("saveItemBtn").addEventListener("click", async () => {
+  if (!currentCanEditItems) return; // v9より問題内容の保存は運営のみ（Firestoreルールでも二重に防止）
   const type = document.getElementById("fType").value;
   const isSurveyType = type === "survey_choice" || type === "survey_multi_select";
   const choices = [];
@@ -577,6 +651,7 @@ document.getElementById("saveItemBtn").addEventListener("click", async () => {
 });
 
 document.getElementById("saveSettingsBtn").addEventListener("click", async () => {
+  if (!currentCanEditSettings) return; // v9より全社共通カテゴリーの設定編集は運営のみ
   const category1 = currentCategory1Def();
   const ref = doc(db, "companies", companyId, "questionSets", currentCategory1);
   await setDoc(ref, {
@@ -591,6 +666,7 @@ document.getElementById("saveSettingsBtn").addEventListener("click", async () =>
 });
 
 document.getElementById("copyTemplateBtn").addEventListener("click", async () => {
+  if (!isOperatorUser) return; // v9よりテンプレートコピーは運営のみ（企業側は問題内容を編集できないため）
   if (!confirm("テンプレートの初期問題をこのカテゴリー1にコピーします。同じIDの問題は上書きされます。\n「受験画面に表示する説明文」「制限時間」もテンプレートの内容が入力欄に反映されますが、保存は「カテゴリー1設定を保存」を押すまで行われません。\nよろしいですか？")) return;
 
   // 問題（items）はこれまで通り、コピーした時点でそのまま保存される。
@@ -606,6 +682,25 @@ document.getElementById("copyTemplateBtn").addEventListener("click", async () =>
   }
 
   alert(`${count}問をコピーしました。説明文・制限時間も入力欄に反映しました。内容を確認のうえ、「カテゴリー1設定を保存」を押して保存してください。`);
+});
+
+// v9で追加：「実施する/しない」の切り替え。全社共通カテゴリーでも、企業管理者はこのフィールドのみ
+// 保存できる（Firestoreルールでenabled/updatedAt以外の書き込みを拒否する）。
+document.getElementById("saveEnabledBtn").addEventListener("click", async () => {
+  if (!currentCategory1) return;
+  const enabled = document.getElementById("setEnabled").checked;
+  await setCategory1Enabled(companyId, currentCategory1, enabled);
+  alert(enabled ? "このカテゴリーを実施する設定で保存しました。" : "このカテゴリーを実施しない設定で保存しました。");
+});
+
+// v9で追加：自社限定カテゴリーの「分析での扱い」（①〜④の代替か、単なる追加か）を運営が設定する。
+document.getElementById("saveSubstitutionBtn").addEventListener("click", async () => {
+  if (!isOperatorUser || !currentCategory1) return;
+  const value = document.getElementById("substitutionSelect").value;
+  await setCustomCategory1Substitution(companyId, currentCategory1, value || null);
+  alert(value
+    ? `分析での扱いを「${CATEGORY1_LABELS[value] || value}の代替」として保存しました。`
+    : "分析での扱いを「単なる追加」として保存しました。");
 });
 </script>
 </body>
