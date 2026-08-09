@@ -138,7 +138,7 @@ import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/
 import {
   doc, getDoc, collection, getDocs, query, where, getCountFromServer,
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { escapeHtml, loadEffectiveQuestionSet, getDocsByIds } from "./operator-shared.js";
+import { escapeHtml, loadEffectiveQuestionSet, getDocsByIds, loadCompanyExamData } from "./operator-shared.js";
 
 function hideLoading() {
   const l = document.getElementById("pageLoading");
@@ -433,29 +433,19 @@ async function loadCharts() {
     const companyIds = [];
     companiesSnap.forEach((d) => companyIds.push(d.id));
 
-    // examInvites／examResultsは、collectionGroup()による全社横断クエリだと環境によって
-    // permission-deniedになることがあるため、operator-dashboard.htmlと同様に
-    // 「会社ごとに明示的にコレクションを指定する」クエリ方式に統一する。
+    // 会社ごとのexamInvites／examResultsはloadCompanyExamData()に統一する（1分間の
+    // セッションキャッシュをoperator-dashboard.htmlと共有できるほか、collectionGroup()に
+    // よる全社横断クエリで環境によってpermission-deniedになる問題も引き続き避けられる：
+    // 会社ごとに明示的にコレクションを指定するクエリ方式のまま）。
     const perCompany = {};
     await Promise.all(companyIds.map(async (companyId) => {
-      const [invSnap, resSnap] = await Promise.all([
-        getDocs(collection(db, "companies", companyId, "examInvites")),
-        getDocs(collection(db, "companies", companyId, "examResults")),
-      ]);
-      perCompany[companyId] = { invSnap, resSnap };
+      perCompany[companyId] = await loadCompanyExamData(companyId);
     }));
 
     // 受験完了データが実際に存在する企業のみ、問題構成（配点満点）を読み込む
     const completedCompanyIds = companyIds.filter((companyId) => {
-      const { invSnap, resSnap } = perCompany[companyId];
-      const resultIds = new Set();
-      resSnap.forEach((ds) => resultIds.add(ds.id));
-      let has = false;
-      invSnap.forEach((ds) => {
-        const inv = ds.data() || {};
-        if (inv.status === "completed" && resultIds.has(ds.id)) has = true;
-      });
-      return has;
+      const { invites, resultMap } = perCompany[companyId];
+      return invites.some((inv) => inv.status === "completed" && resultMap[inv.id]);
     });
 
     const scoringByCompany = {};
@@ -482,14 +472,11 @@ async function loadCharts() {
     companyIds.forEach((companyId) => {
       const scoring = scoringByCompany[companyId];
       if (!scoring) return;
-      const { invSnap, resSnap } = perCompany[companyId];
-      const resultMap = {};
-      resSnap.forEach((ds) => { resultMap[ds.id] = ds.data() || {}; });
+      const { invites, resultMap } = perCompany[companyId];
 
-      invSnap.forEach((ds) => {
-        const inv = ds.data() || {};
+      invites.forEach((inv) => {
         if (inv.status !== "completed") return;
-        const result = resultMap[ds.id];
+        const result = resultMap[inv.id];
         if (!result) return;
 
         FOUR_CATEGORY1_IDS.forEach((id) => {

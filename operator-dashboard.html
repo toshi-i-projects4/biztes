@@ -226,7 +226,7 @@ button{cursor:pointer;font-family:inherit}
 import { auth, db } from "./firebase-config.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { collection, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { escapeHtml as esc, loadEffectiveQuestionSet } from "./operator-shared.js";
+import { escapeHtml as esc, loadEffectiveQuestionSet, loadCompanyExamData } from "./operator-shared.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -369,17 +369,14 @@ async function loadAll() {
   const companyNameMap = {};
   companiesRaw.forEach((c) => { companyNameMap[c.companyId] = c.companyName; });
 
-  // examInvites／examResultsは、collectionGroup()による全社横断クエリだと環境によって
-  // permission-deniedになることがあるため、company-dashboard.html等と同じ「会社ごとに
-  // 明示的にコレクションを指定する」クエリ方式に統一する（企業数ぶんループする）。
+  // 会社ごとのexamInvites／examResultsはloadCompanyExamData()に統一する（1分間の
+  // セッションキャッシュを他画面（operator-home.htmlの全社傾向グラフ等）と共有できるほか、
+  // collectionGroup()による全社横断クエリで環境によってpermission-deniedになる問題も
+  // 引き続き避けられる：会社ごとに明示的にコレクションを指定するクエリ方式のまま）。
   const perCompany = {};
   try {
     await Promise.all(companiesRaw.map(async (c) => {
-      const [invSnap, resSnap] = await Promise.all([
-        getDocs(collection(db, "companies", c.companyId, "examInvites")),
-        getDocs(collection(db, "companies", c.companyId, "examResults")),
-      ]);
-      perCompany[c.companyId] = { invSnap, resSnap };
+      perCompany[c.companyId] = await loadCompanyExamData(c.companyId);
     }));
   } catch (e) {
     e.message = "［受験招待・結果の取得］" + (e.message || e.code || e);
@@ -390,12 +387,9 @@ async function loadAll() {
   // （全企業分を毎回読み込むと企業数が多い場合に読み込みが重くなるため）。
   const completedCompanyIds = new Set();
   companiesRaw.forEach((c) => {
-    const { invSnap, resSnap } = perCompany[c.companyId];
-    const resultIds = new Set();
-    resSnap.forEach((ds) => resultIds.add(ds.id));
-    invSnap.forEach((ds) => {
-      const inv = ds.data() || {};
-      if (inv.status === "completed" && resultIds.has(ds.id)) completedCompanyIds.add(c.companyId);
+    const { invites, resultMap } = perCompany[c.companyId];
+    invites.forEach((inv) => {
+      if (inv.status === "completed" && resultMap[inv.id]) completedCompanyIds.add(c.companyId);
     });
   });
 
@@ -412,14 +406,11 @@ async function loadAll() {
   applicants = [];
   companiesRaw.forEach((c) => {
     const companyId = c.companyId;
-    const { invSnap, resSnap } = perCompany[companyId];
-    const resultMap = {};
-    resSnap.forEach((ds) => { resultMap[ds.id] = ds.data() || {}; });
+    const { invites, resultMap } = perCompany[companyId];
 
-    invSnap.forEach((ds) => {
-    const inv = ds.data() || {};
+    invites.forEach((inv) => {
     if (inv.status !== "completed") return;
-    const result = resultMap[ds.id];
+    const result = resultMap[inv.id];
     if (!result) return;
     const scoring = scoringByCompany[companyId];
     if (!scoring) return; // 企業が削除済みなどで問題構成が取得できない場合はスキップ
@@ -442,7 +433,7 @@ async function loadAll() {
     });
 
     applicants.push({
-      token: companyId + "/" + ds.id,
+      token: companyId + "/" + inv.id,
       companyId,
       companyName: companyNameMap[companyId] || companyId,
       department: (inv.department || "").trim(),

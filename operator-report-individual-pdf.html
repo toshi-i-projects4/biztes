@@ -199,7 +199,7 @@ th{background:#f8fafc;color:#0f172a;font-weight:800;font-size:11px}
 import { auth, db } from "./firebase-config.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { collection, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { escapeHtml as esc, loadEffectiveCategory1List, loadEffectiveQuestionSet } from "./operator-shared.js";
+import { escapeHtml as esc, loadEffectiveCategory1List, loadEffectiveQuestionSet, loadCompanyExamData } from "./operator-shared.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -504,18 +504,14 @@ async function loadApplicantsForCompany(cid) {
   skillSubcatByCategory1 = subcatNamesByCategory1(FOUR_CATEGORY1_IDS, itemsByCategory1);
   skillSubcatMax = maxBySubcatForCategory1s(FOUR_CATEGORY1_IDS, itemsByCategory1);
 
-  const [invitesSnap, resultsSnap] = await Promise.all([
-    getDocs(collection(db, "companies", cid, "examInvites")),
-    getDocs(collection(db, "companies", cid, "examResults")),
-  ]);
-  const resultMap = {};
-  resultsSnap.forEach((ds) => { resultMap[ds.id] = ds.data() || {}; });
+  // examInvites／examResultsはloadCompanyExamData()経由で取得する。オペレーターが会社選択を
+  // 切り替えて同じ会社に戻ってきた場合も、1分間はFirestoreへの読み取りを省略できる。
+  const { invites: companyInvites, resultMap } = await loadCompanyExamData(cid);
 
   applicants = [];
-  invitesSnap.forEach((ds) => {
-    const inv = ds.data() || {};
+  companyInvites.forEach((inv) => {
     if (inv.status !== "completed") return;
-    const result = resultMap[ds.id];
+    const result = resultMap[inv.id];
     if (!result) return;
     const agg = computeResultAggregate(result, itemsByCategory1);
 
@@ -547,7 +543,7 @@ async function loadApplicantsForCompany(cid) {
     });
 
     applicants.push({
-      token: ds.id,
+      token: inv.id,
       applicantName: inv.applicantName || "（氏名未登録）",
       applicantEmail: inv.applicantEmail || "",
       employeeCode: inv.employeeCode || "",

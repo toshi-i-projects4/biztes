@@ -186,7 +186,7 @@ th{background:#f8fafc;color:var(--navy);font-weight:800;font-size:11px;position:
 import { auth, db } from "./firebase-config.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { collection, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { escapeHtml as esc, loadEffectiveCategory1List, loadEffectiveQuestionSet, resolveAnalysisCategory1Mapping } from "./operator-shared.js";
+import { escapeHtml as esc, loadEffectiveCategory1List, loadEffectiveQuestionSet, resolveAnalysisCategory1Mapping, loadCompanyExamData } from "./operator-shared.js";
 
 const $ = (id) => document.getElementById(id);
 function setBackHomeLink(href, text) {
@@ -553,18 +553,14 @@ async function loadAll() {
   FOUR_CATEGORY1_IDS.forEach((category1Id) => { skillSubcatByCategory1[category1Id] = rawSubcatNames[analysisMapping[category1Id]] || []; });
   skillSubcatMax = maxBySubcatForCategory1s(resolvedFourIds); // カテゴリー2名でキーされるため代替先IDのままでよい
 
-  const [invitesSnap, resultsSnap] = await Promise.all([
-    getDocs(collection(db, "companies", companyId, "examInvites")),
-    getDocs(collection(db, "companies", companyId, "examResults")),
-  ]);
-  const resultMap = {};
-  resultsSnap.forEach((ds) => { resultMap[ds.id] = ds.data() || {}; });
+  // examInvites／examResultsはloadCompanyExamData()経由で取得する（同じ会社の他画面と
+  // 1分間のセッションキャッシュを共有し、続けて開いた場合のFirestore読み取りを省略する）。
+  const { invites: companyInvites, resultMap } = await loadCompanyExamData(companyId);
 
   applicants = [];
-  invitesSnap.forEach((ds) => {
-    const inv = ds.data() || {};
+  companyInvites.forEach((inv) => {
     if (inv.status !== "completed") return;
-    const result = resultMap[ds.id];
+    const result = resultMap[inv.id];
     if (!result) return;
     const agg = computeResultAggregate(result);
 
@@ -609,7 +605,7 @@ async function loadAll() {
     });
 
     applicants.push({
-      token: ds.id,
+      token: inv.id,
       applicantName: inv.applicantName || "（氏名未登録）",
       applicantEmail: inv.applicantEmail || "",
       employeeCode: inv.employeeCode || "",
