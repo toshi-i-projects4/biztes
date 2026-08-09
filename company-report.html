@@ -132,7 +132,7 @@ import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/
 import {
   collection, query, where, getDocs, doc, getDoc,
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { escapeHtml as esc, loadEffectiveCategory1List, loadEffectiveQuestionSet, resolveAnalysisCategory1Mapping } from "./operator-shared.js";
+import { escapeHtml as esc, loadEffectiveCategory1List, loadEffectiveQuestionSet, resolveAnalysisCategory1Mapping, getDocsByIds } from "./operator-shared.js";
 
 const $ = (id) => document.getElementById(id);
 function setBackHomeLink(href, text) {
@@ -668,16 +668,19 @@ async function loadReport() {
       where("createdAt", ">=", startDate),
       where("createdAt", "<=", endDate)
     );
-    const [invitesSnap, resultsSnap] = await Promise.all([
-      getDocs(invitesQ),
-      getDocs(collection(db, "companies", companyId, "examResults")),
-    ]);
-
-    resultMap = {};
-    resultsSnap.forEach((ds) => { resultMap[ds.id] = ds.data() || {}; });
-
+    const invitesSnap = await getDocs(invitesQ);
     invites = [];
     invitesSnap.forEach((ds) => invites.push({ id: ds.id, ...ds.data() }));
+
+    // examResultsは無条件で全件取得せず、期間で絞り込んだexamInvitesに対応する分だけ
+    // documentId()のin句でまとめて取得する（表示期間を絞っても毎回全履歴を読み直していたのを解消）。
+    // resultMapはinvites側のトークンでしか参照されないため、結果として得られる内容は従来と変わらない。
+    const resultDocs = await getDocsByIds(
+      collection(db, "companies", companyId, "examResults"),
+      invites.map((inv) => inv.id)
+    );
+    resultMap = {};
+    resultDocs.forEach((ds) => { resultMap[ds.id] = ds.data() || {}; });
 
     render();
     $("csvBtn").disabled = visibleSummaryRows().length === 0;

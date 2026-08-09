@@ -174,7 +174,7 @@ th{background:#f8fafc;color:var(--navy);font-weight:800;font-size:11.5px;positio
 import { auth, db } from "./firebase-config.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { doc, getDoc, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { loadEffectiveCategory1List, loadEffectiveQuestionSet } from "./operator-shared.js";
+import { loadEffectiveCategory1List, loadEffectiveQuestionSet, loadCompanyExamData } from "./operator-shared.js";
 
 function hideLoading() {
   const l = document.getElementById("pageLoading");
@@ -357,14 +357,15 @@ async function loadAdmins() {
 
 async function loadStats() {
   try {
-    const invitesSnap = await getDocs(collection(db, "companies", myCompanyId, "examInvites"));
+    // loadCharts()・loadSurvey()と同じloadCompanyExamData()を使うことで、examInvitesの
+    // 個別読み取りを増やさずに済む（同時に呼ばれても進行中Promiseキャッシュにより1回にまとまる）。
+    const { invites } = await loadCompanyExamData(myCompanyId);
 
     let invited = 0;
     let completed = 0;
-    invitesSnap.forEach((ds) => {
+    invites.forEach((inv) => {
       invited++;
-      const d = ds.data() || {};
-      if (d.status === "completed") completed++;
+      if (inv.status === "completed") completed++;
     });
     const notDone = invited - completed;
 
@@ -519,22 +520,19 @@ async function loadCharts() {
       category1Max[id] = maxForCategory1(Array.from((itemsByCategory1[id] || new Map()).values()));
     });
 
-    const [invitesSnap, resultsSnap] = await Promise.all([
-      getDocs(collection(db, "companies", myCompanyId, "examInvites")),
-      getDocs(collection(db, "companies", myCompanyId, "examResults")),
-    ]);
-    const resultMap = {};
-    resultsSnap.forEach((ds) => { resultMap[ds.id] = ds.data() || {}; });
+    // examInvites／examResultsはloadCompanyExamData()経由で取得する。company-admin-home.html内の
+    // loadCharts()・loadSurvey()が同じ2コレクションをそれぞれ個別に全件取得していたため、
+    // 1画面あたりの読み取りが2倍になっていた（1分間のセッションキャッシュ付き共有関数に統一）。
+    const { invites, resultMap } = await loadCompanyExamData(myCompanyId);
 
     const catSums = {};
     const catCounts = {};
     FOUR_CATEGORY1_IDS.forEach((id) => { catSums[id] = 0; catCounts[id] = 0; });
     const scatterPoints = [];
 
-    invitesSnap.forEach((ds) => {
-      const inv = ds.data() || {};
+    invites.forEach((inv) => {
       if (inv.status !== "completed") return;
-      const result = resultMap[ds.id];
+      const result = resultMap[inv.id];
       if (!result) return;
 
       FOUR_CATEGORY1_IDS.forEach((id) => {
@@ -588,21 +586,17 @@ async function loadSurvey() {
     });
     if (!surveyItems.length) { panel.classList.add("hidden"); return; }
 
-    const [invitesSnap, resultsSnap] = await Promise.all([
-      getDocs(collection(db, "companies", myCompanyId, "examInvites")),
-      getDocs(collection(db, "companies", myCompanyId, "examResults")),
-    ]);
-    const resultMap = {};
-    resultsSnap.forEach((ds) => { resultMap[ds.id] = ds.data() || {}; });
+    // examInvites／examResultsはloadCompanyExamData()経由で取得する（loadCharts()と同じ
+    // キャッシュを共有するため、このページ内でのFirestore読み取りは実質1回で済む）。
+    const { invites, resultMap } = await loadCompanyExamData(myCompanyId);
 
     const answersByItemId = {};
     surveyItems.forEach((item) => { answersByItemId[item.id] = []; });
 
     let completedCount = 0;
-    invitesSnap.forEach((ds) => {
-      const inv = ds.data() || {};
+    invites.forEach((inv) => {
       if (inv.status !== "completed") return;
-      const result = resultMap[ds.id];
+      const result = resultMap[inv.id];
       if (!result || !result.parts) return;
       completedCount++;
       Object.values(result.parts).forEach((part) => {

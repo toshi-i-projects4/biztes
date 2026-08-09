@@ -132,7 +132,7 @@ import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/
 import {
   collection, collectionGroup, query, where, getDocs, doc, getDoc,
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { escapeHtml as esc, loadEffectiveCategory1List, loadEffectiveQuestionSet, resolveAnalysisCategory1Mapping } from "./operator-shared.js";
+import { escapeHtml as esc, loadEffectiveCategory1List, loadEffectiveQuestionSet, resolveAnalysisCategory1Mapping, getDocsByIds } from "./operator-shared.js";
 
 // このページは company-report.html（企業管理のレポート・全社版）と同じ集計・表示ロジックを、
 // 全企業を横断する運営向けレポートとして再利用したもの。company-report.htmlとの主な違いは、
@@ -691,33 +691,43 @@ async function loadReport() {
     const startDate = new Date(range.start + "T00:00:00");
     const endDate = new Date(range.end + "T23:59:59.999");
 
-    let invitesQ, resultsQ;
+    let invitesQ;
     if (companyFilter === "all") {
       invitesQ = query(collectionGroup(db, "examInvites"), where("createdAt", ">=", startDate), where("createdAt", "<=", endDate));
-      resultsQ = collectionGroup(db, "examResults");
     } else {
       invitesQ = query(
         collection(db, "companies", companyFilter, "examInvites"),
         where("createdAt", ">=", startDate),
         where("createdAt", "<=", endDate)
       );
-      resultsQ = collection(db, "companies", companyFilter, "examResults");
     }
 
-    const [invitesSnap, resultsSnap] = await Promise.all([getDocs(invitesQ), getDocs(resultsQ)]);
-
-    resultMap = {};
-    resultsSnap.forEach((ds) => {
-      const companyId = companyFilter === "all" ? (ds.ref.parent.parent ? ds.ref.parent.parent.id : "") : companyFilter;
-      resultMap[companyId + "/" + ds.id] = ds.data() || {};
-    });
-
+    const invitesSnap = await getDocs(invitesQ);
     invites = [];
     const companyIdSet = new Set();
     invitesSnap.forEach((ds) => {
       const companyId = companyFilter === "all" ? (ds.ref.parent.parent ? ds.ref.parent.parent.id : "") : companyFilter;
       companyIdSet.add(companyId);
       invites.push({ id: ds.id, companyId, ...ds.data() });
+    });
+
+    // examResultsは無条件で全件（collectionGroupの場合は全社分）取得せず、期間で絞り込んだ
+    // examInvitesに対応する分だけdocumentId()のin句でまとめて取得する。resultMapはinvites側の
+    // キー（companyId/token）でしか参照されないため、結果として得られる内容は従来と変わらない。
+    let resultDocs;
+    if (companyFilter === "all") {
+      const resultRefs = invites.map((inv) => doc(db, "companies", inv.companyId, "examResults", inv.id));
+      resultDocs = await getDocsByIds(collectionGroup(db, "examResults"), resultRefs);
+    } else {
+      resultDocs = await getDocsByIds(
+        collection(db, "companies", companyFilter, "examResults"),
+        invites.map((inv) => inv.id)
+      );
+    }
+    resultMap = {};
+    resultDocs.forEach((ds) => {
+      const companyId = companyFilter === "all" ? (ds.ref.parent.parent ? ds.ref.parent.parent.id : "") : companyFilter;
+      resultMap[companyId + "/" + ds.id] = ds.data() || {};
     });
 
     // 対象期間内に招待がある企業分のカテゴリー1一覧・問題マスタだけを読み込む

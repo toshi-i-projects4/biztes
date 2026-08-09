@@ -136,9 +136,9 @@ th{background:#fff7ed;color:var(--orange-deep);font-weight:800;font-size:11.5px;
 import { auth, db } from "./firebase-config.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import {
-  doc, getDoc, collection, getDocs,
+  doc, getDoc, collection, getDocs, query, where, getCountFromServer,
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { escapeHtml, loadEffectiveQuestionSet } from "./operator-shared.js";
+import { escapeHtml, loadEffectiveQuestionSet, getDocsByIds } from "./operator-shared.js";
 
 function hideLoading() {
   const l = document.getElementById("pageLoading");
@@ -209,12 +209,18 @@ async function loadStats() {
     const rows = [];
     let totalCompleted = 0;
     let totalNotDone = 0;
+    // 件数だけが目的なので、examInvitesを全件ダウンロードせず、Firestoreの集計クエリ
+    // （getCountFromServer）で件数だけを取得する。登録企業・受験者数が増えても、
+    // このページを開くたびの読み取り量が全招待データ量に比例して膨らまないようにするため。
     await Promise.all(companies.map(async (c) => {
       try {
-        const invSnap = await getDocs(collection(db, "companies", c.id, "examInvites"));
-        let invited = 0;
-        let completed = 0;
-        invSnap.forEach((ds) => { invited++; if ((ds.data() || {}).status === "completed") completed++; });
+        const invitesRef = collection(db, "companies", c.id, "examInvites");
+        const [totalCountSnap, completedCountSnap] = await Promise.all([
+          getCountFromServer(invitesRef),
+          getCountFromServer(query(invitesRef, where("status", "==", "completed"))),
+        ]);
+        const invited = totalCountSnap.data().count;
+        const completed = completedCountSnap.data().count;
         const notDone = invited - completed;
         totalCompleted += completed;
         totalNotDone += notDone;
@@ -252,26 +258,35 @@ async function loadAdmins() {
   const tbody = document.getElementById("adminsTableBody");
   try {
     const snap = await getDocs(collection(db, "operators"));
-    const rows = [];
-    for (const d of snap.docs) {
-      const v = d.data() || {};
+    const operators = [];
+    snap.forEach((d) => operators.push({ id: d.id, ...(d.data() || {}) }));
+
+    // 運営メンバー1人ずつcompanyAdmins→companiesとgetDocで辿っていたN+1読み取りを、
+    // documentId()のin句によるバッチ取得（最大30件ずつ）にまとめる。
+    const caDocs = operators.length
+      ? await getDocsByIds(collection(db, "companyAdmins"), operators.map((o) => o.id))
+      : [];
+    const caByUid = {};
+    caDocs.forEach((d) => { caByUid[d.id] = d.data() || {}; });
+
+    const companyIds = Array.from(new Set(Object.values(caByUid).map((ca) => ca.companyId).filter(Boolean)));
+    const companyDocs = companyIds.length
+      ? await getDocsByIds(collection(db, "companies"), companyIds)
+      : [];
+    const companyNameById = {};
+    companyDocs.forEach((d) => { companyNameById[d.id] = (d.data() || {}).companyName || d.id; });
+
+    const rows = operators.map((v) => {
+      const ca = caByUid[v.id];
       let kind = "運営専任";
       let companyLabel = "－";
-      try {
-        const caSnap = await getDoc(doc(db, "companyAdmins", d.id));
-        if (caSnap.exists()) {
-          kind = "企業管理者と兼務";
-          const cid = caSnap.data().companyId || "";
-          let cname = cid;
-          try {
-            const compSnap = await getDoc(doc(db, "companies", cid || "__none__"));
-            if (compSnap.exists()) cname = compSnap.data().companyName || cid;
-          } catch (e) { /* ignore */ }
-          companyLabel = cid ? cname : "－";
-        }
-      } catch (e) { /* ignore, treat as 専任 */ }
-      rows.push({ name: v.name || "", email: v.email || "", kind, companyLabel });
-    }
+      if (ca) {
+        kind = "企業管理者と兼務";
+        const cid = ca.companyId || "";
+        companyLabel = cid ? (companyNameById[cid] || cid) : "－";
+      }
+      return { name: v.name || "", email: v.email || "", kind, companyLabel };
+    });
     if (!rows.length) {
       tbody.innerHTML = '<tr><td colspan="4" class="empty">運営権限を持つメンバーがいません。</td></tr>';
       return;

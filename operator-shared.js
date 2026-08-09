@@ -2,6 +2,7 @@
 import { db, CATEGORY1_IDS, CATEGORY1_LABELS } from "./firebase-config.js";
 import {
   doc, getDoc, setDoc, deleteDoc, collection, getDocs, query, orderBy, serverTimestamp,
+  where, documentId,
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 // カテゴリー1ごとのデフォルト設定。v7で新5大分類（scripts/seed-new-categories.mjs が投入する
@@ -116,12 +117,13 @@ export function escapeHtml(v) {
 const CACHE_TTL_MS = 10 * 60 * 1000; // 10分
 const CACHE_PREFIX = "biztes_qcache_v1:";
 
-function cacheRead(key) {
+function cacheRead(key, ttlMsOverride) {
   try {
     const raw = sessionStorage.getItem(CACHE_PREFIX + key);
     if (!raw) return undefined;
     const { t, v } = JSON.parse(raw);
-    if (Date.now() - t > CACHE_TTL_MS) {
+    const ttl = ttlMsOverride != null ? ttlMsOverride : CACHE_TTL_MS;
+    if (Date.now() - t > ttl) {
       sessionStorage.removeItem(CACHE_PREFIX + key);
       return undefined;
     }
@@ -165,6 +167,113 @@ export function invalidateCompanyQuestionCache(companyId) {
 // 問題マスタキャッシュを丸ごと破棄する。テンプレート編集は頻繁な操作ではないため影響は小さい）。
 export function invalidateGlobalQuestionCache() {
   cacheClearMatching(() => true);
+}
+
+// =====================================================================
+// 受験状況データ（examInvites／examResults）のキャッシュ（sessionStorage）
+//
+// 読み取り件数の監査で判明した問題：company-admin-home.html・company-dashboard.html・
+// company-report.html・company-report-individual.html・operator-dashboard.html・
+// operator-report.html・operator-report-individual-pdf.html の各画面が、それぞれ独立に
+// 企業のexamInvites／examResultsを丸ごとgetDocsしていた。中でもcompany-admin-home.htmlは
+// 同一ページ内のloadCharts()とloadSurvey()が同じ2コレクションを2回読んでおり、
+// ここが最も影響の大きい重複読み取りだった。
+//
+// examInvites／examResultsは受験の進行によって短時間で変わりうる（招待発行・受験完了など）
+// ため、問題マスタ用キャッシュ（CACHE_TTL_MS=10分）と同じ長さにはせず、短いTTL
+// （EXAM_DATA_CACHE_TTL_MS）にとどめている。まずはcompany-admin-home.htmlの重複読み取り
+// 解消のために導入し、他画面への展開は挙動を確認しながら段階的に行う想定。
+//
+// Firestoreのタイムスタンプ値（createdAt等）はJSON化するとtoDate()等のメソッドが失われるため、
+// キャッシュ書き込み時にミリ秒数へ変換し、読み出し時にtoDate()を持つオブジェクトへ復元する
+// （serializeTimestamps/deserializeTimestamps）。
+// =====================================================================
+const EXAM_DATA_CACHE_TTL_MS = 60 * 1000; // 1分（問題マスタ用より大幅に短くする）
+
+function isFirestoreTimestamp(v) {
+  return !!v && typeof v === "object" && typeof v.toDate === "function" && typeof v.seconds === "number";
+}
+function serializeTimestamps(value) {
+  if (isFirestoreTimestamp(value)) return { __ts: true, ms: value.toDate().getTime() };
+  if (Array.isArray(value)) return value.map(serializeTimestamps);
+  if (value && typeof value === "object") {
+    const out = {};
+    Object.keys(value).forEach((k) => { out[k] = serializeTimestamps(value[k]); });
+    return out;
+  }
+  return value;
+}
+function deserializeTimestamps(value) {
+  if (value && typeof value === "object" && value.__ts === true && typeof value.ms === "number") {
+    const ms = value.ms;
+    return { toDate: () => new Date(ms), toMillis: () => ms, seconds: Math.floor(ms / 1000), nanoseconds: 0 };
+  }
+  if (Array.isArray(value)) return value.map(deserializeTimestamps);
+  if (value && typeof value === "object") {
+    const out = {};
+    Object.keys(value).forEach((k) => { out[k] = deserializeTimestamps(value[k]); });
+    return out;
+  }
+  return value;
+}
+
+// 同一タブ内で複数箇所からほぼ同時に呼ばれた場合に、Firestoreへの問い合わせ自体を1回に
+// まとめるための進行中Promiseキャッシュ（company-admin-home.htmlはloadStats()・loadCharts()・
+// loadSurvey()をawaitせず並行起動するため、sessionStorageへの書き込みが間に合う前に
+// 2回目以降の呼び出しが来ることがある。これを避けるためのもの）。
+const examDataInFlight = {};
+
+// 指定企業のexamInvites・examResultsをまとめて取得する（{ invites: [...], resultMap: {token: data} }）。
+// 同一タブ内でEXAM_DATA_CACHE_TTL_MS以内の再呼び出しはFirestoreへ読みに行かずキャッシュを返す。
+export async function loadCompanyExamData(companyId) {
+  const cacheKey = `examData:${companyId}`;
+  const cached = cacheRead(cacheKey, EXAM_DATA_CACHE_TTL_MS);
+  if (cached) return deserializeTimestamps(cached);
+
+  if (examDataInFlight[companyId]) return examDataInFlight[companyId];
+
+  const fetchPromise = (async () => {
+    const [invitesSnap, resultsSnap] = await Promise.all([
+      getDocs(collection(db, "companies", companyId, "examInvites")),
+      getDocs(collection(db, "companies", companyId, "examResults")),
+    ]);
+    const invites = [];
+    invitesSnap.forEach((ds) => invites.push({ id: ds.id, ...ds.data() }));
+    const resultMap = {};
+    resultsSnap.forEach((ds) => { resultMap[ds.id] = ds.data() || {}; });
+    return { invites, resultMap };
+  })();
+  examDataInFlight[companyId] = fetchPromise;
+  try {
+    const result = await fetchPromise;
+    cacheWrite(cacheKey, serializeTimestamps(result));
+    return result;
+  } finally {
+    delete examDataInFlight[companyId];
+  }
+}
+
+// 招待発行・受験完了など、examInvites／examResultsを変更した直後に呼んでキャッシュを破棄する。
+export function invalidateCompanyExamDataCache(companyId) {
+  if (!companyId) return;
+  cacheClearMatching((key) => key === `examData:${companyId}`);
+}
+
+// 指定コレクション（またはcollectionGroup）から、documentId() の in句でIDをまとめて取得する。
+// Firestoreの in句は最大30件までのため、30件ずつに分けて並列でクエリする。
+// collectionGroupに対して呼ぶ場合、idsには文字列ではなくDocumentReferenceを渡すこと
+// （collectionGroupではドキュメントIDだけでは親パスが一意に定まらないため）。
+export async function getDocsByIds(colRef, ids) {
+  const uniqueIds = Array.from(new Set(ids));
+  if (!uniqueIds.length) return [];
+  const chunks = [];
+  for (let i = 0; i < uniqueIds.length; i += 30) chunks.push(uniqueIds.slice(i, i + 30));
+  const snaps = await Promise.all(
+    chunks.map((chunk) => getDocs(query(colRef, where(documentId(), "in", chunk))))
+  );
+  const docs = [];
+  snaps.forEach((snap) => snap.forEach((d) => docs.push(d)));
+  return docs;
 }
 
 // =====================================================================
