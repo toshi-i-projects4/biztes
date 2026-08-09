@@ -222,7 +222,7 @@ button.ghost:disabled{opacity:.5;cursor:not-allowed}
 import { auth, db, CATEGORY1_TYPES, ALL_TYPES, CATEGORY1_LABELS } from "./firebase-config.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import {
-  doc, getDoc, setDoc, updateDoc, deleteDoc, collection, onSnapshot,
+  doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, collection,
   query, orderBy, serverTimestamp, addDoc,
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import {
@@ -243,7 +243,7 @@ let companyId = params.get("company");
 let category1s = [];
 let currentCategory1 = null;
 let editingItemId = null;
-let unsubscribeItems = null;
+let currentItems = [];
 let isOperatorUser = false;
 
 const TYPE_LABELS = {
@@ -469,23 +469,23 @@ async function loadCategory1(category1Id) {
     document.getElementById("substitutionSelect").value = (customSnap.exists() && customSnap.data().substitutesFor) || "";
   }
 
-  if (unsubscribeItems) unsubscribeItems();
   const itemsRef = collection(db, "companies", companyId, "questionSets", category1Id, "items");
   const q = query(itemsRef, orderBy("order", "asc"));
-  unsubscribeItems = onSnapshot(q, (snap) => renderItems(snap));
+  const itemsSnap = await getDocs(q);
+  currentItems = itemsSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  renderItems(currentItems);
 }
 
-function renderItems(snap) {
+function renderItems(items) {
   const tbody = document.getElementById("itemRows");
   const empty = document.getElementById("emptyItems");
   tbody.innerHTML = "";
-  if (snap.empty) { empty.style.display = "block"; return; }
+  if (!items.length) { empty.style.display = "block"; return; }
   empty.style.display = "none";
 
-  const items = [];
-  snap.forEach((d) => items.push({ id: d.id, ...d.data() }));
-  const practice = items.filter((i) => i.stage === "practice");
-  const real = items.filter((i) => i.stage === "real");
+  const sorted = items.slice().sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  const practice = sorted.filter((i) => i.stage === "practice");
+  const real = sorted.filter((i) => i.stage === "real");
 
   const appendGroup = (label, group) => {
     if (!group.length) return;
@@ -526,6 +526,8 @@ async function deleteItem(itemId) {
   if (!confirm("この問題を削除します。よろしいですか？")) return;
   await deleteDoc(doc(db, "companies", companyId, "questionSets", currentCategory1, "items", itemId));
   invalidateCompanyQuestionCache(companyId);
+  currentItems = currentItems.filter((i) => i.id !== itemId);
+  renderItems(currentItems);
 }
 
 // ---- モーダル制御 ----
@@ -642,12 +644,16 @@ document.getElementById("saveItemBtn").addEventListener("click", async () => {
   const itemsRef = collection(db, "companies", companyId, "questionSets", currentCategory1, "items");
   if (editingItemId) {
     await updateDoc(doc(itemsRef, editingItemId), data);
+    const idx = currentItems.findIndex((i) => i.id === editingItemId);
+    if (idx !== -1) currentItems[idx] = { ...currentItems[idx], ...data };
   } else {
     data.createdAt = serverTimestamp();
-    await addDoc(itemsRef, data);
+    const newRef = await addDoc(itemsRef, data);
+    currentItems.push({ id: newRef.id, ...data });
   }
   invalidateCompanyQuestionCache(companyId);
   overlay.classList.remove("show");
+  renderItems(currentItems);
 });
 
 document.getElementById("saveSettingsBtn").addEventListener("click", async () => {

@@ -101,7 +101,7 @@ table,.data-table{width:100%;border-collapse:collapse;background:#fff;font-size:
 import { auth, db } from "./firebase-config.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import {
-  doc, getDoc, collection, getDocs, onSnapshot, query, orderBy, limit, updateDoc, deleteDoc, setDoc, serverTimestamp,
+  doc, getDoc, collection, getDocs, query, orderBy, limit, updateDoc, deleteDoc, setDoc, serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { escapeHtml } from "./operator-shared.js";
 
@@ -110,7 +110,6 @@ let isOperatorUser = false;
 let currentUser = null;
 let currentUserName = "";
 let currentUserEmployeeCode = "";
-let unsubInvites = null;
 let allInvites = [];
 let editingToken = "";
 let selectedTokens = new Set();
@@ -157,7 +156,7 @@ onAuthStateChanged(auth, async (user) => {
     setBackHomeLink("company-admin-home.html", "← 企業管理者ホームへ戻る");
     updateBulkEditLink();
 
-    watchInvites();
+    loadInvites();
     loadChangeLogs();
     showPage();
     return;
@@ -204,10 +203,10 @@ async function loadCompaniesForOperator() {
     editingToken = "";
     updateOperatorBanner();
     updateBulkEditLink();
-    watchInvites();
+    loadInvites();
     loadChangeLogs();
   });
-  if (select.value) { companyId = select.value; updateOperatorBanner(); updateBulkEditLink(); watchInvites(); loadChangeLogs(); }
+  if (select.value) { companyId = select.value; updateOperatorBanner(); updateBulkEditLink(); loadInvites(); loadChangeLogs(); }
 }
 
 function updateOperatorBanner() {
@@ -232,20 +231,24 @@ function fmtDateTime(v) {
   return "-";
 }
 
-function watchInvites() {
-  if (unsubInvites) unsubInvites();
+// v10で変更：開いている間ずっとリアルタイム購読（onSnapshot）していると、他の受験者の進捗が
+// 変わるたびに追加の読み取りが発生してしまう。実際の運用では「開いて確認・操作したら閉じる」
+// 使い方がほとんどで、開いたまま他者の変更をリアルタイムに見る必要はないため、開いたとき・
+// 「再読み込み」ボタンを押したときに1回だけ取得する方式に変更した。自分自身の操作
+// （編集・削除・一括削除）による変更は、その場でallInvitesを直接更新することで、
+// 再読み込みしなくても即座に一覧へ反映する。
+async function loadInvites() {
   allInvites = [];
   selectedTokens = new Set();
   if (!companyId) { renderRows(); return; }
 
   const q = query(collection(db, "companies", companyId, "examInvites"), orderBy("createdAt", "desc"));
-  unsubInvites = onSnapshot(q, (snap) => {
-    allInvites = snap.docs.map((d) => ({ token: d.id, ...d.data() }));
-    // 表示から消えた（削除された）対象者の選択状態は残さない
-    const liveTokens = new Set(allInvites.map((inv) => inv.token));
-    Array.from(selectedTokens).forEach((t) => { if (!liveTokens.has(t)) selectedTokens.delete(t); });
-    renderRows();
-  });
+  const snap = await getDocs(q);
+  allInvites = snap.docs.map((d) => ({ token: d.id, ...d.data() }));
+  // 表示から消えた（削除された）対象者の選択状態は残さない
+  const liveTokens = new Set(allInvites.map((inv) => inv.token));
+  Array.from(selectedTokens).forEach((t) => { if (!liveTokens.has(t)) selectedTokens.delete(t); });
+  renderRows();
 }
 
 function normalizeSearchText(v) {
@@ -443,11 +446,15 @@ async function bulkDeleteSelected() {
     done++;
     setListStatus(`削除しています...（${done}/${tokens.length}件）`, "warn");
   }
+  // リアルタイム購読をやめたため、この場でallInvitesから削除済みトークンを取り除いて
+  // 即座に一覧へ反映する（失敗したトークンはselectedTokensから外していないのでそのまま残る）。
+  const remainingTokens = new Set(tokens.filter((t) => selectedTokens.has(t)));
+  allInvites = allInvites.filter((inv) => !tokens.includes(inv.token) || remainingTokens.has(inv.token));
+  renderRows();
   setListStatus(
     failed ? `${done - failed}件を削除しました（${failed}件は失敗しました）。` : `${done}件の受験データを削除しました。`,
     failed ? "error" : "ok"
   );
-  // allInvites・表示はonSnapshotの通知で自動更新される
   updateBulkDeleteButton();
 }
 document.getElementById("bulkDeleteBtn").addEventListener("click", bulkDeleteSelected);
@@ -583,7 +590,10 @@ async function saveEdit(token) {
     });
     let logSaved = true;
     try { await writeChangeLog(token, before, after, "updateExaminee"); } catch (logError) { console.warn("examinee change log write skipped", logError); logSaved = false; }
+    // リアルタイム購読をやめたため、この場でallInvitesを直接書き換えて即座に一覧へ反映する。
+    if (target) Object.assign(target, after);
     editingToken = "";
+    renderRows();
     setListStatus(logSaved ? "保存しました。レポート・ダッシュボードにも反映されます。\n変更履歴も記録しました。" : "保存しました。レポート・ダッシュボードにも反映されます。\n※変更履歴の記録は権限設定によりスキップされました。", "ok");
     try { await loadChangeLogs(); } catch (logLoadError) { console.warn("change log reload skipped", logLoadError); }
   } catch (e) {
@@ -608,7 +618,10 @@ async function deleteInviteAndResult(token, btn) {
   try {
     await deleteDoc(doc(db, "companies", companyId, "examInvites", token));
     await deleteDoc(doc(db, "companies", companyId, "examResults", token));
-    // allInvites・表示はonSnapshotの通知で自動更新される
+    // リアルタイム購読をやめたため、この場でallInvitesから直接取り除いて即座に一覧へ反映する。
+    allInvites = allInvites.filter((inv) => inv.token !== token);
+    selectedTokens.delete(token);
+    renderRows();
     setListStatus("「" + label + "」の受験データを削除しました。", "ok");
   } catch (e) {
     console.error(e);
@@ -635,7 +648,7 @@ document.getElementById("reloadBtn").addEventListener("click", (e) => {
   btn.disabled = true;
   const original = btn.textContent;
   btn.textContent = "再読み込み中...";
-  watchInvites();
+  loadInvites();
   setTimeout(() => {
     btn.disabled = false;
     btn.textContent = original;

@@ -119,7 +119,7 @@ textarea#bulkText{min-height:180px;font-family:ui-monospace,Consolas,monospace;f
 import { auth, db } from "./firebase-config.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import {
-  doc, getDoc, collection, getDocs, onSnapshot, query, orderBy, writeBatch, updateDoc, serverTimestamp,
+  doc, getDoc, collection, getDocs, query, orderBy, writeBatch, updateDoc, serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { escapeHtml, buildInviteMailContent, loadInviteMailTemplate, buildDefaultInviteMailTemplate } from "./operator-shared.js";
 
@@ -128,7 +128,6 @@ let isOperatorUser = false;
 let currentUser = null;
 let parsedRows = [];
 let lastResults = [];
-let unsubInvites = null;
 let allInvites = [];
 
 function showPage() {
@@ -240,7 +239,7 @@ onAuthStateChanged(auth, async (user) => {
     document.getElementById("companySelectPanel").classList.add("hidden");
     setBackHomeLink("company-admin-home.html", "← 企業管理者ホームへ戻る");
 
-    watchInvites();
+    loadInvites();
     showPage();
     return;
   }
@@ -272,9 +271,9 @@ async function loadCompaniesForOperator() {
   select.addEventListener("change", () => {
     companyId = select.value;
     updateOperatorBanner();
-    watchInvites();
+    loadInvites();
   });
-  if (select.value) { companyId = select.value; updateOperatorBanner(); watchInvites(); }
+  if (select.value) { companyId = select.value; updateOperatorBanner(); loadInvites(); }
 }
 
 function updateOperatorBanner() {
@@ -457,6 +456,28 @@ document.getElementById("confirmBulkBtn").addEventListener("click", async () => 
       await batch.commit();
     }
 
+    // リアルタイム購読をやめたため、発行した招待をこの場でallInvitesに追加して
+    // 「招待・受験状況一覧」へすぐ反映する（createdAtは並び順・表示用のローカルな近似値）。
+    const nowTs = { toDate: () => new Date() };
+    entries.forEach((r) => {
+      allInvites.unshift({
+        token: r.token,
+        applicantName: r.name,
+        applicantEmail: r.email,
+        employeeCode: r.employeeCode,
+        department: r.department,
+        position: r.position,
+        note: r.note,
+        status: "not_started",
+        createdAt: nowTs,
+        expiresAt: null,
+        startedAt: null,
+        completedAt: null,
+        anonUid: null,
+      });
+    });
+    renderInvites();
+
     lastResults = entries.map((r) => ({
       name: r.name,
       email: r.email,
@@ -567,16 +588,20 @@ function fmtDateTime(v) {
   return "-";
 }
 
-function watchInvites() {
-  if (unsubInvites) unsubInvites();
+// v10で変更：開いている間ずっとリアルタイム購読（onSnapshot）していると、他の受験者の進捗が
+// 変わるたびに追加の読み取りが発生してしまう。実際の運用では「開いて確認・操作したら閉じる」
+// 使い方がほとんどで、開いたまま他者の変更をリアルタイムに見る必要はないため、開いたとき・
+// 「再読み込み」ボタンを押したときに1回だけ取得する方式に変更した。自分自身の操作
+// （一括発行・対象外への変更）による変更は、その場でallInvitesを直接更新することで、
+// 再読み込みしなくても即座に一覧へ反映する。
+async function loadInvites() {
   allInvites = [];
   if (!companyId) { renderInvites(); return; }
 
   const q = query(collection(db, "companies", companyId, "examInvites"), orderBy("createdAt", "desc"));
-  unsubInvites = onSnapshot(q, (snap) => {
-    allInvites = snap.docs.map((d) => ({ token: d.id, ...d.data() }));
-    renderInvites();
-  });
+  const snap = await getDocs(q);
+  allInvites = snap.docs.map((d) => ({ token: d.id, ...d.data() }));
+  renderInvites();
 }
 
 function normalizeSearchText(v) {
@@ -654,6 +679,10 @@ async function excludeInvite(token) {
       updatedAt: serverTimestamp(),
       updatedBy: currentUser ? currentUser.uid : "",
     });
+    // リアルタイム購読をやめたため、この場でallInvitesを直接書き換えて即座に一覧へ反映する。
+    const target = allInvites.find((inv) => inv.token === token);
+    if (target) target.status = "cancelled";
+    renderInvites();
   } catch (e) {
     console.error(e);
     alert("対象外への変更に失敗しました。\n" + (e.code || "") + "\n" + (e.message || e));
@@ -667,7 +696,7 @@ document.getElementById("reloadBtn").addEventListener("click", (e) => {
   btn.disabled = true;
   const original = btn.textContent;
   btn.textContent = "再読み込み中...";
-  watchInvites();
+  loadInvites();
   setTimeout(() => {
     btn.disabled = false;
     btn.textContent = original;

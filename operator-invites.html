@@ -93,14 +93,13 @@ body{margin:0;font-family:"Hiragino Maru Gothic ProN","BIZ UDPGothic","Yu Gothic
 import { auth, db } from "./firebase-config.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import {
-  doc, getDoc, setDoc, updateDoc, collection, getDocs, onSnapshot, query, orderBy, serverTimestamp,
+  doc, getDoc, setDoc, updateDoc, collection, getDocs, query, orderBy, serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { escapeHtml, buildInviteMailContent } from "./operator-shared.js";
 
 let companyId = "";
 let isOperatorUser = false;
 let currentUser = null;
-let unsubInvites = null;
 let lastInvite = { email: "", subject: "", body: "" };
 
 function showPage() {
@@ -192,7 +191,7 @@ onAuthStateChanged(auth, async (user) => {
     document.getElementById("companySelectPanel").classList.add("hidden");
     setBackHomeLink("company-admin-home.html", "← 企業管理者ホームへ戻る");
 
-    watchInvites();
+    loadInvites();
     showPage();
     return;
   }
@@ -224,9 +223,9 @@ async function loadCompaniesForOperator() {
   select.addEventListener("change", () => {
     companyId = select.value;
     updateOperatorBanner();
-    watchInvites();
+    loadInvites();
   });
-  if (select.value) { companyId = select.value; updateOperatorBanner(); watchInvites(); }
+  if (select.value) { companyId = select.value; updateOperatorBanner(); loadInvites(); }
 }
 
 function updateOperatorBanner() {
@@ -244,16 +243,20 @@ document.getElementById("logoutBtn") && document.getElementById("logoutBtn").add
 
 let allInvites = [];
 
-function watchInvites() {
-  if (unsubInvites) unsubInvites();
+// v10で変更：この画面を開いている間ずっとリアルタイム購読（onSnapshot）していると、
+// 他の受験者の進捗が変わるたびに追加の読み取りが発生してしまう。実際の運用では
+// 「開いて確認・操作したら閉じる」使い方がほとんどで、開いたまま他者の変更をリアルタイムに
+// 見る必要はないため、開いたとき・「再読み込み」ボタンを押したときに1回だけ取得する方式に
+// 変更した。自分自身の操作（招待登録・対象外への変更）による変更は、その場でallInvitesを
+// 直接更新することで、再読み込みしなくても即座に一覧へ反映する。
+async function loadInvites() {
   allInvites = [];
   if (!companyId) { renderInvites(); return; }
 
   const q = query(collection(db, "companies", companyId, "examInvites"), orderBy("createdAt", "desc"));
-  unsubInvites = onSnapshot(q, (snap) => {
-    allInvites = snap.docs.map((d) => ({ token: d.id, ...d.data() }));
-    renderInvites();
-  });
+  const snap = await getDocs(q);
+  allInvites = snap.docs.map((d) => ({ token: d.id, ...d.data() }));
+  renderInvites();
 }
 
 function normalizeSearchText(v) {
@@ -327,7 +330,7 @@ document.getElementById("reloadBtn").addEventListener("click", (e) => {
   btn.disabled = true;
   const original = btn.textContent;
   btn.textContent = "再読み込み中...";
-  watchInvites();
+  loadInvites();
   setTimeout(() => {
     btn.disabled = false;
     btn.textContent = original;
@@ -345,6 +348,10 @@ async function excludeInvite(token) {
       updatedAt: serverTimestamp(),
       updatedBy: currentUser ? currentUser.uid : "",
     });
+    // リアルタイム購読をやめたため、この場でallInvitesを直接書き換えて即座に一覧へ反映する。
+    const target = allInvites.find((inv) => inv.token === token);
+    if (target) target.status = "cancelled";
+    renderInvites();
   } catch (e) {
     console.error(e);
     alert("対象外への変更に失敗しました。\n" + (e.code || "") + "\n" + (e.message || e));
@@ -410,6 +417,10 @@ document.getElementById("createInviteBtn").addEventListener("click", async () =>
     status.className = "status warn";
     status.textContent = "招待登録しています...";
     await setDoc(doc(db, "companies", companyId, "examInvites", token), data);
+    // リアルタイム購読をやめたため、作成した招待をこの場でallInvitesに追加して一覧へ反映する
+    // （createdAtは並び順・表示用のローカルな近似値。実際の値は次回読み込み時にサーバー値に置き換わる）。
+    allInvites.unshift({ token, ...data, createdAt: { toDate: () => new Date() } });
+    renderInvites();
     status.textContent = "招待登録しました。下の「招待メール案内」より、メールを作成してください。";
     status.className = "status ok";
     const link = getInviteLink(token);
