@@ -628,8 +628,8 @@ async function loadInvites() {
     allInvites = snap.docs.map((d) => ({ token: d.id, ...d.data() }));
   } catch (e) {
     console.error(e);
-    let msg = "招待一覧の取得に失敗しました：" + (e.code || e.message || e);
-    if (e.code === "failed-precondition") msg += "\n\nFirestoreのインデックスが未作成の可能性があります。ブラウザの開発者ツールのコンソールに表示されるエラー詳細のリンクから作成してください。";
+    let msg = "招待一覧の取得に失敗しました：" + (e.message || e.code || e);
+    if (e.code === "failed-precondition") msg += "\n\nFirestoreのインデックスが未作成です。上のメッセージ内のURL（https://console.firebase.google.com/... で始まるリンク）をコピーしてブラウザで開き、「インデックスを作成」を押してください。数分待つとこの画面が表示できるようになります。";
     alert(msg);
   }
   renderInvites();
