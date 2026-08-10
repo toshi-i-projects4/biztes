@@ -648,6 +648,32 @@ export async function buildDefaultInviteMailTemplate(companyId) {
   return { subject: "【ビズてす】受験のご案内", body: lines.join("\n") };
 }
 
+// =====================================================================
+// 再受験時の重複データ自動削除
+//
+// 同じ社員コードで再度受験招待を発行した場合、以前の招待（examInvites）・受験結果
+// （examResults）が残ったままになり、「招待・受験状況一覧」やレポートに重複して
+// 表示されてしまう。これまでは運営・企業管理者が手動で以前のデータを削除する必要が
+// あったが、新しい招待を発行する直前にこの関数を呼ぶことで、同じ社員コードの
+// 既存データ（新しく発行するもの自身を除く）を自動的に削除してから発行できるようにする。
+// 社員コードが空欄の招待は対象外（社員コード未入力では同一人物かどうか判別できないため）。
+// =====================================================================
+export async function deletePreviousInvitesByEmployeeCode(companyId, employeeCode, excludeToken) {
+  const code = String(employeeCode || "").trim();
+  if (!code || !companyId) return 0;
+  const q = query(collection(db, "companies", companyId, "examInvites"), where("employeeCode", "==", code));
+  const snap = await getDocs(q);
+  let count = 0;
+  for (const d of snap.docs) {
+    if (excludeToken && d.id === excludeToken) continue;
+    await deleteDoc(doc(db, "companies", companyId, "examInvites", d.id));
+    await deleteDoc(doc(db, "companies", companyId, "examResults", d.id)).catch(() => {});
+    count++;
+  }
+  if (count) invalidateCompanyExamDataCache(companyId);
+  return count;
+}
+
 // 企業が保存済みの招待メールテンプレートを読み込む（未保存ならnull）
 export async function loadInviteMailTemplate(companyId) {
   const snap = await getDoc(doc(db, "companies", companyId, "mailTemplates", "inviteMail"));

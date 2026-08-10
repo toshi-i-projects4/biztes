@@ -90,14 +90,13 @@ textarea#bulkText{min-height:180px;font-family:ui-monospace,Consolas,monospace;f
 
   <div class="card">
     <p class="section-title">招待・受験状況一覧</p>
-    <p class="description">発行済みの受験招待の一覧です。招待対象から外した人は「対象外」として管理できます。リンクのコピー、メールの再作成もできます。</p>
+    <p class="description">発行済みの受験招待のうち、未受験・受験中・対象外のものを表示します。招待対象から外した人は「対象外」として管理できます。リンクのコピー、メールの再作成もできます。※受験完了した方は読み込み件数を減らすためこの一覧には表示されません。受験完了者の一覧・詳細は「レポート」画面でご確認ください。</p>
     <div class="toolbar">
       <input id="search" placeholder="社員コード・氏名・メール・部署・備考で検索">
       <select id="filterStatus">
         <option value="all">すべて</option>
         <option value="not_started">未受験</option>
         <option value="in_progress">受験中</option>
-        <option value="completed">受験完了</option>
         <option value="cancelled">対象外</option>
       </select>
       <button class="secondary-btn" id="reloadBtn" type="button">再読み込み</button>
@@ -119,9 +118,9 @@ textarea#bulkText{min-height:180px;font-family:ui-monospace,Consolas,monospace;f
 import { auth, db } from "./firebase-config.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import {
-  doc, getDoc, collection, getDocs, query, orderBy, writeBatch, updateDoc, serverTimestamp,
+  doc, getDoc, collection, getDocs, query, orderBy, where, writeBatch, updateDoc, serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { escapeHtml, buildInviteMailContent, loadInviteMailTemplate, buildDefaultInviteMailTemplate } from "./operator-shared.js";
+import { escapeHtml, buildInviteMailContent, loadInviteMailTemplate, buildDefaultInviteMailTemplate, deletePreviousInvitesByEmployeeCode } from "./operator-shared.js";
 
 let companyId = "";
 let isOperatorUser = false;
@@ -431,6 +430,20 @@ document.getElementById("confirmBulkBtn").addEventListener("click", async () => 
 
   try {
     const entries = validRows.map((r) => ({ ...r, token: generateToken() }));
+
+    // 同じ社員コードの以前の招待・受験結果が残っている場合は、新しい招待を保存する前に
+    // 自動的に削除する（再受験のたびに手動で以前のデータを消す手間をなくすため）。
+    // 社員コードが空欄の行は対象外。
+    const uniqueEmployeeCodes = Array.from(new Set(entries.map((r) => String(r.employeeCode || "").trim()).filter(Boolean)));
+    let removedCount = 0;
+    if (uniqueEmployeeCodes.length) {
+      confirmStatus.textContent = "同じ社員コードの以前の受験データを確認しています...";
+      for (const code of uniqueEmployeeCodes) {
+        removedCount += await deletePreviousInvitesByEmployeeCode(companyId, code);
+      }
+      confirmStatus.textContent = "発行しています...";
+    }
+
     // Firestoreのバッチ書き込みは1回あたり最大500件のため、余裕を持って200件ずつに分割する
     const chunkSize = 200;
     for (let i = 0; i < entries.length; i += chunkSize) {
@@ -489,7 +502,9 @@ document.getElementById("confirmBulkBtn").addEventListener("click", async () => 
     }));
 
     const resultSummaryEl = document.getElementById("resultSummary");
-    resultSummaryEl.textContent = `${lastResults.length} 件の受験招待を発行しました。下の一覧の「招待メール作成（個別）」から、対象者ごとに案内メールを作成してください。`;
+    resultSummaryEl.textContent = `${lastResults.length} 件の受験招待を発行しました。`
+      + (removedCount ? `（同じ社員コードの以前の受験データ ${removedCount} 件を削除しました。）` : "")
+      + " 下の一覧の「招待メール作成（個別）」から、対象者ごとに案内メールを作成してください。";
     resultSummaryEl.className = "status ok";
     document.getElementById("resultRows").innerHTML = lastResults.map((r) => `
       <tr>
@@ -594,13 +609,29 @@ function fmtDateTime(v) {
 // 「再読み込み」ボタンを押したときに1回だけ取得する方式に変更した。自分自身の操作
 // （一括発行・対象外への変更）による変更は、その場でallInvitesを直接更新することで、
 // 再読み込みしなくても即座に一覧へ反映する。
+// v11で変更：受験完了（status: "completed"）の招待は、この一覧を開くたびにFirestoreから
+// 読み込む必要性が薄い（完了後の詳細はレポート画面で確認できる）ため、クエリの段階で除外し、
+// 読み込み件数そのものを減らしている。除外はwhere("status", "in", [...])で行うため、
+// 初回実行時にFirestore側で複合インデックスの作成を求められることがある
+// （エラーメッセージ中のリンクから作成できる）。
 async function loadInvites() {
   allInvites = [];
   if (!companyId) { renderInvites(); return; }
 
-  const q = query(collection(db, "companies", companyId, "examInvites"), orderBy("createdAt", "desc"));
-  const snap = await getDocs(q);
-  allInvites = snap.docs.map((d) => ({ token: d.id, ...d.data() }));
+  try {
+    const q = query(
+      collection(db, "companies", companyId, "examInvites"),
+      where("status", "in", ["not_started", "in_progress", "cancelled"]),
+      orderBy("createdAt", "desc")
+    );
+    const snap = await getDocs(q);
+    allInvites = snap.docs.map((d) => ({ token: d.id, ...d.data() }));
+  } catch (e) {
+    console.error(e);
+    let msg = "招待一覧の取得に失敗しました：" + (e.code || e.message || e);
+    if (e.code === "failed-precondition") msg += "\n\nFirestoreのインデックスが未作成の可能性があります。ブラウザの開発者ツールのコンソールに表示されるエラー詳細のリンクから作成してください。";
+    alert(msg);
+  }
   renderInvites();
 }
 

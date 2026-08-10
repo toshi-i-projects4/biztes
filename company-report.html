@@ -77,7 +77,6 @@ th.sortable.active .sort-arrow{color:var(--blue-dark)}
     <div class="controls">
       <div class="control-item"><label for="startDate">開始日</label><input type="date" id="startDate"></div>
       <div class="control-item"><label for="endDate">終了日</label><input type="date" id="endDate"></div>
-      <div class="control-item"><div class="btn-row"><button class="primary" id="loadBtn" type="button">表示更新</button></div></div>
     </div>
     <div class="note" id="periodHelp"></div>
   </div>
@@ -306,8 +305,6 @@ function remapAggByCategory1(byCategory1) {
 function hideLoading() { const l = $("pageLoading"); if (l) { l.classList.add("hidden"); l.style.display = "none"; } }
 function setStatus(msg, type) { const e = $("status"); e.textContent = msg || ""; e.className = "status " + (msg ? (type || "") : ""); }
 function pad2(n) { return String(n).padStart(2, "0"); }
-function dateKey(d) { return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate()); }
-function defaultRange() { const d = new Date(); return { start: dateKey(new Date(d.getFullYear(), d.getMonth(), 1)), end: dateKey(d) }; }
 function fmtDateTime(v) {
   try {
     if (v && typeof v.toDate === "function") {
@@ -324,7 +321,8 @@ function getDateRange() { return { start: $("startDate").value, end: $("endDate"
 function isValidRange(r) { return !!(r.start && r.end && r.start <= r.end); }
 function updatePeriodHelp(r) {
   if (isValidRange(r)) { $("periodHelp").textContent = "対象期間：" + r.start + " 〜 " + r.end + "　※この期間に発行された受験招待を対象とします。"; }
-  else { $("periodHelp").textContent = "開始日・終了日を指定してください（開始日は終了日以前の日付にしてください）。"; }
+  else if (r.start && r.end) { $("periodHelp").textContent = "開始日は終了日以前の日付にしてください。"; }
+  else { $("periodHelp").textContent = "開始日・終了日を両方入力すると、その期間に発行された受験招待を表示します。"; }
 }
 
 // カテゴリー1別／カテゴリー2別の点数セル。1問も回答していない（未到達含む）場合は「-」で表示する。
@@ -646,20 +644,31 @@ function render() {
   renderDetailTable();
 }
 
+function clearReportRows(msg) {
+  $("resultBody").innerHTML = '<tr><td colspan="' + SUMMARY_COL_COUNT + '" class="empty">' + msg + '</td></tr>';
+  $("detailBody").innerHTML = '<tr><td colspan="' + DETAIL_COL_COUNT + '" class="empty">' + msg + '</td></tr>';
+}
+
 async function loadReport() {
   const range = getDateRange();
   updatePeriodHelp(range);
   if (!isValidRange(range)) {
-    setStatus("開始日・終了日を正しく指定してください（開始日は終了日以前の日付にしてください）。", "error");
     invites = []; resultMap = {};
     render();
     $("csvBtn").disabled = true;
+    $("detailCsvBtn").disabled = true;
+    if (range.start && range.end) {
+      setStatus("開始日・終了日を正しく指定してください（開始日は終了日以前の日付にしてください）。", "error");
+      clearReportRows("指定内容を確認してください。");
+    } else {
+      setStatus("", "");
+      clearReportRows("開始日・終了日を両方入力すると表示されます。");
+    }
     return;
   }
   setStatus("", "");
-  $("loadBtn").disabled = true; $("csvBtn").disabled = true; $("detailCsvBtn").disabled = true;
-  $("resultBody").innerHTML = '<tr><td colspan="' + SUMMARY_COL_COUNT + '" class="empty">データを読み込み中です。</td></tr>';
-  $("detailBody").innerHTML = '<tr><td colspan="' + DETAIL_COL_COUNT + '" class="empty">データを読み込み中です。</td></tr>';
+  $("csvBtn").disabled = true; $("detailCsvBtn").disabled = true;
+  clearReportRows("データを読み込み中です。");
   try {
     const startDate = new Date(range.start + "T00:00:00");
     const endDate = new Date(range.end + "T23:59:59.999");
@@ -691,10 +700,8 @@ async function loadReport() {
     let msg = "取得に失敗しました：" + (e.code || e.message || e);
     if (e.code === "failed-precondition") msg += "\n\nFirestoreのインデックスが未作成の可能性があります。エラー詳細のリンクから作成してください。";
     setStatus(msg, "error");
-    $("resultBody").innerHTML = '<tr><td colspan="' + SUMMARY_COL_COUNT + '" class="empty">取得に失敗しました。</td></tr>';
-    $("detailBody").innerHTML = '<tr><td colspan="' + DETAIL_COL_COUNT + '" class="empty">取得に失敗しました。</td></tr>';
+    clearReportRows("取得に失敗しました。");
   } finally {
-    $("loadBtn").disabled = false;
     hideLoading();
   }
 }
@@ -756,7 +763,8 @@ function downloadDetailCsv() {
   URL.revokeObjectURL(url);
 }
 
-$("loadBtn").addEventListener("click", loadReport);
+$("startDate").addEventListener("change", loadReport);
+$("endDate").addEventListener("change", loadReport);
 $("csvBtn").addEventListener("click", downloadCsv);
 $("detailCsvBtn").addEventListener("click", downloadDetailCsv);
 $("headRow").addEventListener("click", (e) => {
@@ -826,10 +834,9 @@ onAuthStateChanged(auth, async (user) => {
     // v9で追加：①〜④のいずれかが自社カテゴリーで代替されている場合、以降のスコア表示では
     // スロットID（cognitive等）ではなく代替先のカテゴリーIDから結果を参照する。
     analysisMapping = await resolveAnalysisCategory1Mapping(companyId);
-    const dr = defaultRange();
-    $("startDate").value = dr.start;
-    $("endDate").value = dr.end;
-    await loadReport();
+    updatePeriodHelp(getDateRange());
+    clearReportRows("開始日・終了日を両方入力すると表示されます。");
+    hideLoading();
   } catch (e) {
     console.error(e);
     setStatus("読み込みに失敗しました。\n" + (e.message || e), "error");
