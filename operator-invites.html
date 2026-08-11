@@ -6,7 +6,7 @@
 <title>受験招待（個別）｜ビズてす</title>
 <style>
 body{margin:0;font-family:"Hiragino Maru Gothic ProN","BIZ UDPGothic","Yu Gothic UI","Meiryo",sans-serif;background:#eef2f7;color:#111827;padding:24px;box-sizing:border-box;line-height:1.7}
-.page{max-width:980px;margin:30px auto;background:#fff;border-radius:16px;box-shadow:0 4px 12px rgba(0,0,0,.08);padding:32px;box-sizing:border-box}
+.page{max-width:1440px;margin:24px auto;background:#fff;border-radius:16px;box-shadow:0 4px 12px rgba(0,0,0,.08);padding:28px;box-sizing:border-box}
 .header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px}h1{margin:0;font-size:28px}.back-link,.bottom-back-link{color:#0369a1;text-decoration:none;font-weight:bold;font-size:14px}.bottom-back-link{display:inline-block;margin-top:22px}.section-title{font-size:18px;font-weight:bold;margin:0 0 14px}.description{font-size:14px;line-height:1.7;color:#6b7280;margin:0 0 18px}
 .card{background:transparent;border:none;border-radius:0;box-shadow:none;padding:0;box-sizing:border-box;margin:0 0 28px}.card+.card{border-top:1px solid #e5e7eb;padding-top:24px}
 .info-box,.warning-box{background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:14px 16px;margin-bottom:14px;line-height:1.7;white-space:pre-wrap;font-size:14px;color:#111827}.warning-box{background:#fffbeb;border-color:#fde68a;color:#92400e;margin-top:16px}
@@ -64,13 +64,14 @@ body{margin:0;font-family:"Hiragino Maru Gothic ProN","BIZ UDPGothic","Yu Gothic
 
   <div class="card">
     <p class="section-title">招待・受験状況一覧</p>
-    <p class="description">発行済みの受験招待のうち、未受験・受験中・対象外のものを表示します。招待対象から外した人は「対象外」として管理できます。リンクのコピー、メールの再作成もできます。※受験完了した方は読み込み件数を減らすためこの一覧には表示されません。受験完了者の一覧・詳細は「レポート」画面でご確認ください。</p>
+    <p class="description">発行済みの受験招待の一覧です。招待対象から外した人は「対象外」として管理できます。リンクのコピー、メールの再作成もできます。</p>
     <div class="toolbar">
       <input id="search" placeholder="社員コード・氏名・メール・部署・備考で検索">
       <select id="filterStatus">
         <option value="all">すべて</option>
         <option value="not_started">未受験</option>
         <option value="in_progress">受験中</option>
+        <option value="completed">受験完了</option>
         <option value="cancelled">対象外</option>
       </select>
       <button class="secondary-btn" id="reloadBtn" type="button">再読み込み</button>
@@ -92,9 +93,9 @@ body{margin:0;font-family:"Hiragino Maru Gothic ProN","BIZ UDPGothic","Yu Gothic
 import { auth, db } from "./firebase-config.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import {
-  doc, getDoc, setDoc, updateDoc, collection, getDocs, query, orderBy, where, serverTimestamp,
+  doc, getDoc, setDoc, updateDoc, collection, getDocs, query, orderBy, serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { escapeHtml, buildInviteMailContent, deletePreviousInvitesByEmployeeCode } from "./operator-shared.js";
+import { escapeHtml, buildInviteMailContent } from "./operator-shared.js";
 
 let companyId = "";
 let isOperatorUser = false;
@@ -248,29 +249,13 @@ let allInvites = [];
 // 見る必要はないため、開いたとき・「再読み込み」ボタンを押したときに1回だけ取得する方式に
 // 変更した。自分自身の操作（招待登録・対象外への変更）による変更は、その場でallInvitesを
 // 直接更新することで、再読み込みしなくても即座に一覧へ反映する。
-// v11で変更：受験完了（status: "completed"）の招待は、この一覧を開くたびにFirestoreから
-// 読み込む必要性が薄い（完了後の詳細はレポート画面で確認できる）ため、クエリの段階で除外し、
-// 読み込み件数そのものを減らしている。除外はwhere("status", "in", [...])で行うため、
-// 初回実行時にFirestore側で複合インデックスの作成を求められることがある
-// （エラーメッセージ中のリンクから作成できる）。
 async function loadInvites() {
   allInvites = [];
   if (!companyId) { renderInvites(); return; }
 
-  try {
-    const q = query(
-      collection(db, "companies", companyId, "examInvites"),
-      where("status", "in", ["not_started", "in_progress", "cancelled"]),
-      orderBy("createdAt", "desc")
-    );
-    const snap = await getDocs(q);
-    allInvites = snap.docs.map((d) => ({ token: d.id, ...d.data() }));
-  } catch (e) {
-    console.error(e);
-    let msg = "招待一覧の取得に失敗しました：" + (e.message || e.code || e);
-    if (e.code === "failed-precondition") msg += "\n\nFirestoreのインデックスが未作成です。上のメッセージ内のURL（https://console.firebase.google.com/... で始まるリンク）をコピーしてブラウザで開き、「インデックスを作成」を押してください。数分待つとこの画面が表示できるようになります。";
-    alert(msg);
-  }
+  const q = query(collection(db, "companies", companyId, "examInvites"), orderBy("createdAt", "desc"));
+  const snap = await getDocs(q);
+  allInvites = snap.docs.map((d) => ({ token: d.id, ...d.data() }));
   renderInvites();
 }
 
@@ -431,17 +416,12 @@ document.getElementById("createInviteBtn").addEventListener("click", async () =>
   try {
     status.className = "status warn";
     status.textContent = "招待登録しています...";
-    // 同じ社員コードの以前の招待・受験結果が残っている場合は、新しい招待を保存する前に
-    // 自動的に削除する（再受験のたびに手動で以前のデータを消す手間をなくすため）。
-    const removedCount = employeeCode ? await deletePreviousInvitesByEmployeeCode(companyId, employeeCode) : 0;
     await setDoc(doc(db, "companies", companyId, "examInvites", token), data);
     // リアルタイム購読をやめたため、作成した招待をこの場でallInvitesに追加して一覧へ反映する
     // （createdAtは並び順・表示用のローカルな近似値。実際の値は次回読み込み時にサーバー値に置き換わる）。
     allInvites.unshift({ token, ...data, createdAt: { toDate: () => new Date() } });
     renderInvites();
-    status.textContent = removedCount
-      ? `招待登録しました。社員コード「${employeeCode}」の以前の受験データ（${removedCount}件）を削除しました。下の「招待メール案内」より、メールを作成してください。`
-      : "招待登録しました。下の「招待メール案内」より、メールを作成してください。";
+    status.textContent = "招待登録しました。下の「招待メール案内」より、メールを作成してください。";
     status.className = "status ok";
     const link = getInviteLink(token);
     await showInviteMail(data, link);
