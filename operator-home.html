@@ -390,9 +390,16 @@ function renderMiniRadar(values, hasData) {
       responsive: true,
       maintainAspectRatio: false,
       devicePixelRatio: (window.devicePixelRatio || 1) * 2,
-      events: [],
+      events: ["mousemove", "mouseout", "touchstart", "touchmove"],
       scales: { r: { min: 0, max: 100, ticks: { stepSize: 25, backdropColor: "transparent", font: { size: 11 } }, pointLabels: { font: { size: 11, weight: "bold" } } } },
-      plugins: { legend: { display: false } },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (context) => `${context.label}: ${context.formattedValue}点`,
+          },
+        },
+      },
     },
   });
 }
